@@ -213,7 +213,7 @@ trait PaymentRequestUtils {
      *
      * @since 3.6.2
      *
-     * @param WC_Product $product The product to get the tax for.
+     * @param \WC_Product $product The product to get the tax for.
      *
      * @return float Tax amount for the given product.
      */
@@ -340,7 +340,7 @@ trait PaymentRequestUtils {
      *
      * @since 3.6.1
      *
-     * @return WC_Product Product object.
+     * @return \WC_Product Product object.
      */
     public function get_product() {
         global $post;

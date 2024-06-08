@@ -53,6 +53,7 @@ class Order {
         add_filter( 'dokan_get_processing_fee', [ $this, 'get_order_processing_fee' ], 10, 2 );
         add_filter( 'dokan_get_processing_gateway_fee', [ $this, 'get_processing_gateway_fee' ], 10, 3 );
         add_filter( 'dokan_orders_vendor_net_amount', [ $this, 'get_vendor_net_amount' ], 10, 5 );
+        add_filter( 'dokan_commission_log_gateway_fee_to_order_note', [ $this, 'log_gateway_fee' ], 10, 2 );
     }
 
     /**
@@ -296,6 +297,11 @@ class Order {
             return;
         }
 
+        // return if order has parent order
+        if ( $order->get_parent_id() ) {
+            return;
+        }
+
         Payment::disburse( $order );
     }
 
@@ -444,7 +450,7 @@ class Order {
      * @param \WC_Order $suborder
      * @param \WC_Order $order
      *
-     * @return void
+     * @return float|string
      */
     public function get_vendor_net_amount( $net_amount, $vendor_earning, $gateway_fee, $suborder, $order ) {
         if (
@@ -455,5 +461,22 @@ class Order {
         }
 
         return wc_format_decimal( $net_amount, 2 );
+    }
+
+    /**
+     * Logs gateway fee if seller pays processing fees.
+     *
+     * @since 3.10.3
+     *
+     * @param bool $do_log Log in Order note?
+     * @param WC_Order $order Order.
+     *
+     * @return bool
+     */
+    public function log_gateway_fee( $do_log, $order ) {
+        if ( ! $do_log || Helper::get_gateway_id() !== $order->get_payment_method() ) {
+            return $do_log;
+        }
+        return Settings::sellers_pay_processing_fees();
     }
 }

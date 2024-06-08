@@ -60,17 +60,6 @@ class ProductSection extends AbstractProductSection {
     }
 
     /**
-     * Get vendor store settings page section label.
-     *
-     * @since 3.5.0
-     *
-     * @return string
-     */
-    public function get_setting_label() {
-        return __( 'Show advertised products section', 'dokan' );
-    }
-
-    /**
      * Get section products.
      *
      * @since 3.5.0

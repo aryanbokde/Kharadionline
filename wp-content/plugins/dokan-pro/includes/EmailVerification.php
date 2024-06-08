@@ -162,10 +162,19 @@ class EmailVerification {
             }
 
             update_user_caches( $user );
-        }
 
-        $seller_wizard = new SetupWizard();
-        $seller_wizard->setup_wizard();
+            // Redirect to set up wizard page if vendor verified and welcome wizard disabled.
+            if ( in_array( 'seller', $user->roles, true ) && dokan_get_option( 'disable_welcome_wizard', 'dokan_selling' ) === 'off' ) {
+                // Redirect to set up wizard.
+                $setup_wizard_url = add_query_arg(
+                    [ 'page' => 'dokan-seller-setup', 'step' => 'introduction' ],
+                    wc_get_account_endpoint_url( 'myaccount' ),
+                );
+
+                wp_safe_redirect( $setup_wizard_url );
+                exit();
+            }
+        }
     }
 
     /**

@@ -117,6 +117,7 @@ class BillingSubscriptionActivated extends WebhookEventHandler {
 
         // get saved subscription id
         $saved_subscription_id = get_user_meta( $vendor_id, '_dokan_paypal_marketplace_vendor_subscription_id', true );
+        $saved_subscription_id = empty( $saved_subscription_id ) ? $order->get_meta( '_dokan_paypal_marketplace_vendor_subscription_id' ) : $saved_subscription_id;
 
         // check already enabled subscription
         if ( ! empty( $order->get_meta( '_dokan_paypal_payment_capture_id' ) && ! empty( $saved_subscription_id ) && $saved_subscription_id === $subscription_id ) ) {

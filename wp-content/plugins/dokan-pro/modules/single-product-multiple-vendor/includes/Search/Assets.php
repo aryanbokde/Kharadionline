@@ -57,6 +57,7 @@ class Assets {
             || isset( $wp->query_vars['new-product'] )
             || ( isset( $wp->query_vars['booking'] ) && 'new-product' === $wp->query_vars['booking'] )
             || isset( $wp->query_vars['new-auction-product'] )
+            || ( isset( $wp->query_vars['auction'] ) && isset( $_GET['product_id'] ) )
         ) {
             wp_enqueue_style( 'dokan-spmv-search-style' );
             wp_enqueue_script( 'dokan-spmv-search-js' );

@@ -159,7 +159,7 @@ class Config {
      *
      * @since 3.5.0
      *
-     * @var object
+     * @var MangoPayApi
      */
     public $mangopay_api;
 
@@ -187,7 +187,7 @@ class Config {
      *
      * @since 3.5.0
      *
-     * @var object
+     * @var Config|null
      */
     private static $instance = null;
 
@@ -207,7 +207,7 @@ class Config {
      *
      * @since 3.5.0
      *
-     * @return object
+     * @return Config
      */
     public static function get_instance() {
         if ( null === static::$instance ) {

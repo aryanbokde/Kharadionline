@@ -51,6 +51,12 @@ class Hooks {
 
         // after deleting a product, delete advertisement
         add_action( 'delete_post', [ $this, 'delete_advertisement' ], 20, 1 );
+
+        // remove min max rules for advertisement product.
+        add_filter( 'dokan_validate_min_max_rules_for_product', [ $this, 'remove_min_max_for_advertisements' ], 10, 2 );
+
+        // make product purchasable for vendors own product.
+        add_filter( 'dokan_vendor_own_product_purchase_restriction', [ $this, 'make_product_purchasable_for_advertisement' ], 10, 2 );
     }
 
     /**
@@ -195,7 +201,9 @@ class Hooks {
      * @return void
      */
     public function delete_advertisement_base_product( $post_id ) {
-        if ( $post_id === Helper::get_advertisement_base_product() ) {
+        if (
+            file_exists( DOKAN_PRODUCT_ADVERTISEMENT_INC . 'Helper' )
+            && $post_id === Helper::get_advertisement_base_product() ) {
             delete_option( Helper::get_advertisement_base_product_option_key() );
         }
     }
@@ -308,5 +316,44 @@ class Hooks {
 
         $manager = new Manager();
         $manager->delete_advertisement_by_product_id( $product->get_id() );
+    }
+
+    /**
+     * Remove min max rules for advertisement products.
+     *
+     * @since 3.10.3
+     *
+     * @param bool $apply_min_max
+     * @param int  $product_id
+     *
+     * @return bool
+     */
+    public function remove_min_max_for_advertisements( $apply_min_max, $product_id ) {
+        // Remove from min-max rules is advertisement product.
+        if ( (int) $product_id === Helper::get_advertisement_base_product() ) {
+            $apply_min_max = false;
+        }
+
+        return $apply_min_max;
+    }
+
+    /**
+     * Make vendors own product purchasable if
+     * advertisement product.
+     *
+     * @since 3.10.3
+     *
+     * @param bool        $is_purchasable
+     * @param \WC_Product $product
+     *
+     * @return bool
+     */
+    public function make_product_purchasable_for_advertisement( $is_purchasable, $product ) {
+        // Check is advertisement product.
+        if ( $product->get_id() === Helper::get_advertisement_base_product() ) {
+            $is_purchasable = true;
+        }
+
+        return $is_purchasable;
     }
 }

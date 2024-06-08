@@ -5,6 +5,10 @@ namespace WeDevs\DokanPro\Refund;
 use ArrayAccess;
 use WP_Error;
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly
+}
+
 /**
  * A helper class to mimic WP_REST_Request
  *
@@ -19,7 +23,7 @@ class Request implements ArrayAccess {
      *
      * @since 3.0.0
      *
-     * @var null|\WeDevs\DokanPro\Refund\Refund
+     * @var null|Refund
      */
     protected $model = null;
 
@@ -37,7 +41,7 @@ class Request implements ArrayAccess {
      *
      * @since 3.0.0
      *
-     * @var null|array
+     * @var null|WP_Error
      */
     protected $error = null;
 
@@ -110,11 +114,11 @@ class Request implements ArrayAccess {
     }
 
     /**
-     * Get refund model
+     * Get the refund model
      *
      * @since 3.0.0
      *
-     * @return \WeDevs\DokanPro\Refund\Refund
+     * @return Refund
      */
     public function get_model() {
         return $this->model;
@@ -170,7 +174,7 @@ class Request implements ArrayAccess {
      *
      * @since 3.0.0
      *
-     * @param \WP_Error $error
+     * @param WP_Error $error
      *
      * @return void
      */
@@ -211,7 +215,7 @@ class Request implements ArrayAccess {
      *
      * @since 3.0.0
      *
-     * @return \WP_Error
+     * @return WP_Error
      */
     public function get_error() {
         return $this->error;
@@ -356,12 +360,12 @@ class Request implements ArrayAccess {
         }
 
         foreach ( $order->get_items( [ 'line_item', 'shipping', 'fee' ] ) as $order_line_item_id => $order_line_item ) {
-            $refunded_amount = ( isset( $already_refunded[ $order_line_item_id ] ) && ! empty( $already_refunded[ $order_line_item_id ]['item_totals'] ) ) ? (float) wc_format_decimal( $already_refunded[ $order_line_item_id ]['item_totals'], wc_get_rounding_precision() ) : 0.00;
-            $refunded_tax    = ( isset( $already_refunded[ $order_line_item_id ] ) && ! empty( $already_refunded[ $order_line_item_id ]['item_tax_totals'] ) ) ? (float) wc_format_decimal( $already_refunded[ $order_line_item_id ]['item_tax_totals'], wc_get_rounding_precision() ) : 0.00;
+            $refunded_amount = ( isset( $already_refunded[ $order_line_item_id ] ) && ! empty( $already_refunded[ $order_line_item_id ]['item_totals'] ) ) ? (float) wc_format_decimal( $already_refunded[ $order_line_item_id ]['item_totals'], '' ) : 0.00;
+            $refunded_tax    = ( isset( $already_refunded[ $order_line_item_id ] ) && ! empty( $already_refunded[ $order_line_item_id ]['item_tax_totals'] ) ) ? (float) wc_format_decimal( $already_refunded[ $order_line_item_id ]['item_tax_totals'], '' ) : 0.00;
 
             if ( isset( $item_totals_request[ $order_line_item_id ] ) ) {
-                $order_line_item_total         = (float) wc_format_decimal( $order_line_item->get_total(), wc_get_rounding_precision() );
-                $order_line_item_request_total = (float) wc_format_decimal( $item_totals_request[ $order_line_item_id ], wc_get_rounding_precision() );
+                $order_line_item_total         = (float) wc_format_decimal( $order_line_item->get_total(), '' );
+                $order_line_item_request_total = (float) wc_format_decimal( $item_totals_request[ $order_line_item_id ], '' );
                 if ( $order_line_item_total < ( $refunded_amount + $order_line_item_request_total ) ) {
                     $this->add_error(
                         new WP_Error(
@@ -389,8 +393,8 @@ class Request implements ArrayAccess {
                 continue;
             }
 
-            $order_line_item_total_tax = (float) wc_format_decimal( $order_line_item->get_total_tax(), 2 );
-            $order_line_item_total_request_tax = (float) wc_format_decimal( array_sum( $item_tax_totals_request[ $order_line_item_id ] ), 2 );
+            $order_line_item_total_tax         = (float) wc_format_decimal( $order_line_item->get_total_tax(), '' );
+            $order_line_item_total_request_tax = (float) wc_format_decimal( array_sum( $item_tax_totals_request[ $order_line_item_id ] ), '' );
 
             if ( $order_line_item_total_tax < ( $refunded_tax + $order_line_item_total_request_tax ) ) {
                 $this->add_error(

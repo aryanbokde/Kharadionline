@@ -1,7 +1,14 @@
 (function($){
     var wrapper = $( '.dokan-store-tabs' ),
         login_btn = $( '.dokan-live-chat-login' ),
-        custom_login_btn = login_btn.html();
+        custom_login_btn = login_btn.html(),
+        modal = $( '.dokan-live-chat-modals' ).iziModal( {
+            width: 440,
+            closeButton: true,
+            appendTo: 'body',
+            title: '',
+            headerColor: dokan.modal_header_color
+        } );
 
     var Dokan_Live_Chat = {
 
@@ -26,15 +33,12 @@
 
                 $.post( dokan.ajaxurl, s_data, function ( resp ) {
                     if ( resp.success == true ) {
-                        $.magnificPopup.open({
-                            items: {
-                                src: '<div class="white-popup dokan-support-login-wrapper"><div id="ds-error-msg" ></div>' + resp.data + '</div>',
-                                type: 'inline'
-                           }
-                        });
+                        modal.iziModal( 'setContent', '<div class="white-popup dokan-support-login-wrapper"><div id="ds-error-msg" ></div>' + resp.data + '</div>' );
+                        modal.iziModal( 'open' );
+
                         login_btn.html(custom_login_btn);
                     } else {
-                        dokan_sweetalert( dokan.i18n_invalid, { 
+                        dokan_sweetalert( dokan.i18n_invalid, {
                             icon: 'error',
                         } );
                         login_btn.html(custom_login_btn);
@@ -55,11 +59,11 @@
                 $e_msg.addClass('dokan-hide');
                 $.post( dokan.ajaxurl, s_data, function ( resp ) {
                     if ( resp.success == true ) {
-                        $.magnificPopup.close();
+                        modal.iziModal( 'close' );
                         location.reload()
                     }
                     else {
-                        dokan_sweetalert( dokan.i18n_invalid, { 
+                        dokan_sweetalert( dokan.i18n_invalid, {
                             icon: 'error',
                         } );
                         login_btn.html(custom_login_btn);

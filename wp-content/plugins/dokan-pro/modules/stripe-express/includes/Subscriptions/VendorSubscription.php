@@ -4,7 +4,9 @@ namespace WeDevs\DokanPro\Modules\StripeExpress\Subscriptions;
 
 defined( 'ABSPATH' ) || exit; // Exit if called directly
 
+use WC_Emails;
 use WC_Order;
+use WeDevs\Dokan\Vendor\Vendor;
 use WP_Error;
 use DokanPro\Modules\Subscription\SubscriptionPack;
 use WeDevs\DokanPro\Modules\StripeExpress\Support\Helper;
@@ -118,6 +120,7 @@ class VendorSubscription {
         // Load email classes and actions
         add_filter( 'woocommerce_email_classes', [ $this, 'load_emails' ] );
         add_filter( 'woocommerce_email_actions', [ $this, 'load_email_actions' ] );
+        WC_Emails::instance();
     }
 
     /**
@@ -253,6 +256,9 @@ class VendorSubscription {
         } else {
             UserMeta::update_active_cancelled_subscription( $vendor_id, false );
             UserMeta::update_seller_enabled( $vendor_id );
+
+            do_action( 'dokan_vendor_enabled', $vendor_id );
+
             UserMeta::update_post_product( $vendor_id );
             UserMeta::update_pending_subscription( $vendor_id, false );
 

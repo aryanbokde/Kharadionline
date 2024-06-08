@@ -3,6 +3,9 @@
 namespace WeDevs\DokanPro\REST;
 
 use WeDevs\DokanPro\Admin\ReportLogExporter;
+use WP_Error;
+use WP_REST_Request;
+use WP_REST_Response;
 use WP_REST_Server;
 use WeDevs\Dokan\Abstracts\DokanRESTAdminController;
 
@@ -23,16 +26,16 @@ class LogsController extends DokanRESTAdminController {
     public function register_routes() {
         register_rest_route(
             $this->namespace, '/' . $this->base, [
-				[
-					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => [ $this, 'get_logs' ],
-					'permission_callback' => [ $this, 'check_permission' ],
+                [
+                    'methods'             => WP_REST_Server::READABLE,
+                    'callback'            => [ $this, 'get_logs' ],
+                    'permission_callback' => [ $this, 'check_permission' ],
                     'args'                => array_merge(
                         $this->get_collection_params(),
                         $this->get_logs_params()
                     ),
-				],
-			]
+                ],
+            ]
         );
 
         register_rest_route(
@@ -59,7 +62,7 @@ class LogsController extends DokanRESTAdminController {
      */
     public function get_logs_params() {
         return [
-            'vendor_id' => [
+            'vendor_id'    => [
                 'description'       => 'Vendor IDs to filter form',
                 'type'              => [ 'array', 'integer' ],
                 'default'           => [],
@@ -69,7 +72,7 @@ class LogsController extends DokanRESTAdminController {
                     'sanitize_callback' => 'absint',
                 ],
             ],
-            'order_id' => [
+            'order_id'     => [
                 'description'       => 'Order IDs to filter form',
                 'type'              => [ 'array', 'integer' ],
                 'default'           => [],
@@ -82,23 +85,23 @@ class LogsController extends DokanRESTAdminController {
             'order_status' => [
                 'description' => 'Order status to filter form',
                 'required'    => false,
-                'type'        => 'string',
+                'type'        => [ 'string', 'array' ],
                 'default'     => '',
             ],
-            'orderby' => [
+            'orderby'      => [
                 'description' => 'Filter by column',
                 'required'    => false,
                 'type'        => 'string',
                 'default'     => 'order_id',
             ],
-            'order' => [
+            'order'        => [
                 'description' => 'Order by type',
                 'required'    => false,
                 'type'        => 'string',
                 'enum'        => [ 'desc', 'asc' ],
                 'default'     => 'desc',
             ],
-            'return' => [
+            'return'       => [
                 'description' => 'How data will be returned',
                 'type'        => 'string',
                 'required'    => false,
@@ -114,22 +117,22 @@ class LogsController extends DokanRESTAdminController {
      *
      * @since 2.9.4
      *
-     * @return object
+     * @param WP_REST_Request $request
+     *
+     * @return WP_REST_Response|WP_Error
      */
     public function get_logs( $request ) {
-        $params = wp_unslash( $request->get_params() );
-        $items_count = dokan_pro()->reports->get_logs( array_merge( $params, [ 'return' => 'count' ] ) );
+        $params = $request->get_params();
 
+        $params['return'] = 'count';
+        $items_count = dokan_pro()->reports->get_logs( $params );
         if ( is_wp_error( $items_count ) ) {
             return $items_count->get_error_message();
         }
 
-        if ( ! $items_count ) {
-            wp_send_json_error( __( 'No logs found', 'dokan' ) );
-        }
-
-        $results  = dokan_pro()->reports->get_logs( $params );
-        $logs     = $this->prepare_logs_data( $results );
+        $params['return'] = 'ids';
+        $results = dokan_pro()->reports->get_logs( $params );
+        $logs    = $this->prepare_logs_data( $results, $request );
 
         $response = rest_ensure_response( $logs );
         $response = $this->format_collection_response( $response, $request, $items_count );
@@ -142,62 +145,82 @@ class LogsController extends DokanRESTAdminController {
      *
      * @since 3.4.1
      *
-     * @param $request
+     * @param WP_REST_Request $request
+     *
+     * @return WP_REST_Response|WP_Error
      */
     public function export_logs( $request ) {
         include_once DOKAN_PRO_INC . '/Admin/ReportLogExporter.php';
 
         $params = $request->get_params();
+        $params['return'] = 'ids';
         $step   = isset( $params['page'] ) ? absint( $params['page'] ) : 1; // phpcs:ignore
-        $logs   = $this->prepare_logs_data( dokan_pro()->reports->get_logs( $params ) );
+        $logs   = $this->prepare_logs_data( dokan_pro()->reports->get_logs( $params ), $request );
+
+        // get counts
+        $params['return'] = 'count';
+        $items_count = dokan_pro()->reports->get_logs( $params );
 
         $exporter = new ReportLogExporter();
         $exporter->set_items( $logs );
         $exporter->set_page( $step );
         $exporter->set_limit( $params['per_page'] );
-        $exporter->set_total_rows( dokan_pro()->reports->get_logs( array_merge( $params, [ 'return' => 'count' ] ) ) );
+        $exporter->set_total_rows( $items_count );
         $exporter->generate_file();
 
         if ( $exporter->get_percent_complete() >= 100 ) {
-            wp_send_json_success(
+            return rest_ensure_response(
                 [
                     'step'       => 'done',
                     'percentage' => 100,
                     'url'        => add_query_arg(
                         [
-                            'download-order-log-csv'  => wp_create_nonce( 'download-order-log-csv-nonce' ),
+                            'download-order-log-csv' => wp_create_nonce( 'download-order-log-csv-nonce' ),
                         ], admin_url( 'admin.php' )
                     ),
-                ], 200
+                ]
             );
         } else {
-            wp_send_json_success(
+            return rest_ensure_response(
                 [
                     'step'       => ++$step,
                     'percentage' => $exporter->get_percent_complete(),
                     'columns'    => $exporter->get_column_names(),
-                ], 200
+                ]
             );
         }
-
-        exit();
     }
 
     /**
      * Prepare Log items for response
      *
-     * @param mixed $results
+     * @param mixed           $results
+     * @param WP_REST_Request $request
      *
      * @return array
      */
-    public function prepare_logs_data( $results ) {
+    public function prepare_logs_data( $results, $request ) {
+        global $wpdb;
         $logs     = [];
         $statuses = wc_get_order_statuses();
 
-        foreach ( $results as $result ) {
-            $order                   = wc_get_order( $result->order_id );
+        foreach ( $results as $order_id ) {
+            $result = $wpdb->get_row(
+                $wpdb->prepare(
+                    "SELECT *
+                    FROM {$wpdb->prefix}dokan_orders
+                    WHERE order_id = %d",
+                    $order_id
+                )
+            );
+
+            if ( ! $result ) {
+                continue;
+            }
+
             $is_subscription_product = false;
 
+            $order = wc_get_order( $order_id );
             if ( ! $order ) {
                 continue;
             }
@@ -212,7 +235,7 @@ class LogsController extends DokanRESTAdminController {
             }
 
             $order_total    = $order->get_total();
-            $has_refund     = $order->get_total_refunded() ? true : false;
+            $has_refund     = (bool) $order->get_total_refunded();
             $total_shipping = $order->get_shipping_total() ? $order->get_shipping_total() : 0;
 
             $total_shipping_tax = $order->get_shipping_tax();
@@ -226,10 +249,14 @@ class LogsController extends DokanRESTAdminController {
 
             $tax_totals -= $order->get_shipping_tax();
 
+            $shipping_tax_refunded_total = dokan()->commission->get_total_shipping_tax_refunded( $order );
+            $tax_refunded_total          = $order->get_total_tax_refunded() - $shipping_tax_refunded_total;
+            $shipping_refunded_total     = $order->get_total_shipping_refunded();
+
             /**
              * Payment gateway fee minus from admin commission earning
-             * net amount is excluding gateway fee, so we need to deduct it from admin commission
-             * otherwise admin commission will be including gateway fees
+             * net amount is excluding gateway fee, so we need to deduct it from the admin commission
+             * otherwise the admin commission will be including gateway fees
              */
             $is_subscription_product = apply_filters( 'dokan_log_exclude_commission', $is_subscription_product, $result );
             $processing_fee          = (float) $order->get_meta( 'dokan_gateway_fee' );
@@ -240,7 +267,7 @@ class LogsController extends DokanRESTAdminController {
             }
 
             /**
-             * In case of refund, we are not excluding gateway fee, in case of stripe full/partial refund net amount can be negative
+             * In case of refund, we are not excluding gateway fee; in case of stripe full/partial refund net amount can be negative
              */
             if ( $commission < 0 ) {
                 $commission = 0;
@@ -264,24 +291,33 @@ class LogsController extends DokanRESTAdminController {
             }
 
             $logs[] = [
-                'order_id'             => $result->order_id,
-                'vendor_id'            => $result->seller_id,
-                'vendor_name'          => dokan()->vendor->get( $result->seller_id )->get_shop_name(),
-                'previous_order_total' => wc_format_decimal( $order_total, $dp ),
-                'order_total'          => wc_format_decimal( $result->order_total, $dp ),
-                'vendor_earning'       => $is_subscription_product ? 0 : wc_format_decimal( $result->net_amount, $dp ),
-                'commission'           => wc_format_decimal( $commission, $dp ),
-                'dokan_gateway_fee'    => $processing_fee ? wc_format_decimal( $processing_fee, $dp ) : 0,
-                'gateway_fee_paid_by'  => $gateway_fee_paid_by ? $gateway_fee_paid_by : '',
-                'shipping_total'       => wc_format_decimal( $total_shipping, $dp ),
-                'shipping_total_tax'   => wc_format_decimal( $total_shipping_tax, $dp ),
-                'tax_total'            => wc_format_decimal( $tax_totals, $dp ),
-                'status'               => $statuses[ $result->order_status ],
-                'date'                 => $result->post_date,
-                'has_refund'           => $has_refund,
-                'shipping_recipient'   => dokan()->commission->get_shipping_fee_recipient( $result->order_id ),
-                'shipping_tax_recipient'  => $shipping_tax_recipient,
-                'tax_recipient'        => dokan()->commission->get_tax_fee_recipient( $result->order_id ),
+                'order_id'                    => $result->order_id,
+                'vendor_id'                   => $result->seller_id,
+                'vendor_name'                 => dokan()->vendor->get( $result->seller_id )->get_shop_name(),
+                'previous_order_total'        => wc_format_decimal( $order_total, $dp ),
+                'order_total'                 => wc_format_decimal( $result->order_total, $dp ),
+                'vendor_earning'              => $is_subscription_product ? 0 : wc_format_decimal( $result->net_amount, $dp ),
+                'commission'                  => wc_format_decimal( $commission, $dp ),
+                'dokan_gateway_fee'           => $processing_fee ? wc_format_decimal( $processing_fee, $dp ) : 0,
+                'gateway_fee_paid_by'         => $gateway_fee_paid_by ? $gateway_fee_paid_by : '',
+                'shipping_total'              => wc_format_decimal( $total_shipping, $dp ),
+                'shipping_total_refunded'     => wc_format_decimal( $shipping_refunded_total, $dp ),
+                'shipping_total_remains'      => wc_format_decimal( $total_shipping - $shipping_refunded_total, $dp ),
+                'has_shipping_refund'         => ! empty( $shipping_refunded_total ),
+                'shipping_total_tax'          => wc_format_decimal( $total_shipping_tax, $dp ),
+                'shipping_total_tax_refunded' => wc_format_decimal( $shipping_tax_refunded_total, $dp ),
+                'shipping_total_tax_remains'  => wc_format_decimal( $total_shipping_tax - $shipping_tax_refunded_total, $dp ),
+                'has_shipping_tax_refund'     => ! empty( $shipping_tax_refunded_total ),
+                'tax_total'                   => wc_format_decimal( $tax_totals, $dp ),
+                'tax_total_refunded'          => wc_format_decimal( $tax_refunded_total, $dp ),
+                'tax_total_remains'           => wc_format_decimal( $tax_totals - $tax_refunded_total, $dp ),
+                'has_tax_refund'              => ! empty( $tax_refunded_total ),
+                'status'                      => $statuses[ $result->order_status ],
+                'date'                        => $order->get_date_created()->date( 'Y-m-d H:i:s' ),
+                'has_refund'                  => $has_refund,
+                'shipping_recipient'          => dokan()->commission->get_shipping_fee_recipient( $result->order_id ),
+                'shipping_tax_recipient'      => $shipping_tax_recipient,
+                'tax_recipient'               => dokan()->commission->get_tax_fee_recipient( $result->order_id ),
             ];
         }
 

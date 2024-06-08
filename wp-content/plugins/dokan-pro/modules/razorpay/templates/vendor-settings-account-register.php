@@ -5,6 +5,7 @@ use WeDevs\DokanPro\Modules\Razorpay\Helper;
 $existing_razorpay_id = get_user_meta( get_current_user_id(), Helper::get_seller_account_id_key_trashed(), true );
 ?>
 
+<div class="dokan-razorpay-modals"></div>
 <script type="text/html" id="tmpl-dokan-razorpay-vendor-account-register">
     <div class="dokan-popup-content white-popup dokan-razorpay-account-popup-wrapper" id="dokan-razorpay-account-popup" style="width: 600px;">
         <h2 class="dokan-popup-title dokan-razorpay-account-title">

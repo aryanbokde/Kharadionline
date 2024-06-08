@@ -40,19 +40,14 @@ class Payment {
      * @return void
      */
     public static function disburse( WC_Order $order ) {
-        if ( Order::lock_processing( $order->get_id(), 'disburse' ) ) {
-            return;
-        }
-
         // Charge id is stored in parent order, so we need to parse it from that order.
         $parent_order = $order->get_parent_id() ? wc_get_order( $order->get_parent_id() ) : $order;
 
-        $intent = self::get_intent( $parent_order );
-        if ( ! $intent ) {
-            throw new DokanException( 'dokan_stripe_express_no_intent', __( 'No intent is found to process the order!', 'dokan' ) );
+        // order lock should be placed on parent order, because we are going to process all sub orders.
+        if ( Order::lock_processing( $parent_order->get_id(), 'disburse' ) ) {
+            return;
         }
 
-        $charge_id = Order::get_charge_id( $parent_order, $intent );
         $intent = self::get_intent( $parent_order );
         if ( ! $intent ) {
             throw new DokanException( 'dokan_stripe_express_no_intent', __( 'No intent is found to process the order!', 'dokan' ) );
@@ -76,6 +71,7 @@ class Payment {
 
         if ( $order->get_meta( 'has_sub_order' ) ) {
             OrderMeta::update_dokan_gateway_fee( $order, $stripe_fee );
+            OrderMeta::save( $order );
             /* translators: 1) gateway title, 2) processing fee with currency */
             $order->add_order_note( sprintf( __( '[%1$s] Gateway processing fee: %2$s', 'dokan' ), Helper::get_gateway_title(), wc_price( $stripe_fee, [ 'currency' => $order->get_currency() ] ) ) );
         }
@@ -108,7 +104,7 @@ class Payment {
                 OrderMeta::update_stripe_fee( $sub_order, $stripe_fee_for_vendor );
             }
 
-            if ( floatval( $sub_order_total ) <= 0 ) {
+            if ( $sub_order_total <= 0 ) {
                 /* translators: order number */
                 $sub_order->add_order_note( sprintf( __( 'Order %s payment completed', 'dokan' ), $sub_order->get_order_number() ) );
                 continue;
@@ -249,7 +245,7 @@ class Payment {
         OrderMeta::save( $order );
         dokan()->commission->calculate_gateway_fee( $order->get_id() );
 
-        Order::unlock_processing( $order->get_id(), 'disburse' );
+        Order::unlock_processing( $parent_order->get_id(), 'disburse' );
     }
 
     /**
@@ -340,19 +336,17 @@ class Payment {
      *
      * @since 3.6.1
      *
-     * @param string  $intent_id           The id of the intent to update.
-     * @param int     $order_id            The id of the order if intent created from Order.
-     * @param array   $data                The data to update the intent with.
-     * @param boolean $save_payment_method True if saving the payment method.
-     * @param string  $payment_type        The name of the selected payment type or empty string.
+     * @param string         $intent_id           The id of the intent to update.
+     * @param WC_Order|false $order            The id of the order if intent created from Order.
+     * @param array          $data                The data to update the intent with.
+     * @param boolean        $save_payment_method True if saving the payment method.
+     * @param string         $payment_type        The name of the selected payment type or empty string.
      *
      * @return \Stripe\PaymentIntent|\Stripe\SetupIntent
      * @throws DokanException  If the update intent call returns with an error.
      */
-    public static function update_intent( $intent_id, $order_id, $data = [], $is_setup = false, $save_payment_method = false, $payment_type = '' ) {
-        $order = wc_get_order( $order_id );
-
-        if ( ! is_a( $order, 'WC_Order' ) ) {
+    public static function update_intent( $intent_id, $order, $data = [], $is_setup = false, $save_payment_method = false, $payment_type = '' ) {
+        if ( ! $order ) {
             throw new DokanException( 'invalid_order', __( 'No valid order found!', 'dokan' ) );
         }
 
@@ -440,7 +434,7 @@ class Payment {
         OrderMeta::update_intent( $order, $intent_id, $is_setup );
         OrderMeta::save( $order );
 
-        return $intent;
+        return self::get_intent( $order, $intent->id, [], $is_setup );
     }
 
     /**
@@ -821,6 +815,14 @@ class Payment {
                     $response->id
                 )
             );
+        }
+
+        $processing_fee = Payment::get_gateway_fee_from_charge( $response->id );
+        dokan_log( print_r( $processing_fee, 1 ) );
+        if ( $processing_fee ) {
+            OrderMeta::update_stripe_fee( $order, $processing_fee );
+            OrderMeta::update_dokan_gateway_fee( $order, $processing_fee );
+            OrderMeta::save( $order );
         }
 
         do_action( 'dokan_stripe_express_process_response', $response, $order );

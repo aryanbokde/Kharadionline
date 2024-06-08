@@ -3,6 +3,10 @@
 defined( 'ABSPATH' ) || exit;
 
 use WeDevs\DokanPro\Modules\StripeExpress\Support\Helper;
+use WeDevs\DokanPro\Modules\StripeExpress\Support\Settings;
+
+// Collect test mode endpoint if user on test mode.
+$stripe_env = Settings::is_test_mode() ? '/test' : '';
 
 $form_fields = [
     'enabled'                          => [
@@ -187,9 +191,9 @@ $form_fields = [
             /* translators: 1) br tag 2) Stripe anchor tag 3) Apple anchor tag 4) Stripe dashboard opening anchor tag 5) Stripe dashboard closing anchor tag */
             __( 'Enable payment via Apple Pay and Google Pay. %1$sBy using Apple Pay, you agree to %2$s and %3$s\'s terms of service. (Apple Pay domain verification is performed automatically in live mode; configuration can be found on the %4$sStripe dashboard%5$s.)', 'dokan' ),
             '<br />',
-            '<a href="https://stripe.com/apple-pay/legal" target="_blank">Stripe</a>',
+            '<a href="https://stripe.com/legal/apple-pay" target="_blank">Stripe</a>',
             '<a href="https://developer.apple.com/apple-pay/acceptable-use-guidelines-for-websites/" target="_blank">Apple</a>',
-            '<a href="https://dashboard.stripe.com/settings/payments/apple_pay" target="_blank">',
+            "<a href='https://dashboard.stripe.com{$stripe_env}/dashboard' target='_blank'>",
             '</a>'
         ),
     ],

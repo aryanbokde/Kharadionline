@@ -82,7 +82,7 @@ class Account extends Api {
         try {
             $defaults = [
                 'type'         => StripeAccount::TYPE_EXPRESS,
-                'capabilities' => [
+                'capabilities' => apply_filters( 'dokan_stripe_express_account_capabilities', [
                     'card_payments'       => [
                         'requested' => true,
                     ],
@@ -95,7 +95,7 @@ class Account extends Api {
                     'transfers'           => [
                         'requested' => true,
                     ],
-                ],
+                ] ),
             ];
 
             $args = wp_parse_args( $args, $defaults );

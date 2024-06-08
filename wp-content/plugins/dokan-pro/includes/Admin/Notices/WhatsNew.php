@@ -31,7 +31,7 @@ class WhatsNew {
         }
 
         // check if it has already been dismissed
-        $versions = get_option( 'dokan_pro_whats_new_versions', array() );
+        $versions = get_option( 'dokan_pro_whats_new_versions', [] );
 
         if ( in_array( DOKAN_PRO_PLUGIN_VERSION, $versions, true ) ) {
             return $notices;
@@ -77,7 +77,7 @@ class WhatsNew {
         }
 
         if ( ! empty( sanitize_key( wp_unslash( $_POST['dokan_promotion_dismissed'] ) ) ) ) {
-            $versions = get_option( 'dokan_pro_whats_new_versions', array() );
+            $versions = get_option( 'dokan_pro_whats_new_versions', [] );
 
             if ( ! in_array( DOKAN_PRO_PLUGIN_VERSION, $versions, true ) ) {
                 $versions[] = DOKAN_PRO_PLUGIN_VERSION;

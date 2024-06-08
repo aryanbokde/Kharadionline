@@ -5,6 +5,10 @@ namespace WeDevs\DokanPro\Refund;
 use WeDevs\Dokan\Cache;
 use WeDevs\Dokan\Order\OrderCache;
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly
+}
+
 /**
  * Refund Cache class.
  *

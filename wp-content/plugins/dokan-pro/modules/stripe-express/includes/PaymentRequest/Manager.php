@@ -341,11 +341,11 @@ class Manager {
             }
         }
 
-        return true;
+        return apply_filters( 'dokan_stripe_express_should_render_payment_request_button', true );
     }
 
     /**
-     * Checks whether or not payment request button is enabled on certain page.
+     * Checks whether payment request button is enabled on certain page.
      *
      * @since 3.7.8
      *
@@ -557,7 +557,7 @@ class Manager {
         }
 
         $order        = wc_get_order( $post->ID );
-        $method_title = is_object( $order ) ? $order->get_payment_method_title() : '';
+        $method_title =  $order ? $order->get_payment_method_title() : '';
 
         if ( Helper::get_gateway_id() === $id && ! empty( $method_title ) ) {
             return $method_title;

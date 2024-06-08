@@ -2,6 +2,10 @@
 
 namespace WeDevs\DokanPro;
 
+use WeDevs\DokanPro\Dependencies\Appsero\Client;
+use WeDevs\DokanPro\Dependencies\Appsero\License;
+use WeDevs\DokanPro\Dependencies\Appsero\Updater;
+
 /**
  * Dokan Update class
  *
@@ -12,7 +16,7 @@ class Update {
     /**
      * Appsero License Instance
      *
-     * @var \Appsero\License
+     * @var License
      */
     private $license;
 
@@ -27,10 +31,6 @@ class Update {
      * Initialize the class
      */
     public function __construct() {
-        if ( ! class_exists( '\Appsero\Client' ) ) {
-            return;
-        }
-
         $this->init_appsero();
 
         if ( is_multisite() ) {
@@ -50,7 +50,7 @@ class Update {
      * @return void
      */
     protected function init_appsero() {
-        $client = new \Appsero\Client( '8f0a1669-b8db-46eb-9fc4-02ac5bfe89e7', __( 'Dokan Pro', 'dokan' ), DOKAN_PRO_FILE );
+        $client = new Client( '8f0a1669-b8db-46eb-9fc4-02ac5bfe89e7', __( 'Dokan Pro', 'dokan' ), DOKAN_PRO_FILE );
 
         // track plugin install
         $insights = $client->insights();
@@ -94,7 +94,7 @@ class Update {
         $this->license->add_settings_page( $args );
 
         // Active automatic updater
-        $client->updater();
+        Updater::init( $client );
     }
 
     /**
@@ -105,8 +105,7 @@ class Update {
      * @return array
      */
     public function license_enter_notice( $notices ) {
-    	return;
-        if ( $this->license->is_valid() ) {
+        if ( $this->has_license_key() ) {
             return $notices;
         }
 
@@ -137,7 +136,7 @@ class Update {
      * @return void
      */
     public function plugin_update_message( $args ) {
-        if ( $this->license->is_valid() ) {
+        if ( $this->is_valid() ) {
             return;
         }
 
@@ -147,5 +146,94 @@ class Update {
         );
 
         echo apply_filters( $this->product_id . '_in_plugin_update_message', wp_kses_post( $upgrade_notice ) );
+    }
+
+    /**
+     * If license is valid.
+     *
+     * @since 3.10.0
+     *
+     * @return bool|null
+     */
+    public function is_valid() {
+        return wc_string_to_bool( $this->license->is_valid() );
+    }
+
+    /**
+     * Get the count of days that after the license will expire.
+     *
+     * @since 3.10.0
+     *
+     * @return integer|bool
+     */
+    public function get_expiry_days() {
+        $license_data = $this->license->get_license();
+
+        if ( isset( $license_data['expiry_days'] ) ) {
+            return $license_data['expiry_days'];
+        }
+
+        return 0;
+    }
+
+    /**
+     * Refresh dokan pro license
+     *
+     * @since 3.10.0
+     *
+     * @return void
+     */
+    public function refresh_license() {
+        $this->license->check_license_status();
+    }
+
+    /**
+     * Returns license source id.
+     *
+     * @since 3.10.0
+     *
+     * @return string
+     */
+    public function get_license_source_id() {
+        $license_data = $this->license->get_license();
+
+        if ( ! empty( $license_data['source_id'] ) ) {
+            return $license_data['source_id'];
+        }
+
+        return '';
+    }
+
+    /**
+     * Returns dokan pro license plan.
+     *
+     * @since 3.10.0
+     *
+     * @return array|string|string[]
+     */
+    public function get_plan() {
+        $subject = $this->get_license_source_id();
+        if ( empty( $subject ) ) {
+            $subject = dokan_pro()->get_plan();
+        }
+
+        $search       = array( 'dokan-litetime-deal-', 'dokan-' );
+        $replace      = array( '', '' );
+        $license_plan = str_replace( $search, $replace, $subject );
+
+        return $license_plan;
+    }
+
+    /**
+     * Returns dokan pro license has key or not.
+     *
+     * @since 3.10.0
+     *
+     * @return bool
+     */
+    public function has_license_key() {
+        $license_data = $this->license->get_license();
+
+        return ! empty( $license_data['key'] );
     }
 }

@@ -101,7 +101,7 @@
 
         function loading_get_request( url, textfield, selectfield, search_option ){
 
-            if(search_option == 'default'){
+            if(search_option === 'old_live_search'){
                 var div_id = get_div_id();
 
                 $(div_id).append('<div id="loading"><img src="' + dokanLiveSearch.loading_img + '" atr="Loding..."/></div>');
@@ -156,6 +156,7 @@
                 $(get_div_id()).html(dom);
 
                 $('#loading').hide();
+                $('.dokan-geolocation-filters-loading').hide();
                 $(get_div_id()).css({'opacity':1,'position':'auto'});
 
                 $('.woocommerce-ordering').on('change','.orderby',function(e){

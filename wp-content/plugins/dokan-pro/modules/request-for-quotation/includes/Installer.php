@@ -75,20 +75,7 @@ class Installer {
      * @return void
      */
     public function create_pages() {
-        if ( empty( get_option( 'dokan_request_quote_page_id' ) ) ) {
-            $new_page = [
-                'post_status'    => 'publish',
-                'post_type'      => 'page',
-                'post_author'    => get_current_user_id(),
-                'post_name'      => 'request-quote',
-                'post_title'     => 'Request for Quote',
-                'post_content'   => '[dokan-request-quote]',
-                'post_parent'    => 0,
-                'comment_status' => 'closed',
-            ];
-            $page_id = wp_insert_post( $new_page );
-            update_option( 'dokan_request_quote_page_id', $page_id );
-        }
+        Helper::get_quote_page_id();
     }
 
     /**

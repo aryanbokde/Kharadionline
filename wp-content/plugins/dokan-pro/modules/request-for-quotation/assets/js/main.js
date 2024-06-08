@@ -1,7 +1,7 @@
 /* global dokan  */
 ;(function($){
     const dokan_quote_form = '.dokan-quote-form';
-    var Dokan_Request_Quote = {
+    let Dokan_Request_Quote = {
         init: function() {
             $('.product').on('click', '.dokan_request_button', function () {
                 if( $(this).hasClass('disabled') ){
@@ -38,7 +38,7 @@
                     }else {
                         window.location.reload();
                     }
-                } ).fail( function ( jqXHR, status, error ) {
+                } ).fail( function ( jqXHR ) {
                     if ( jqXHR.responseJSON.data.message ) {
                         dokan_sweetalert( jqXHR.responseJSON.data.message, {
                             icon: 'error',
@@ -70,11 +70,12 @@
                             location.reload();
                         }
 
-                        $('div.woocommerce-notices-wrapper').html(response['message'] );
+                        let notice_wrapper = $('div.woocommerce-notices-wrapper');
+                        notice_wrapper.html(response['message'] );
                         $('table.dokan_quote_table_contents').replaceWith( response['quote-table'] );
                         $('table.table_quote_totals').replaceWith( response['quote-totals'] );
                         $('body').animate({
-                                scrollTop: $('div.woocommerce-notices-wrapper').offset().top,
+                                scrollTop: notice_wrapper.offset().top,
                             }, 500
                         );
                     }
@@ -84,21 +85,21 @@
                 e.preventDefault();
                 $(this).addClass('loading');
                 let current_button = $(this);
-                var nagetive_error = false;
+                let negative_error = false;
                 $('.offered-price-input').map((_,el) => {
                     if (el.value < 0 || el.value === '') {
-                        nagetive_error = true;
+                        negative_error = true;
                         alert( dokan.valid_price_error );
                     }
                 }).get();
                 $('.qty').map((_,el) => {
                     if (el.value < 0 || el.value === '') {
-                        nagetive_error = true;
+                        negative_error = true;
                         alert( dokan.valid_quantity_error );
                     }
                 }).get();
 
-                if (nagetive_error) {
+                if (negative_error) {
                     current_button.removeClass('loading');
                     return;
                 }
@@ -123,7 +124,7 @@
                         if( response['quote_empty'] ){
                             location.reload();
                         }
-                        var notices_wrapper = $('div.woocommerce-notices-wrapper');
+                        let notices_wrapper = $('div.woocommerce-notices-wrapper');
                         notices_wrapper.html(response['message'] );
                         $('table.dokan_quote_table_contents').replaceWith( response['quote-table'] );
                         $('table.table_quote_totals').replaceWith( response['quote-totals'] );
@@ -132,7 +133,7 @@
                             }, 500
                         );
                     },
-                    error: function (response) {
+                    error: function () {
                         current_button.removeClass('loading');
                     }
                 });

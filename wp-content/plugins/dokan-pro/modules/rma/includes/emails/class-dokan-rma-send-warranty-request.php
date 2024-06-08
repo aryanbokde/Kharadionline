@@ -47,7 +47,7 @@ class Dokan_Rma_Send_Warranty_Request extends WC_Email {
      * @return string
      */
     public function get_default_subject() {
-        return __( '[{site_name}] A new refund request is sent by ({customer_name})', 'dokan' );
+        return __( '[{site_name}] A new refunds and return request is sent by ({customer_name})', 'dokan' );
     }
 
     /**
@@ -58,7 +58,7 @@ class Dokan_Rma_Send_Warranty_Request extends WC_Email {
      * @return string
      */
     public function get_default_heading() {
-        return __( 'Refund request is sent by ({customer_name})', 'dokan' );
+        return __( 'Refunds and return request is sent by ({customer_name})', 'dokan' );
     }
 
     /**
@@ -180,5 +180,3 @@ class Dokan_Rma_Send_Warranty_Request extends WC_Email {
 }
 
 endif;
-
-return new Dokan_Rma_Send_Warranty_Request();

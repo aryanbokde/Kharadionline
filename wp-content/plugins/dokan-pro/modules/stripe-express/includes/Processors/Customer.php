@@ -4,6 +4,8 @@ namespace WeDevs\DokanPro\Modules\StripeExpress\Processors;
 
 defined( 'ABSPATH' ) || exit; // Exit if called directly
 
+use WC_Customer;
+use WC_Order;
 use WP_Error;
 use WeDevs\Dokan\Exceptions\DokanException;
 use WeDevs\DokanPro\Modules\StripeExpress\Support\Helper;
@@ -71,6 +73,21 @@ class Customer {
      */
     private function __construct() {}
 
+	/**
+	 * Get the class instance
+	 *
+	 * @since 3.8.3
+	 *
+	 * @return static
+	 */
+	public static function get_instance() {
+		if ( ! isset( self::$instance ) ) {
+			self::$instance = new static();
+		}
+
+		return self::$instance;
+	}
+
     /**
      * Sets required data.
      *
@@ -81,20 +98,18 @@ class Customer {
      * @return static
      */
     public static function set( $user_id = 0 ) {
-        if ( ! static::$instance ) {
-            static::$instance = new static();
-        }
+        $instance = static::get_instance();
 
         if ( $user_id ) {
-            static::$instance->set_user_id( $user_id );
+	        $instance->set_user_id( $user_id );
 
             $customer_id = UserMeta::get_stripe_customer_id( $user_id );
             if ( $customer_id ) {
-                static::$instance->set_id( $customer_id );
+	            $instance->set_id( $customer_id );
             }
         }
 
-        return static::$instance;
+        return $instance;
     }
 
     /**
@@ -152,7 +167,7 @@ class Customer {
      *
      * @since 3.6.1
      *
-     * @return WP_User|false
+     * @return \WP_User|false
      */
     protected function get_user() {
         return $this->get_user_id() ? \get_user_by( 'id', $this->get_user_id() ) : false;
@@ -449,7 +464,7 @@ class Customer {
             $customer_id = $this->get_id();
             // Create customer on Stripe end if not exists
             if ( empty( $customer_id ) ) {
-                $customer_data = $this->map_data( null, new \WC_Customer( $this->get_user_id() ) );
+                $customer_data = $this->map_data( null, new WC_Customer( $this->get_user_id() ) );
                 $customer_id   = $this->create( $customer_data );
 
                 if ( is_wp_error( $customer_id ) ) {
@@ -570,7 +585,7 @@ class Customer {
      *
      * @return array Customer data.
      */
-    public function map_data( \WC_Order $wc_order = null, \WC_Customer $wc_customer = null ) {
+    public function map_data( WC_Order $wc_order = null, WC_Customer $wc_customer = null ) {
         if ( null === $wc_customer && null === $wc_order ) {
             return [];
         }

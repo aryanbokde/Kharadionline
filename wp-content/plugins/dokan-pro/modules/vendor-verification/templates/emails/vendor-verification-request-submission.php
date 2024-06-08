@@ -16,8 +16,8 @@ do_action( 'woocommerce_email_header', $email_heading, $email );
 
     <p>
         <?php
-        // translators: 1: Store Name.
         echo sprintf(
+            // translators: 1: Store Name.
             __( 'A new verification request has been made by %s.', 'dokan' ),
             wp_strip_all_tags( $store_name )
         );
@@ -26,8 +26,8 @@ do_action( 'woocommerce_email_header', $email_heading, $email );
 
     <p>
         <?php
-        // translators: 1: Admin URL, 2: Dokan Admin Dashboard.
         echo sprintf(
+            // translators: 1: Admin URL, 2: Dokan Admin Dashboard.
             __( 'You can approve or reject it by going to the <a href="%1$s">%2$s</a>.', 'dokan' ),
             esc_url( $admin_url ),
             __( 'Dokan Admin Dashboard', 'dokan' )

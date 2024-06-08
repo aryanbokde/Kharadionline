@@ -33,6 +33,7 @@ class Hooks {
 
         add_filter( 'dokan_rest_api_store_collection_params', [ $this, 'add_params_to_store_collection' ] );
         add_filter( 'dokan_rest_get_stores_args', [ $this, 'rest_get_stores_args' ], 10, 2 );
+        add_filter( 'dokan_rest_api_store_collection_params', [ $this, 'rest_add_stores_collection_param' ] );
     }
 
     /**
@@ -116,4 +117,20 @@ class Hooks {
         return $shop_info;
     }
 
+    /**
+     * Add badge_id Collection parameter.
+     *
+     * @since 3.7.30
+     *
+     * @param array $params Collection parameters.
+     * @return array
+     */
+    public function rest_add_stores_collection_param( array $params ) : array {
+        $params['badge_id'] = array(
+            'description'       => __( 'Badge ID', 'dokan' ),
+            'type'              => 'integer',
+            'validate_callback' => 'rest_validate_request_arg',
+        );
+        return $params;
+    }
 }

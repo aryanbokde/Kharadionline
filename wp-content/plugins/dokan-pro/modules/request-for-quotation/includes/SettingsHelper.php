@@ -45,7 +45,7 @@ class SettingsHelper {
      * @return float
      */
     public static function decrease_offered_price() {
-        return (float) ( -1 * abs( dokan_get_option( 'decrease_offered_price', 'dokan_quote_settings', 0 ) ) );
+        return (float) ( -1 * abs( (float) dokan_get_option( 'decrease_offered_price', 'dokan_quote_settings', 0 ) ) );
     }
 
     /**

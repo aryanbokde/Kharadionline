@@ -42,4 +42,25 @@ class PayInPaymentDetailsCard extends Libraries\Dto implements PayInPaymentDetai
      * @var Shipping
      */
     public $Shipping;
+
+    /**
+     * @var string
+     */
+    public $Reference;
+
+    /**
+     * @var string
+     */
+    public $Bic;
+
+    /**
+     * @var string
+     */
+    public $BankName;
+
+    /**
+     * Information of the card
+     * @var object
+     */
+    public $CardInfo;
 }

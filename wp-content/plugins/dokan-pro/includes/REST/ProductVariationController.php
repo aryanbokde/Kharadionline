@@ -2,9 +2,11 @@
 
 namespace WeDevs\DokanPro\REST;
 
+use WC_Data;
 use WC_Product;
 use WC_Product_Variation;
 use WP_Error;
+use WP_REST_Response;
 use WP_REST_Server;
 use WP_REST_Request;
 use WeDevs\Dokan\REST\ProductController;
@@ -132,11 +134,24 @@ class ProductVariationController extends ProductController {
     /**
      * Validation before create variation item
      *
+     * @param WP_REST_Request $request
+     *
      * @since 2.8.0
      *
-     * @return bool
+     * @return bool|WP_Error
      */
     public function validation_before_create_item( $request ) {
+        $variable_product_id = $request->get_param( 'product_id' );
+        $variable_product    = wc_get_product( $variable_product_id );
+
+        if ( ! $variable_product ) {
+            return new WP_Error(
+                'invalid_product_id',
+                __( 'Invalid product id to create variations.', 'dokan' ),
+                [ 'status' => 404 ]
+            );
+        }
+
         return true;
     }
 
@@ -147,7 +162,7 @@ class ProductVariationController extends ProductController {
      *
      * @param  WP_REST_Request $request Details about the request.
      *
-     * @return bool|WP_Error
+     * @return bool
      */
     public function batch_items_permissions_check( $request ) {
         return current_user_can( 'dokandar' );
@@ -159,7 +174,7 @@ class ProductVariationController extends ProductController {
      * @param WC_Product $product Product instance.
      * @param string     $context Request context.
      *                            Options: 'view' and 'edit'.
-     * @return array
+     * @return WP_REST_Response
      */
     protected function prepare_data_for_response( $object, $request ) {
         $data = array(
@@ -219,6 +234,7 @@ class ProductVariationController extends ProductController {
      *
      * @param  WP_REST_Request $request Request object.
      * @param  bool            $creating If is creating a new object.
+     *
      * @return WP_Error|WC_Data
      */
     protected function prepare_object_for_database( $request, $creating = false ) {

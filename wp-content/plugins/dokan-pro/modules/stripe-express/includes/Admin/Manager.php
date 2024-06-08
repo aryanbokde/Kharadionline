@@ -30,5 +30,6 @@ class Manager {
     private function init_classes() {
         new Assets();
         new SellerProfile();
+        new StripeDeleteAccount();
     }
 }

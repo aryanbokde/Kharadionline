@@ -43,7 +43,7 @@ class AdminSettings {
             'title'                => __( 'Live Chat', 'dokan' ),
             'icon_url'             => DOKAN_LIVE_CHAT_ASSETS . '/images/chat.svg',
             'description'          => __( 'Secure Live Chat Settings', 'dokan' ),
-            'document_link'        => 'https://wedevs.com/docs/dokan/modules/dokan-live-chat/',
+            'document_link'        => 'https://dokan.co/docs/wordpress/modules/dokan-live-chat/',
             'settings_title'       => __( 'Live Chat Settings', 'dokan' ),
             'settings_description' => __( 'You can integrate and set up your site to let registered and customers chat in real-time with vendors.', 'dokan' ),
         ];
@@ -95,10 +95,11 @@ class AdminSettings {
                 ],
             ],
             'app_id'                   => [
-                'name'    => 'app_id',
-                'label'   => __( 'App ID', 'dokan' ),
-                'desc'    => sprintf( '%1$s <a target="_blank" href="%2$s">%3$s</a>', __( 'Insert App ID', 'dokan' ), esc_url( 'https://talkjs.com/dashboard/signup/standard/' ), __( 'Get your App ID', 'dokan' ) ),
-                'type'    => 'text',
+                'name'        => 'app_id',
+                'label'       => __( 'App ID', 'dokan' ),
+                'desc'        => sprintf( '%1$s <a target="_blank" href="%2$s">%3$s</a>', __( 'Insert App ID', 'dokan' ), esc_url( 'https://talkjs.com/dashboard/signup/standard/' ), __( 'Get your App ID', 'dokan' ) ),
+                'type'        => 'text',
+                'secret_text' => true,
                 'show_if' => [
                     'provider' => [
                         'equal' => 'talkjs',
@@ -106,10 +107,11 @@ class AdminSettings {
                 ],
             ],
             'app_secret'               => [
-                'name'    => 'app_secret',
-                'label'   => __( 'App Secret', 'dokan' ),
-                'desc'    => sprintf( '%1$s <a target="_blank" href="%2$s">%3$s</a>', __( 'Insert App Secret', 'dokan' ), esc_url( 'https://talkjs.com/dashboard/signup/standard/' ), __( 'Get your App Secret', 'dokan' ) ),
-                'type'    => 'text',
+                'name'        => 'app_secret',
+                'label'       => __( 'App Secret', 'dokan' ),
+                'desc'        => sprintf( '%1$s <a target="_blank" href="%2$s">%3$s</a>', __( 'Insert App Secret', 'dokan' ), esc_url( 'https://talkjs.com/dashboard/signup/standard/' ), __( 'Get your App Secret', 'dokan' ) ),
+                'type'        => 'text',
+                'secret_text' => true,
                 'show_if' => [
                     'provider' => [
                         'equal' => 'talkjs',
@@ -159,6 +161,7 @@ class AdminSettings {
                     'inside_tab' => __( 'Inside Product Tab', 'dokan' ),
                     'dont_show'  => __( 'Don\'t Show', 'dokan' ),
                 ],
+                'default' => 'above_tab',
             ],
         ];
 

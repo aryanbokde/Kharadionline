@@ -485,6 +485,7 @@ class Manager {
         $seller_badges = $this->all( $args );
 
         if ( is_wp_error( $seller_badges ) ) {
+            Cache::delete_transient( $transient_key, $transient_group );
             return $seller_badges;
         }
 

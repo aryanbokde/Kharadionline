@@ -22,7 +22,7 @@ class CustomWithdrawMethod {
      * @return void
      */
     public function __construct() {
-        add_filter( 'dokan_withdraw_methods', [ $this, 'register_custom_withdraw_method' ], 10 );
+        add_filter( 'dokan_withdraw_methods', [ $this, 'register_custom_withdraw_method' ], 99 );
 
         // Hooks for admin dashboard
         add_filter( 'dokan_settings_fields', array( $this, 'custom_withdraw_method_admin_settings' ), 10, 2 );
@@ -39,6 +39,40 @@ class CustomWithdrawMethod {
 
         add_filter( 'dokan_withdraw_method_settings_title', [ $this, 'get_heading' ], 10, 2 );
         add_filter( 'dokan_withdraw_withdrawable_payment_methods', [ $this, 'include_custom_method_to_payment_methods' ] );
+
+        add_filter( 'dokan_vendor_to_array', [ $this, 'add_dokan_custom_to_vendor_profile_data' ] );
+    }
+
+    /**
+     * Returns true if venddor enabled dokan custom payment geteway.
+     *
+     * @since 3.9.1
+     *
+     * @param $data
+     *
+     * @return array
+     */
+    public function add_dokan_custom_to_vendor_profile_data( $data ) {
+        $vendor_id = ! empty( $data['id'] ) ? absint( $data['id'] ) : 0;
+
+        // phpcs:ignore
+        if ( ! current_user_can( 'manage_woocommerce' ) && $vendor_id !== dokan_get_current_user_id() ) {
+            return $data;
+        }
+
+        $method_name = dokan_get_option( 'withdraw_method_name', 'dokan_withdraw', '' );
+        $method_type = dokan_get_option( 'withdraw_method_type', 'dokan_withdraw', '' );
+        $value = isset( $data['payment']['dokan_custom']['value'] ) ? esc_attr( $data['payment']['dokan_custom']['value'] ) : '';
+
+        if ( ! empty( $method_name ) && ! empty( $method_type ) ) {
+            $data['payment']['dokan_custom'] = [
+                'withdraw_method_name' => $method_name,
+                'withdraw_method_type' => $method_type,
+                'value'                => $value,
+            ];
+        }
+
+        return $data;
     }
 
     /**
@@ -52,9 +86,10 @@ class CustomWithdrawMethod {
      */
     public function register_custom_withdraw_method( $methods ) {
         $methods['dokan_custom'] = [
-            'title'    => __( 'Custom', 'dokan' ),
-            'callback' => [ $this, 'dokan_custom_withdraw_method' ],
-            'key'      => 'dokan_custom',
+            'title'        => __( 'Custom', 'dokan' ),
+            'callback'     => [ $this, 'dokan_custom_withdraw_method' ],
+            'key'          => 'dokan_custom',
+            'apply_charge' => true,
         ];
 
         return $methods;
@@ -110,8 +145,8 @@ class CustomWithdrawMethod {
         $custom_withdraw = [
             'withdraw_method_name'      => [
                 'name'              => 'withdraw_method_name',
-                'label'             => __( 'Method Name', 'dokan' ),
-                'desc'              => __( 'This will be the title of the withdraw method. e.g. MoneyGram', 'dokan' ),
+                'label'             => __( 'Custom Method Name', 'dokan' ),
+                'desc'              => __( 'This will be the title of the custom withdraw method. e.g. MoneyGram', 'dokan' ),
                 'type'              => 'text',
                 'class'             => 'withdraw_method_name',
                 'sanitize_callback' => 'sanitize_text_field',
@@ -123,8 +158,8 @@ class CustomWithdrawMethod {
             ],
             'withdraw_method_type'      => [
                 'name'              => 'withdraw_method_type',
-                'label'             => __( 'Method Type', 'dokan' ),
-                'desc'              => __( 'Withdraw method type. e.g. Email or Phone Number', 'dokan' ),
+                'label'             => __( 'Custom Method Type', 'dokan' ),
+                'desc'              => __( 'Custom Withdraw method type. e.g. Email or Phone Number', 'dokan' ),
                 'type'              => 'text',
                 'class'             => 'withdraw_method_type',
                 'sanitize_callback' => 'sanitize_text_field',
@@ -253,7 +288,7 @@ class CustomWithdrawMethod {
      */
     public function seller_active_withdraw_methods( $active_payment_methods, $vendor_id ) {
         $store_info = dokan_get_store_info( $vendor_id );
-        if ( isset( $store_info['payment']['dokan_custom']['value'] ) && $store_info['payment']['dokan_custom']['value'] !== false ) {
+        if ( ! empty( $store_info['payment']['dokan_custom']['value'] ) ) {
             $active_payment_methods[] = 'dokan_custom';
         }
 

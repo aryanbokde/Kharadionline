@@ -53,6 +53,26 @@ class SocialLogin {
     }
 
     /**
+     * Returns Enabled social login platforms.
+     *
+     * @3.9.4
+     *
+     * @return array
+     */
+    public function get_enabled_social_login(): array {
+        $config                = $this->get_providers_config();
+        $enabled_social_logins = [];
+
+        foreach ( $config['providers'] as $key => $provider ) {
+            if ( $provider['enabled'] ) {
+                $enabled_social_logins[ $key ] = $provider['enabled'];
+            }
+        }
+
+        return $enabled_social_logins;
+    }
+
+    /**
      * Get configuration values for HybridAuth
      *
      * @return array
@@ -64,33 +84,41 @@ class SocialLogin {
                 'Google' => [
                     'enabled' => false,
                     'keys'    => [
-                        'id'     => dokan_get_option( 'google_app_id', 'dokan_social_api' ),
-                        'secret' => dokan_get_option( 'google_app_secret', 'dokan_social_api' ),
+                        'id'         => dokan_get_option( 'google_app_id', 'dokan_social_api' ),
+                        'secret'     => dokan_get_option( 'google_app_secret', 'dokan_social_api' ),
+                        'is_enabled' => dokan_get_option( 'google_enable_status', 'dokan_social_api', 'on' ),
                     ],
+                    'fw-icon' => 'fa-google',
                 ],
                 'Facebook' => [
                     'enabled'        => false,
                     'trustForwarded' => false,
                     'scope'          => 'email, public_profile',
                     'keys'           => [
-                        'id'     => dokan_get_option( 'fb_app_id', 'dokan_social_api' ),
-                        'secret' => dokan_get_option( 'fb_app_secret', 'dokan_social_api' ),
+                        'id'         => dokan_get_option( 'fb_app_id', 'dokan_social_api' ),
+                        'secret'     => dokan_get_option( 'fb_app_secret', 'dokan_social_api' ),
+                        'is_enabled' => dokan_get_option( 'fb_enable_status', 'dokan_social_api', 'on' ),
                     ],
+                    'fw-icon' => 'fa-facebook',
                 ],
                 'Twitter' => [
                     'enabled'      => false,
                     'includeEmail' => true,
                     'keys'         => [
-                        'key'    => dokan_get_option( 'twitter_app_id', 'dokan_social_api' ),
-                        'secret' => dokan_get_option( 'twitter_app_secret', 'dokan_social_api' ),
+                        'key'        => dokan_get_option( 'twitter_app_id', 'dokan_social_api' ),
+                        'secret'     => dokan_get_option( 'twitter_app_secret', 'dokan_social_api' ),
+                        'is_enabled' => dokan_get_option( 'twitter_enable_status', 'dokan_social_api', 'on' ),
                     ],
+                    'fw-icon' => 'fa-square-x-twitter',
                 ],
                 'LinkedIn' => [
                     'enabled' => false,
                     'keys'    => [
-                        'id' => dokan_get_option( 'linkedin_app_id', 'dokan_social_api' ),
-                        'secret' => dokan_get_option( 'linkedin_app_secret', 'dokan_social_api' ),
+                        'id'         => dokan_get_option( 'linkedin_app_id', 'dokan_social_api' ),
+                        'secret'     => dokan_get_option( 'linkedin_app_secret', 'dokan_social_api' ),
+                        'is_enabled' => dokan_get_option( 'linkedin_enable_status', 'dokan_social_api', 'on' ),
                     ],
+                    'fw-icon' => 'fa-linkedin',
                 ],
                 'Apple' => [
                     'enabled' => false,
@@ -100,37 +128,39 @@ class SocialLogin {
                         'team_id'     => dokan_get_option( 'apple_team_id', 'dokan_social_api' ),
                         'key_id'      => dokan_get_option( 'apple_key_id', 'dokan_social_api' ),
                         'key_content' => dokan_get_option( 'apple_key_content', 'dokan_social_api' ),
+                        'is_enabled'  => dokan_get_option( 'apple_enable_status', 'dokan_social_api', 'on' ),
                     ],
                     'verifyTokenSignature' => false,
                     'authorize_url_parameters' => [
                         'response_mode' => 'form_post',
                     ],
+                    'fw-icon' => 'fa-apple',
                 ],
             ],
         ];
 
         //facebook config from admin
-        if ( $config['providers']['Facebook']['keys']['id'] !== '' && $config['providers']['Facebook']['keys']['secret'] !== '' ) {
+        if ( 'on' === $config['providers']['Facebook']['keys']['is_enabled'] && $config['providers']['Facebook']['keys']['id'] !== '' && $config['providers']['Facebook']['keys']['secret'] !== '' ) {
             $config['providers']['Facebook']['enabled'] = true;
         }
 
         //google config from admin
-        if ( $config['providers']['Google']['keys']['id'] !== '' && $config['providers']['Google']['keys']['secret'] !== '' ) {
+        if ( 'on' === $config['providers']['Google']['keys']['is_enabled'] && $config['providers']['Google']['keys']['id'] !== '' && $config['providers']['Google']['keys']['secret'] !== '' ) {
             $config['providers']['Google']['enabled'] = true;
         }
 
         //linkedin config from admin
-        if ( $config['providers']['LinkedIn']['keys']['id'] !== '' && $config['providers']['LinkedIn']['keys']['secret'] !== '' ) {
+        if ( 'on' === $config['providers']['LinkedIn']['keys']['is_enabled'] && $config['providers']['LinkedIn']['keys']['id'] !== '' && $config['providers']['LinkedIn']['keys']['secret'] !== '' ) {
             $config['providers']['LinkedIn']['enabled'] = true;
         }
 
         //Twitter config from admin
-        if ( $config['providers']['Twitter']['keys']['key'] !== '' && $config['providers']['Twitter']['keys']['secret'] !== '' ) {
+        if ( 'on' === $config['providers']['Twitter']['keys']['is_enabled'] && $config['providers']['Twitter']['keys']['key'] !== '' && $config['providers']['Twitter']['keys']['secret'] !== '' ) {
             $config['providers']['Twitter']['enabled'] = true;
         }
 
         // apple config from the admin
-        if ( $config['providers']['Apple']['keys']['id'] !== '' &&
+        if ( 'on' === $config['providers']['Apple']['keys']['is_enabled'] && $config['providers']['Apple']['keys']['id'] !== '' &&
             $config['providers']['Apple']['keys']['team_id'] !== '' &&
             $config['providers']['Apple']['keys']['key_id'] !== '' &&
             $config['providers']['Apple']['keys']['key_content'] !== ''
@@ -180,10 +210,12 @@ class SocialLogin {
             /**
              * Hold information about provider when user clicks on Sign In.
              */
-            $provider = ! empty( $_GET['vendor_social_reg'] ) ? sanitize_text_field( wp_unslash( $_GET['vendor_social_reg'] ) ) : ''; //phpcs:ignore
+            $provider    = ! empty( $_GET['vendor_social_reg'] ) ? sanitize_text_field( wp_unslash( $_GET['vendor_social_reg'] ) ) : ''; //phpcs:ignore
+            $is_checkout = ! empty( $_GET['is_checkout'] ) && wc_string_to_bool( wp_unslash( $_GET['is_checkout'] ) ); //phpcs:ignore
 
             if ( $provider ) {
                 $storage->set( 'provider', $provider );
+                $storage->set( 'is_checkout', $is_checkout );
             }
 
             if ( $provider = $storage->get( 'provider' ) ) { //phpcs:ignore
@@ -197,29 +229,31 @@ class SocialLogin {
             }
 
             $user_profile = $adapter->getUserProfile();
+            $is_checkout  = $storage->get( 'is_checkout' );
             $storage->clear();
+            $redirect_url = $is_checkout ? wc_get_checkout_url() : $this->callback;
 
             if ( ! $user_profile ) {
                 wc_add_notice( __( 'Something went wrong! please try again', 'dokan' ), 'error' );
-                wp_safe_redirect( $this->callback );
+                wp_safe_redirect( $redirect_url );
             }
 
             if ( empty( $user_profile->email ) ) {
                 wc_add_notice( __( 'User email is not found. Try again.', 'dokan' ), 'error' );
-                wp_safe_redirect( $this->callback );
+                wp_safe_redirect( $redirect_url );
             }
 
             $wp_user = get_user_by( 'email', $user_profile->email );
 
             if ( ! $wp_user ) {
                 try {
-                    $this->register_new_user( $user_profile );
+                    $this->register_new_user( $user_profile, $redirect_url );
                 } catch ( \Exception $exception ) {
                     wc_add_notice( $exception->getMessage(), 'error' );
-                    wp_safe_redirect( $this->callback );
+                    wp_safe_redirect( $redirect_url );
                 }
             } else {
-                $this->login_user( $wp_user );
+                $this->login_user( $wp_user, $redirect_url );
             }
         } catch ( Exception $e ) {
             wc_add_notice( $e->getMessage(), 'error' );
@@ -239,7 +273,7 @@ class SocialLogin {
             'title'                => __( 'Social API', 'dokan' ),
             'icon_url'             => DOKAN_PRO_PLUGIN_ASSEST . '/images/admin-settings-icons/social.svg',
             'description'          => __( 'Configure Social Api', 'dokan' ),
-            'document_link'        => 'https://wedevs.com/docs/dokan/settings/dokan-social-login/',
+            'document_link'        => 'https://dokan.co/docs/wordpress/settings/dokan-social-login/',
             'settings_title'       => __( 'Social Settings', 'dokan' ),
             'settings_description' => __( 'Define settings to allow vendors to use their social profiles to register or log in to the marketplace.', 'dokan' ),
         ];
@@ -275,9 +309,13 @@ class SocialLogin {
                 'desc'          => sprintf(
                     /* translators: 1) Opening anchor tag, 2) Closing anchor tag */
                     __( 'Configure your facebook API settings. %1$sGet Help%2$s', 'dokan' ),
-                    '<a href="https://wedevs.com/docs/dokan/settings/dokan-social-login/configuring-facebook/" target="_blank">',
+                    '<a href="https://dokan.co/docs/wordpress/settings/dokan-social-login/configuring-facebook/" target="_blank">',
                     '</a>'
                 ),
+                'enable_status'        => [
+                    'name'    => 'fb_enable_status',
+                    'default' => 'on',
+                ],
                 'label'         => __( 'Connect to Facebook', 'dokan' ),
                 'icon_url'      => DOKAN_PRO_PLUGIN_ASSEST . '/images/scl-icons/fb.svg',
                 'social_desc'   => __( 'You can successfully connect Facebook with your website.', 'dokan' ),
@@ -322,9 +360,13 @@ class SocialLogin {
                 'desc'               => sprintf(
                     /* translators: 1) Opening anchor tag, 2) Closing anchor tag */
                     __( 'Configure your twitter API settings. %1$sGet Help%2$s', 'dokan' ),
-                    '<a href="https://wedevs.com/docs/dokan/settings/dokan-social-login/configuring-twitter/" target="_blank">',
+                    '<a href="https://dokan.co/docs/wordpress/settings/dokan-social-login/configuring-twitter/" target="_blank">',
                     '</a>'
                 ),
+                'enable_status'        => [
+                    'name'    => 'twitter_enable_status',
+                    'default' => 'on',
+                ],
                 'label'              => __( 'Connect to Twitter', 'dokan' ),
                 'icon_url'           => DOKAN_PRO_PLUGIN_ASSEST . '/images/scl-icons/twt.svg',
                 'social_desc'        => __( 'You can successfully connect Twitter with your website.', 'dokan' ),
@@ -369,9 +411,13 @@ class SocialLogin {
                 'desc'              => sprintf(
                     /* translators: 1) Opening anchor tag, 2) Closing anchor tag */
                     __( 'Configure your google API settings. %1$sGet Help%2$s', 'dokan' ),
-                    '<a href="https://wedevs.com/docs/dokan/settings/dokan-social-login/configuring-google/" target="_blank">',
+                    '<a href="https://dokan.co/docs/wordpress/settings/dokan-social-login/configuring-google/" target="_blank">',
                     '</a>'
                 ),
+                'enable_status'        => [
+                    'name'    => 'google_enable_status',
+                    'default' => 'on',
+                ],
                 'label'             => __( 'Connect to Google', 'dokan' ),
                 'icon_url'          => DOKAN_PRO_PLUGIN_ASSEST . '/images/scl-icons/google.svg',
                 'social_desc'       => __( 'You can successfully connect to your Google account with your website.', 'dokan' ),
@@ -416,9 +462,13 @@ class SocialLogin {
                 'desc'                => sprintf(
                     /* translators: 1) Opening anchor tag, 2) Closing anchor tag */
                     __( 'Configure your linkedin API settings. %1$sGet Help%2$s', 'dokan' ),
-                    '<a href="https://wedevs.com/docs/dokan/settings/dokan-social-login/configuring-linkedin/" target="_blank">',
+                    '<a href="https://dokan.co/docs/wordpress/settings/dokan-social-login/configuring-linkedin/" target="_blank">',
                     '</a>'
                 ),
+                'enable_status'        => [
+                    'name'    => 'linkedin_enable_status',
+                    'default' => 'on',
+                ],
                 'label'               => __( 'Connect to Linkedin', 'dokan' ),
                 'icon_url'            => DOKAN_PRO_PLUGIN_ASSEST . '/images/scl-icons/linkedin.svg',
                 'social_desc'         => __( 'You can successfully connect LinkedIn with your website.', 'dokan' ),
@@ -462,9 +512,13 @@ class SocialLogin {
                 'desc'               => sprintf(
                     /* translators: 1) Opening anchor tag, 2) Closing anchor tag */
                     __( 'Configure your apple API settings. %1$sGet Help%2$s', 'dokan' ),
-                    '<a href="https://wedevs.com/docs/dokan/settings/dokan-social-login/configuring-apple/">',
+                    '<a href="https://dokan.co/docs/wordpress/settings/dokan-social-login/configuring-apple/">',
                     '</a>'
                 ),
+                'enable_status'        => [
+                    'name'    => 'apple_enable_status',
+                    'default' => 'on',
+                ],
                 'type'               => 'social',
                 'label'              => __( 'Connect to Apple', 'dokan' ),
                 'icon_url'           => DOKAN_PRO_PLUGIN_ASSEST . '/images/scl-icons/apple.svg',
@@ -569,7 +623,11 @@ class SocialLogin {
 
         foreach ( $this->config['providers'] as $provider_name => $provider_settings ) {
             if ( true === $provider_settings['enabled'] ) {
-                $configured_providers[] = strtolower( $provider_name );
+                $icon = $provider_settings['fw-icon'];
+
+                $configured_providers[ strtolower( $provider_name ) ] = [
+                    'icon' => $icon,
+                ];
             }
         }
 
@@ -596,12 +654,13 @@ class SocialLogin {
      *
      * @param object $data
      *
-     * @param string $provider
+     * @param string $data
+     * @param string $redirect_url
      *
      * @return void
      * @throws Exception
      */
-    private function register_new_user( $data ) {
+    private function register_new_user( $data, $redirect_url = '' ) {
         // @codingStandardsIgnoreStart
         $userdata = array(
             'user_login' => dokan_generate_username( ! empty( $data->displayName ) ? $data->displayName : 'user' ),
@@ -619,17 +678,18 @@ class SocialLogin {
             throw new Exception( $user_id->get_error_message() );
         }
 
-        $this->login_user( get_userdata( $user_id ) );
+        $this->login_user( get_userdata( $user_id ), $redirect_url );
     }
 
     /**
      * Log in existing users
      *
-     * @param WP_User $wp_user
+     * @param WP_User $wp_user      User Object
+     * @param string  $redirect_url Redirect URL
      *
      * return void
      */
-    private function login_user( $wp_user ) {
+    private function login_user( $wp_user, $redirect_url = '' ) {
         clean_user_cache( $wp_user->ID );
         wp_clear_auth_cookie();
         wp_set_current_user( $wp_user->ID );
@@ -641,7 +701,8 @@ class SocialLogin {
         }
 
         update_user_caches( $wp_user );
-        wp_safe_redirect( dokan_get_page_url( 'myaccount', 'woocommerce' ) );
+        $redirect_url = ! empty( $redirect_url ) ? $redirect_url : dokan_get_page_url( 'myaccount', 'woocommerce' );
+        wp_safe_redirect( $redirect_url );
         exit;
     }
 

@@ -2,9 +2,14 @@
 
 namespace WeDevs\DokanPro\Refund;
 
-use WeDevs\DokanPro\Refund\Ajax;
+use WeDevs\Dokan\Traits\ChainableContainer;
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly
+}
 
 class Hooks {
+    use ChainableContainer;
 
     /**
      * Hooks related to Dokan Pro Refund
@@ -19,6 +24,10 @@ class Hooks {
         add_action( 'dokan_pro_refund_approved', [ self::class, 'after_refund_approved' ] );
         add_filter( 'dokan_refund_insert_into_vendor_balance', [ $this, 'exclude_cod_payment' ], 10, 2 );
         add_action( 'dokan_refund_request_created', [ $this, 'add_order_note_on_refund_request_create' ], 1, 1 );
+
+        new RefundCache();
+
+        $this->container['non_dokan_auto_refund'] = ProcessAutomaticRefund::instance();
     }
 
     /**
@@ -38,18 +47,19 @@ class Hooks {
     }
 
     /**
-     * @param bool $ret
+     * @since 3.3.2
+     *
      * @param \WeDevs\DokanPro\Refund\Refund $refund
      *
-     * @since 3.3.2
+     * @param bool                           $ret
      *
      * @return bool
      */
     public function exclude_cod_payment( $ret, $refund ) {
         $order = wc_get_order( $refund->get_order_id() );
 
-        // return if $order is not instance of WC_Order
-        if ( ! $order instanceof \WC_Order ) {
+        // return if $order is not an instance of WC_Order
+        if ( ! $order ) {
             return $ret;
         }
 
@@ -89,7 +99,7 @@ class Hooks {
             return;
         }
         $order->add_order_note(
-            // translators: 1:Refund request ID, 2: Formatted Refund amount, 3: Refund reason.
+            // translators: 1:Refund request ID, 2: Formatted Refund amount, 3: Refund reasons.
             sprintf( __( 'A new request for refund is placed for the admin approval - Refund request ID: #%1$s - Refund Amount: %2$s - Reason: %3$s', 'dokan' ), $refund->get_id(), wc_price( $refund->get_refund_amount() ), $refund->get_refund_reason() )
         );
     }

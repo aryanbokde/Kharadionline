@@ -26,18 +26,17 @@ trait PaymentUtils {
      *
      * @since 3.6.1
      *
-     * @param int|string $order_id
+     * @param \WC_Order $order
      *
      * @return void
      * @throws DokanException
      */
-    public function validate_minimum_order_amount( $order_id ) {
-        $order = wc_get_order( $order_id );
-        if ( ! $order ) {
+    public function validate_minimum_order_amount( $order ) {
+        if ( ! $order instanceof \WC_Order ) {
             throw new DokanException(
                 'dokan-not-valid-order',
                 /* translators: order id */
-                sprintf( __( 'The order %s is not valid', 'dokan' ), $order_id )
+                sprintf( __( 'The order %s is not valid', 'dokan' ), $order->get_id() )
             );
         }
 
@@ -236,7 +235,7 @@ trait PaymentUtils {
      * @since 3.7.8
      *
      * @param \Stripe\PaymentIntent $intent            The Payment Intent response from the Stripe API.
-     * @param WC_Order              $order             An order that is being paid for.
+     * @param \WC_Order              $order             An order that is being paid for.
      * @param bool                  $retry             A flag that indicates whether another retry should be attempted.
      * @param bool                  $force_save_source Force save the payment source.
      * @param mixed                 $previous_error    Any error message from previous request.

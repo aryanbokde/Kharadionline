@@ -151,6 +151,7 @@ abstract class VendorSubscription {
         $allowed_status = apply_filters( 'dps_get_product_by_seller_allowed_statuses', array( 'publish', 'pending' ) );
 
         $query = "SELECT COUNT(*) FROM $wpdb->posts WHERE post_author = {$this->get_vendor()} AND post_type = 'product' AND post_status IN ( '" . implode( "','", $allowed_status ). "' )";
+        $query = apply_filters( 'dokan_vendor_subscription_product_count_query', $query, $this->get_vendor(), $allowed_status );
         $count = $wpdb->get_var( $query ); //phpcs:ignore
 
         return $count;

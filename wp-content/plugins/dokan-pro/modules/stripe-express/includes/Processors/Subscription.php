@@ -110,7 +110,21 @@ class Subscription {
 
             return SubscriptionApi::create( $data );
         } catch ( DokanException $e ) {
-            return new WP_Error( 'stripe-subscription-create-error', $e->get_message() );
+            $message = $e->get_message();
+            if ( Helper::is_no_such_customer_error( $e ) ) {
+                try {
+                    $customer = Customer::get_instance();
+                    $customer->set_user_id( $customer_id );
+                    $customer->set_id( 0 );
+                    $stripe_customer_id = $customer->create();
+                    $data['customer']   = $stripe_customer_id;
+                    return SubscriptionApi::create( $data );
+                } catch ( DokanException $e ) {
+                    $message = $e->get_message();
+                }
+            }
+
+            return new WP_Error( 'stripe-subscription-create-error', $message );
         }
     }
 
@@ -161,13 +175,27 @@ class Subscription {
                 $order = wc_get_order( $order );
             }
 
-            if ( ! $order instanceof WC_Order ) {
+            if ( ! $order ) {
                 return false;
             }
             $stripe_subscription_id = OrderMeta::get_stripe_subscription_id( $order );
         }
 
         return $stripe_subscription_id;
+    }
+
+    /*
+     * Retrieves the temporary subscription id from user meta.
+     *
+     * @since 3.8.3
+     *
+     * @param int $user_id
+     *
+     * @return string
+     */
+    public static function get_temporary_subscription_id( $user_id = null ) {
+        $user_id = $user_id ? $user_id : get_current_user_id();
+        return UserMeta::get_stripe_temp_subscription_id( $user_id );
     }
 
     /**
@@ -200,7 +228,7 @@ class Subscription {
      * @param WC_Product|int|string $product Product object or ID.
      * @param array                 $data    Additional data to add as product data (Optional)
      *
-     * @return \Stripe\Product\WP_Error
+     * @return \Stripe\Product|WP_Error
      */
     public static function create_product( $product, $data = [] ) {
         if ( ! is_a( $product, 'WC_Product' ) ) {
@@ -791,19 +819,25 @@ class Subscription {
             return false;
         }
 
-        global $wpdb;
-
-        $order_id = $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT `post_id`
-                FROM $wpdb->postmeta
-                WHERE `meta_key` = %s
-                AND `meta_value` = %s",
-                OrderMeta::stripe_subscription_id_key(),
-                $subscription->id
-            )
+        $order_id = dokan()->order->all(
+            [
+                'meta_query' => [
+                    [
+                        'key'     => OrderMeta::stripe_subscription_id_key(),
+                        'value'   => $subscription->id,
+                        'compare' => '=',
+                    ],
+                ],
+                'limit' => 1,
+                'return' => 'ids',
+            ]
         );
 
+        if ( empty( $order_id ) ) {
+            return false;
+        }
+
+        $order_id = reset( $order_id );
         if ( empty( $order_id ) && ! empty( $subscription->metadata['order_id'] ) ) {
             $order_id = $subscription->metadata['order_id'];
         }
@@ -812,11 +846,6 @@ class Subscription {
             return false;
         }
 
-        $order = wc_get_order( absint( $order_id ) );
-        if ( ! $order instanceof WC_Order ) {
-            return false;
-        }
-
-        return $order;
+        return wc_get_order( absint( $order_id ) );
     }
 }

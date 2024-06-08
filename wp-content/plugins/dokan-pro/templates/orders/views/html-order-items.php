@@ -1,5 +1,7 @@
 <?php
 
+use WeDevs\DokanPro\Refund\ProcessAutomaticRefund;
+
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
 }
@@ -85,11 +87,7 @@ if ( wc_tax_enabled() ) {
         <tbody id="order_line_items">
         <?php
         foreach ( $line_items as $item_id => $item ) {
-            if ( version_compare( WC_VERSION, '4.4.0', '>=' ) ) {
-                $_product = $item->get_product();
-            } else {
-                $_product = $order->get_product_from_item( $item );
-            }
+            $_product = $item->get_product();
 
             dokan_get_template_part(
                 'orders/views/html-order-item', '', array(
@@ -162,7 +160,7 @@ if ( wc_tax_enabled() ) {
 </div>
 <div class="wc-order-data-row wc-order-totals-items wc-order-items-editable">
     <?php
-    $coupons = $order->get_items( array( 'coupon' ) );
+    $coupons = $order->get_items( 'coupon' );
 
     if ( $coupons ) {
 		?>
@@ -171,7 +169,8 @@ if ( wc_tax_enabled() ) {
             <?php
             echo '<li><strong>' . __( 'Coupon(s) Used', 'dokan' ) . '</strong></li>';
             foreach ( $coupons as $item_id => $item ) {
-                $coupon    = new WC_Coupon( $item->get_name() );
+                $coupon = new WC_Coupon( $item->get_name() );
+
                 $item_link = '#';
 
                 $vendor_coupon = $coupon->get_id() ? add_query_arg(
@@ -189,8 +188,14 @@ if ( wc_tax_enabled() ) {
                 ) : dokan_get_navigation_url( 'coupons' );
 
                 $item_link = dokan_is_coupon_created_by_admin_for_vendor( $coupon ) ? $marketplace_coupon : $vendor_coupon;
+                $item_link = apply_filters( 'dokan_pro_dashboard_order_item_coupon_url', $item_link, $item, $coupon );
 
-                echo '<li class="code"><a href="' . esc_url( $item_link ) . '" class="tips" data-tip="' . esc_attr( wc_price( $item->get_discount(), array( 'currency' => dokan_replace_func( 'get_order_currency', 'get_currency', $order ) ) ) ) . '"><span>' . esc_html( $item->get_name() ) . '</span></a></li>';
+                $tip_html = sprintf( '%1$s %2$s', get_woocommerce_currency_symbol( $order->get_currency() ), $item->get_discount() );
+                if ( empty( $item_link ) || '#' === $item_link ) {
+                    echo '<li class="code"><span class="tips" data-title="' . esc_attr( $tip_html ) . '"><span>' . $item->get_name() . '</span></span></li>';
+                } else {
+                    echo '<li class="code"><a href="' . esc_url( $item_link ) . '" class="dokan-vendor-order-page-tips" data-title="' . esc_attr( $tip_html ) . '"><span>' . $item->get_name() . '</span></a></li>';
+                }
             }
             ?>
             </ul>
@@ -201,18 +206,18 @@ if ( wc_tax_enabled() ) {
     <table class="wc-order-totals">
         <tr>
             <td><?php esc_html_e( 'Discount', 'dokan' ); ?> <span class="tips" title="<?php esc_attr_e( 'This is the total discount. Discounts are defined per line item.', 'dokan' ); ?>"><span class="fa fa-question-circle dokan-vendor-order-page-tips"></span></span> :</td>
-            <td class="total">
+            <td></td>
+            <td class="total">-
                 <?php echo wc_price( $order->get_total_discount(), array( 'currency' => dokan_replace_func( 'get_order_currency', 'get_currency', $order ) ) ); ?>
             </td>
-            <td width="1%"></td>
         </tr>
 
         <?php do_action( 'woocommerce_admin_order_totals_after_discount', dokan_get_prop( $order, 'id' ) ); ?>
 
         <tr>
             <td><?php esc_html_e( 'Shipping', 'dokan' ); ?> <span class="tips" title="<?php esc_attr_e( 'This is the shipping and handling total costs for the order.', 'dokan' ); ?>"><span class="fa fa-question-circle dokan-vendor-order-page-tips"></span></span> :</td>
+            <td></td>
             <td class="total"><?php echo wc_price( $order->get_total_shipping(), array( 'currency' => dokan_replace_func( 'get_order_currency', 'get_currency', $order ) ) ); ?></td>
-            <td width="1%"></td>
         </tr>
 
         <?php do_action( 'woocommerce_admin_order_totals_after_shipping', dokan_get_prop( $order, 'id' ) ); ?>
@@ -221,16 +226,17 @@ if ( wc_tax_enabled() ) {
             <?php foreach ( $order->get_tax_totals() as $code => $tax_item ) : ?>
                 <tr>
                     <td><?php echo $tax_item->label; ?>:</td>
+                    <td></td>
                     <td class="total"><?php echo $tax_item->formatted_amount; ?></td>
-                    <td width="1%"></td>
                 </tr>
             <?php endforeach; ?>
         <?php endif; ?>
 
-        <?php do_action( 'woocommerce_admin_order_totals_after_tax', dokan_get_prop( $order, 'id' ) ); ?>
+        <?php do_action( 'woocommerce_admin_order_totals_after_tax', $order->get_id() ); ?>
 
         <tr>
             <td><?php esc_html_e( 'Order Total', 'dokan' ); ?>:</td>
+            <td></td>
             <td class="total">
                 <div class="view"><?php echo $order->get_formatted_order_total(); ?></div>
                 <div class="edit" style="display: none;">
@@ -238,19 +244,14 @@ if ( wc_tax_enabled() ) {
                     <div class="clear"></div>
                 </div>
             </td>
-            <td>
-            <?php
-            if ( $order->is_editable() ) :
-                ?>
-                <div class="wc-order-edit-line-item-actions"><a class="edit-order-item" href="#"></a></div><?php endif; ?></td>
         </tr>
 
         <?php do_action( 'woocommerce_admin_order_totals_after_total', dokan_get_prop( $order, 'id' ) ); ?>
 
         <tr>
             <td class="refunded-total"><?php esc_html_e( 'Refunded', 'dokan' ); ?>:</td>
+            <td></td>
             <td class="total refunded-total">-<?php echo wc_price( $order->get_total_refunded(), array( 'currency' => dokan_replace_func( 'get_order_currency', 'get_currency', $order ) ) ); ?></td>
-            <td width="1%"></td>
         </tr>
 
         <?php
@@ -314,21 +315,26 @@ if ( wc_tax_enabled() ) {
                 <?php
                 $refund_amount = '<span class="wc-order-refund-amount">' . wc_price( 0, array( 'currency' => dokan_replace_func( 'get_order_currency', 'get_currency', $order ) ) ) . '</span>';
                 $gateway_name  = false !== $payment_gateway ? ( ! empty( $payment_gateway->method_title ) ? $payment_gateway->method_title : $payment_gateway->get_title() ) : __( 'Payment gateway', 'dokan' );
-                ?>
-                <?php // translators: %s: Refund amount ?>
-                <button type="button" class="dokan-btn dokan-btn-default do-manual-refund tips" data-tip="<?php esc_attr_e( 'You will need to manually issue a refund through your payment gateway after using this.', 'dokan' ); ?>"><?php printf( _x( 'Refund %s Manually', 'Refund $amount Manually', 'dokan' ), $refund_amount ); ?></button>
+                if ( ProcessAutomaticRefund::instance()->is_excluded_payment_gateway( $payment_gateway->id ?? '' ) ) :
+                    ?>
+                    <?php // translators: %s: Refund amount ?>
+                    <button type="button" class="dokan-btn dokan-btn-default do-manual-refund tips" data-tip="<?php esc_attr_e( 'You will need to manually issue a refund through your payment gateway after using this.', 'dokan' ); ?>"><?php printf( _x( 'Refund %s Manually', 'Refund $amount Manually', 'dokan' ), $refund_amount ); ?></button>
 
-                <?php
-                if (
-                    false !== $payment_gateway
-                    && $payment_gateway->can_refund_order( $order )
-                ) {
-                    /* translators: refund amount, gateway name */
-                    echo '<button type="button" class="dokan-btn dokan-btn-default do-api-refund">' . sprintf( esc_html__( 'Refund %1$s via %2$s', 'dokan' ), wp_kses_post( $refund_amount ), esc_html( $gateway_name ) ) . '</button>';
-                }
-                ?>
+                    <?php
+                    if (
+                        false !== $payment_gateway
+                        && $payment_gateway->can_refund_order( $order )
+                    ) {
+                        /* translators: refund amount, gateway name */
+                        echo '<button type="button" class="dokan-btn dokan-btn-default do-api-refund">' . sprintf( esc_html__( 'Refund %1$s via %2$s', 'dokan' ), wp_kses_post( $refund_amount ), esc_html( $gateway_name ) ) . '</button>';
+                    }
+                    ?>
+                <?php else : ?>
+                    <?php // translators: %s: Refund amount ?>
+                    <button type="button" class="dokan-btn dokan-btn-default <?php echo esc_attr( ( false !== $payment_gateway && $payment_gateway->can_refund_order( $order ) ) ? 'do-api-refund' : 'do-manual-refund' ); ?> tips" data-tip="<?php esc_attr_e( 'Admin will decide whether admin manually issue a refund or through your payment gateway via API automatically.', 'dokan' ); ?>"><?php printf( _x( 'Submit Refund Request %s', 'Submit Refund Request $amount', 'dokan' ), $refund_amount ); ?></button>
 
-                <button type="button" class="dokan-btn dokan-btn-default cancel-action"><?php esc_html_e( 'Cancel', 'dokan' ); ?></button>
+                <?php endif; ?>
+                    <button type="button" class="dokan-btn dokan-btn-default cancel-action"><?php esc_html_e( 'Cancel', 'dokan' ); ?></button>
                 <div class="clear"></div>
             </div>
             <div class="clear"></div>

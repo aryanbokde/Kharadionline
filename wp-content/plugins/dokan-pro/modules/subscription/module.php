@@ -61,6 +61,7 @@ class Module {
         add_filter( 'dokan_can_add_product', array( $this, 'seller_add_products' ), 1, 1 );
         add_filter( 'dokan_vendor_can_duplicate_product', array( $this, 'vendor_can_duplicate_product' ) );
         add_filter( 'dokan_update_product_post_data', array( $this, 'make_product_draft' ), 1 );
+        add_filter( 'dokan_post_status', [ $this, 'set_product_status' ], 2, 99 );
         add_action( 'dokan_can_post_notice', array( $this, 'display_product_pack' ) );
         add_filter( 'dokan_can_post', array( $this, 'can_post_product' ) );
         add_filter( 'dokan_product_cat_dropdown_args', [ __CLASS__, 'filter_category' ] );
@@ -83,7 +84,7 @@ class Module {
         add_action( 'dokan_before_listing_product', array( $this, 'show_custom_subscription_info' ) );
         add_filter( 'woocommerce_register_post_type_product', [ __CLASS__, 'disable_creating_new_product' ] );
 
-        add_filter( 'dokan_get_dashboard_nav', [ __CLASS__, 'add_new_page' ], 11, 1 );
+        add_filter( 'dokan_get_dashboard_nav', [ __CLASS__, 'add_new_page' ], 11 );
         add_filter( 'dokan_set_template_path', array( $this, 'load_subscription_templates' ), 11, 3 );
         add_action( 'dokan_load_custom_template', array( $this, 'load_template_from_plugin' ) );
 
@@ -109,6 +110,9 @@ class Module {
         // remove subscripton product from vendor product listing page
         add_filter( 'dokan_product_listing_exclude_type', array( $this, 'exclude_subscription_product' ) );
         add_filter( 'dokan_count_posts', array( $this, 'exclude_subscription_product_count' ), 10, 3 );
+
+        // remove min max rules for vendor subscription.
+        add_filter( 'dokan_validate_min_max_rules_for_product', [ $this, 'remove_min_max_for_subscription_packs' ], 10, 2 );
 
         // remove subscription product from best selling and top rated product query
         add_filter( 'dokan_best_selling_products_query', array( $this, 'exclude_subscription_product_query' ) );
@@ -146,6 +150,8 @@ class Module {
         add_filter( 'dokan_mangopay_needs_cart_validation', [ $this, 'skip_cart_validation_for_mangopay' ] );
         add_filter( 'dokan_mangopay_disburse_payment', [ $this, 'skip_payment_disbursement_for_mangopay' ], 10, 2 );
         add_filter( 'dokan_mangopay_payin_data', [ $this, 'modify_mangopay_payin_data' ] );
+        add_filter( 'dokan_catalog_mode_hide_add_to_cart_button', [ $this, 'remove_catalogue_mode_restriction_on_dokan_subscription_product' ], 99, 3 );
+        add_filter( 'woocommerce_available_payment_gateways', [ $this, 'remove_unsupported_payment_gateways_on_dokan_subscription_product' ], 99 );
     }
 
     /**
@@ -170,24 +176,30 @@ class Module {
             wp_schedule_event( time(), 'daily', 'dps_schedule_pack_update' );
         }
 
-        // flush rewrite rules after plugin is activate
+        // flush rewrite rules after the plugin is activated
         $this->flush_rewrite_rules();
 
-        // todo: we need to rewrite this bit of code, need to store page id in database
-        if ( ! self::is_dokan_plugin() ) {
-            if ( ! get_page_by_title( __( 'Product Subscription', 'dokan' ) ) ) {
-                $dasboard_page = get_page_by_title( 'Dashboard' );
+        // Verify that, is previously product subscription page creation ok or not.
+        $saved_page_id = dokan_get_option( 'subscription_pack', 'dokan_product_subscription' );
 
-                $page_id = wp_insert_post(
-                    array(
-                        'post_title'   => wp_strip_all_tags( __( 'Product Subscription', 'dokan' ) ),
-                        'post_content' => '[dps_product_pack]',
-                        'post_status'  => 'publish',
-                        'post_parent'  => $dasboard_page->ID,
-                        'post_type'    => 'page',
-                    )
-                );
-            }
+        if ( empty( $saved_page_id ) || null === get_post( $saved_page_id ) ) {
+            $dashboard_page_data  = dokan_get_option( 'dashboard', 'dokan_pages' );
+            $dashboard_page_id    = apply_filters( 'dokan_get_dashboard_page_id', $dashboard_page_data );
+
+            $post_id = wp_insert_post(
+                [
+                    'post_title'   => wp_strip_all_tags( __( 'Product Subscription', 'dokan' ) ),
+                    'post_content' => '[dps_product_pack]',
+                    'post_status'  => 'publish',
+                    'post_parent'  => $dashboard_page_id,
+                    'post_type'    => 'page',
+                ]
+            );
+
+            // Update dokan product subscription settings.
+            $subscription_settings   = get_option( 'dokan_product_subscription', array() );
+            $subscription_settings['subscription_pack'] = $post_id;
+            update_option( 'dokan_product_subscription', $subscription_settings );
         }
     }
 
@@ -391,11 +403,7 @@ class Module {
 
         $installed_version = get_option( 'dokan_theme_version' );
 
-        if ( $installed_version > '2.3' ) {
-            dokan_get_template_part( 'subscription/product_subscription_plugin_new', '', array( 'is_subscription' => true ) );
-        } else {
-            dokan_get_template_part( 'subscription/product_subscription_plugin', '', array( 'is_subscription' => true ) );
-        }
+        dokan_get_template_part( 'subscription/product_subscription_plugin', '', array( 'is_subscription' => true ) );
     }
 
     /**
@@ -416,24 +424,12 @@ class Module {
             return $urls;
         }
 
-        if ( dokan_is_seller_enabled( get_current_user_id() ) ) {
-            $installed_version = get_option( 'dokan_theme_version' );
-
-            if ( $installed_version > '2.3' ) {
-                $urls['subscription'] = array(
-                    'title' => __( 'Subscription', 'dokan' ),
-                    'icon'  => '<i class="fas fa-book"></i>',
-                    'url'   => $permalink,
-                    'pos'   => 180,
-                );
-            } else {
-                $urls['subscription'] = array(
-                    'title' => __( 'Subscription', 'dokan' ),
-                    'icon'  => '<i class="fas fa-book"></i>',
-                    'url'   => $permalink,
-                );
-            }
-        }
+        $urls['subscription'] = array(
+            'title' => __( 'Subscription', 'dokan' ),
+            'icon'  => '<i class="fas fa-book"></i>',
+            'url'   => $permalink,
+            'pos'   => 180,
+        );
 
         return $urls;
     }
@@ -501,6 +497,38 @@ class Module {
         }
 
         return $data;
+    }
+
+    /**
+     * Set product edit status
+     *
+     * @since 3.8.3
+     *
+     * @param array $all_statuses
+     * @param int $product_id
+     *
+     * @return array
+     */
+    public function set_product_status( $all_statuses, $product_id ) {
+        $product = wc_get_product( $product_id );
+        if ( ! $product ) {
+            return $all_statuses;
+        }
+
+        $vendor_id = dokan_get_current_user_id();
+        if ( Helper::get_vendor_remaining_products( $vendor_id ) ) {
+            return $all_statuses;
+        }
+
+        if ( ! in_array( $product->get_status(), [ 'publish', 'pending' ], true ) ) {
+            unset( $all_statuses['pending'] );
+            unset( $all_statuses['publish'] );
+            if ( ! array_key_exists( 'draft', $all_statuses ) ) {
+                $all_statuses['draft'] = dokan_get_post_status( 'draft' );
+            }
+        }
+
+        return $all_statuses;
     }
 
     /**
@@ -609,7 +637,7 @@ class Module {
                 return $args;
             }
 
-            $args['include'] = $selected_cat;
+            $args['include'] = apply_filters( 'dokan_pro_subscription_allowed_categories', $selected_cat );
             return $args;
         }
 
@@ -699,6 +727,10 @@ class Module {
      * Schedule task daily update this functions
      */
     public function schedule_task() {
+        if ( ! function_exists( 'dokan' ) || ! dokan()->vendor ) {
+            return;
+        }
+
         $users = get_users(
             [
                 'role__in'   => [ 'seller', 'administrator' ],
@@ -795,7 +827,7 @@ class Module {
             '_subscription_product_admin_commission_type',
             $product->get_meta( '_subscription_product_admin_commission_type', true )
         );
-        $order->save_meta_data();
+        $order->save();
     }
 
     /**
@@ -1733,6 +1765,27 @@ class Module {
     }
 
     /**
+     * Remove min max rules for subscription pack.
+     *
+     * @since 3.10.3
+     *
+     * @param bool $apply_min_max
+     * @param int  $product_id
+     *
+     * @return bool
+     */
+    public function remove_min_max_for_subscription_packs( $apply_min_max, $product_id ) {
+        $product = wc_get_product( $product_id );
+
+        // Remove from min-max rules is subscription product.
+        if ( 'product_pack' === $product->get_type() ) {
+            return false;
+        }
+
+        return $apply_min_max;
+    }
+
+    /**
      * Add Current subscription info to vendor info.
      *
      * @since 3.3.1
@@ -1911,7 +1964,7 @@ class Module {
             return $categories;
         }
 
-        $selected_cat     = array_map( 'absint', $selected_cat );
+        $selected_cat     = array_map( 'absint', apply_filters( 'dokan_pro_subscription_allowed_categories', $selected_cat ) );
         $to_return        = [];
 
         // We are allowing all the ancestors and grand children of the selected category.
@@ -2034,5 +2087,70 @@ class Module {
         $payin_data['fees'] = $payin_data['amount'] - 1;
 
         return $payin_data;
+    }
+
+    /**
+     * Remove catalog mode restriction.
+     *
+     * @since 3.8.3
+     *
+     * @param string      $enable Catalogue mode restriction enabled. Default `yes`
+     * @param \WC_Product $product Current Product.
+     * @param bool        $purchasable Whether the product is available to purchase.
+     *
+     * @return string
+     */
+    public function remove_catalogue_mode_restriction_on_dokan_subscription_product( string $enable, $product, bool $purchasable ): string {
+        if ( 'product_pack' !== $product->get_type() ) {
+            return $enable;
+        }
+        return 'no';
+    }
+
+    /**
+     * Remove unsupported payment gateways.
+     *
+     * @since 3.9.1
+     *
+     * @param array $gateways All payment gateways.
+     *
+     * @return array
+     */
+    public function remove_unsupported_payment_gateways_on_dokan_subscription_product( array $gateways ): array {
+        if ( ! WC()->cart || WC()->cart->is_empty() || is_admin() ) {
+            return $gateways;
+        }
+
+        $is_recurring_subscription_product_is_in_cart = false;
+        foreach ( WC()->cart->get_cart() as $item ) {
+            if ( is_a( $item['data'], \WC_Product::class ) && 'product_pack' === $item['data']->get_type() && Helper::is_recurring_pack( $item['data']->get_id() ) ) {
+                $is_recurring_subscription_product_is_in_cart = true;
+                break;
+            }
+        }
+
+        if ( ! $is_recurring_subscription_product_is_in_cart ) {
+            return $gateways;
+        }
+
+        $vendor_recurring_subscription_supported_payment_gateways = apply_filters(
+            'dokan_pro_recurring_vendor_subscription_supported_payment_gateways',
+            [
+                'dokan_stripe_express',
+                'dokan-stripe-connect',
+                'dokan_paypal_adaptive',
+                'dokan_paypal_marketplace',
+                'dokan-moip-connect',
+                'paypal',
+            ]
+        );
+
+        foreach ( $gateways as $key => $gateway ) {
+            if ( ! in_array( $gateway->id, $vendor_recurring_subscription_supported_payment_gateways, true ) ) {
+                unset( $gateways[ $key ] );
+            }
+        }
+
+        return $gateways;
     }
 }

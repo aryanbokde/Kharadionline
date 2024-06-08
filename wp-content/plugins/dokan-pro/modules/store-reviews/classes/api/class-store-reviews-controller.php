@@ -118,7 +118,7 @@ class Dokan_REST_Store_Review_Controller extends DokanRESTController {
      *
      * @since 2.8.2
      *
-     * @return void
+     * @return WP_Post|array|null
      */
     public function get_object( $id ) {
         return get_post( $id );
@@ -153,7 +153,7 @@ class Dokan_REST_Store_Review_Controller extends DokanRESTController {
         }
 
         $cache_group = 'store_reviews';
-        $cache_key   = 'store_reviews_' . md5( wp_json_encode( $args ) );;
+        $cache_key   = 'store_reviews_' . md5( wp_json_encode( $args ) );
         $query       = Cache::get( $cache_key, $cache_group );
 
         if ( false === $query ) {
@@ -173,7 +173,7 @@ class Dokan_REST_Store_Review_Controller extends DokanRESTController {
         $response = rest_ensure_response( $data );
         $count    = wp_count_posts( $this->post_type );
 
-        $response->header( 'X-Status-All', ( $count->publish + $count->trash ) );
+        $response->header( 'X-Status-All', ( $count->publish ) );
         $response->header( 'X-Status-Trash', $count->trash );
 
         $response = $this->format_collection_response( $response, $request, $query->found_posts );
@@ -317,11 +317,15 @@ class Dokan_REST_Store_Review_Controller extends DokanRESTController {
     public function restore_reviews( $request ) {
         $post = $this->get_object( $request['id'] );
 
-        if ( is_wp_error( $post ) ) {
-            return $post;
+        if ( empty( $post ) ) {
+            return new WP_Error( 'no_review_found', __( 'No review found', 'dokan' ), array( 'status' => 404 ) );
         }
 
         $post = wp_untrash_post( $post->ID );
+
+        if ( empty( $post ) ) {
+            return new WP_Error( 'could_not_restore', __( 'Could not restore this review', 'dokan' ), array( 'status' => 404 ) );
+        }
 
         // Update the post status from `draft` to `publish` as by default `wp_untrash_post` makes post `draft`
         wp_update_post( [
@@ -380,6 +384,11 @@ class Dokan_REST_Store_Review_Controller extends DokanRESTController {
                 } else if ( 'restore' === $status ) {
                     foreach ( $value as $store_review_id ) {
                         wp_untrash_post( $store_review_id );
+                        // Update the post status from `draft` to `publish` as by default `wp_untrash_post` makes post `draft`
+                        wp_update_post( [
+                            'ID'          => $store_review_id,
+                            'post_status' => 'publish'
+                        ] );
                     }
                 }
             }
@@ -439,7 +448,7 @@ class Dokan_REST_Store_Review_Controller extends DokanRESTController {
      *
      * @since 2.8.0
      *
-     * @return data
+     * @return WP_REST_Response
      */
     public function prepare_response_for_object( $object, $request ) {
         $customer  = get_user_by( 'id', $object->post_author );

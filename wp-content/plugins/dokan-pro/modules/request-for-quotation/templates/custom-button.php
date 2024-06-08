@@ -36,11 +36,13 @@ if ( ! $product->is_in_stock() && ! SettingsHelper::is_out_of_stock_enabled() ) 
         do_action( 'woocommerce_after_add_to_cart_quantity' );
 
         if ( 'keep_and_add_new' === $single_quote_rule->hide_cart_button ) {
-            $button_html = '<button type="submit" name="add-to-cart" value="' . intval( $product->get_id() ) . '" class="single_add_to_cart_button button alt">' . __( 'Add to cart', 'dokan' ) . '</button> ';
+            $button_html = '<button type="submit" name="add-to-cart" value="' . $product->get_id() . '" class="single_add_to_cart_button button alt">' . __( 'Add to cart', 'dokan' ) . '</button> ';
             echo apply_filters( 'dokan_request_for_quote_add_to_cart_button_html', $button_html, $product );
         }
+        if ( ! dokan_is_product_author( $product->get_id() ) ) {
+            echo '<a href="javascript:void(0)" rel="nofollow" data-product_id="' . $product->get_id() . '" data-product_sku="' . esc_attr( $product->get_sku() ) . '" class="button dokan_request_button single_add_to_cart_button alt add_to_cart_button product_type_' . esc_attr( $product->get_type() ) . '">' . esc_html( $single_quote_rule->button_text ) . '</a>';
+        }
 
-        echo '<a href="javascript:void(0)" rel="nofollow" data-product_id="' . intval( $product->get_id() ) . '" data-product_sku="' . esc_attr( $product->get_sku() ) . '" class="button dokan_request_button single_add_to_cart_button alt add_to_cart_button product_type_' . esc_attr( $product->get_type() ) . '">' . esc_html( $single_quote_rule->button_text ) . '</a>';
         do_action( 'dokan_after_add_to_quote_button' );
         do_action( 'woocommerce_after_add_to_cart_button' );
 

@@ -207,19 +207,6 @@ class Helper {
     }
 
     /**
-     * Show checkout modal
-     *
-     * @since  3.0.3
-     *
-     * @return bool
-     */
-    public static function show_checkout_modal() {
-        $settings = self::get_settings();
-
-        return ! empty( $settings['stripe_checkout'] ) && 'yes' === $settings['stripe_checkout'];
-    }
-
-    /**
      * Get gateway title
      *
      * @since 3.0.3
@@ -294,7 +281,7 @@ class Helper {
         Stripe::setAppInfo(
             'Dokan Stripe-Connect',
             DOKAN_PRO_PLUGIN_VERSION,
-            'https://wedevs.com/dokan/modules/stripe-connect/',
+            'https://dokan.co/wordpress/modules/stripe-connect/',
             'pp_partner_Ee9F0QbhSGowvH'
         );
     }
@@ -518,15 +505,34 @@ class Helper {
 
         $fee = $balance_transaction->fee;
         foreach ( $balance_transaction->fee_details as $fee_details ) {
+            if ( ! in_array( $fee_details->type, array( 'stripe_fee', 'tax' ), true ) ) {
+                continue;
+            }
+
             if ( $fee_details->type === 'stripe_fee' ) {
                 $fee = $fee_details->amount;
-                break;
+            }
+
+            if ( $fee_details->type === 'tax' ) {
+                $fee += $fee_details->amount;
             }
         }
 
         if ( ! in_array( strtolower( $balance_transaction->currency ), self::no_decimal_currencies(), true ) ) {
             $fee = number_format( $fee / 100, 2, '.', '' );
         }
+
+        /**
+         * Filter the stripe gateway balance fee
+         *
+         * @since 3.11.0
+         *
+         * @param int|float|string  $fee                    The gateway balance fee
+         * @param object            $balance_transaction    The balance transaction object
+         *
+         * @return int|float|string The formated gateway balance fee
+         */
+        $fee = apply_filters( 'dokan_stripe_format_gateway_balance_fee', $fee, $balance_transaction );
 
         if ( $balance_transaction->exchange_rate ) {
             return number_format( $fee / $balance_transaction->exchange_rate, 2, '.', '' );

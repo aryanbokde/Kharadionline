@@ -24,7 +24,7 @@ class Module {
         $this->define_constants();
 
         // Widget initialization hook
-        add_action( 'widgets_init', array( $this, 'initialize_widget_register' ) );
+        add_action( 'dokan_widgets', array( $this, 'initialize_widget_register' ) );
 
         // Loads frontend scripts and styles
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
@@ -65,66 +65,42 @@ class Module {
         $return_result['type']      = 'error';
         $return_result['data_list'] = '';
         $output                     = '';
-        $get_postdata               = wp_unslash( $_POST );
+        $args                       = [
+            'posts_per_page' => 250,
+            'post_status'    => 'publish',
+        ];
 
         // _wpnonce check for an extra layer of security, the function will exit if it fails
-        if ( ! isset( $get_postdata['_wpnonce'] ) || ! wp_verify_nonce( $get_postdata['_wpnonce'], 'dokan_suggestion_search_nonce' ) ) {
+        if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['_wpnonce'] ) ), 'dokan_suggestion_search_nonce' ) ) {
             wp_send_json_error( __( 'Error: Nonce verification failed', 'dokan' ) );
         }
 
-        if ( isset( $get_postdata['textfield'] ) && ! empty( $get_postdata['textfield'] ) ) {
-            $keyword = $get_postdata['textfield'];
+        if ( ! empty( $_POST['textfield'] ) ) {
+            $args['s'] = sanitize_text_field( wp_unslash( $_POST['textfield'] ) );
 
-            if ( isset( $get_postdata['selectfield'] ) && ! empty( $get_postdata['selectfield'] ) ) {
-                $category = get_term_by( 'slug', $get_postdata['selectfield'], 'product_cat' );
-                $category = $category->term_id;
-
-                $querystr = "SELECT DISTINCT * FROM $wpdb->posts AS p
-                LEFT JOIN $wpdb->term_relationships AS r ON (p.ID = r.object_id)
-                INNER JOIN $wpdb->term_taxonomy AS x ON (r.term_taxonomy_id = x.term_taxonomy_id)
-                INNER JOIN $wpdb->terms AS t ON (r.term_taxonomy_id = t.term_id)
-                WHERE p.post_type IN ('product')
-                AND p.post_status = 'publish'
-                AND x.taxonomy = 'product_cat'
-                AND (
-                    (x.term_id = {$category})
-                    OR
-                    (x.parent = {$category})
-                )
-                AND (
-                    (p.ID IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_sku' AND meta_value LIKE '%{$keyword}%'))
-                    OR
-                    (p.post_content LIKE '%{$keyword}%')
-                    OR
-                    (p.post_title LIKE '%{$keyword}%')
-                )
-                ORDER BY t.name ASC, p.post_date DESC LIMIT 250;";
-            } else {
-                $querystr = "SELECT DISTINCT $wpdb->posts.*
-                FROM $wpdb->posts, $wpdb->postmeta
-                WHERE $wpdb->posts.ID = $wpdb->postmeta.post_id
-                AND (
-                    ($wpdb->postmeta.meta_key = '_sku' AND $wpdb->postmeta.meta_value LIKE '%{$keyword}%')
-                    OR
-                    ($wpdb->posts.post_content LIKE '%{$keyword}%')
-                    OR
-                    ($wpdb->posts.post_title LIKE '%{$keyword}%')
-                )
-                AND $wpdb->posts.post_status = 'publish'
-                AND $wpdb->posts.post_type = 'product'
-                ORDER BY $wpdb->posts.post_date DESC LIMIT 250";
+            if ( ! empty( $_POST['selectfield'] ) ) {
+                $args['tax_query'][] = [
+                    'taxonomy' => 'product_cat',
+                    'field'    => 'slug',
+                    'terms'    => sanitize_title_with_dashes( wp_unslash( $_POST['selectfield'] ), '', 'save' ),
+                ];
             }
 
-            $query_results = $wpdb->get_results( $querystr );
+            $query_results = dokan()->product->all( $args )->get_posts();
 
             if ( ! empty( $query_results ) ) {
                 foreach ( $query_results as $result ) {
-                    $product    = wc_get_product( $result->ID );
-                    $price      = wc_price( $product->get_price() );
-                    $price_sale = $product->get_sale_price();
-                    $stock      = $product->get_stock_status();
-                    $sku        = $product->get_sku();
-                    $categories = wp_get_post_terms( $result->ID, 'product_cat' );
+                    $product       = wc_get_product( $result->ID );
+                    $price         = wc_price( $product->get_price() );
+                    $price_sale    = $product->get_sale_price();
+                    $price_regular = $product->get_regular_price();
+                    $stock         = $product->get_stock_status();
+                    $sku           = $product->get_sku();
+                    $categories    = wp_get_post_terms( $result->ID, 'product_cat' );
+
+                    if ( 'hidden' === $product->get_catalog_visibility() || 'catalog' === $product->get_catalog_visibility() ) {
+                        continue;
+                    }
 
                     if ( 'variable' === $product->get_type() ) {
                         $price = wc_price( $product->get_variation_price() ) . ' - ' . wc_price( $product->get_variation_price( 'max' ) );
@@ -148,7 +124,7 @@ class Module {
                         $output .= '<div class="product-price">';
                         $output .= '<span class="dokan-ls-regular-price">' . $price . '</span>';
                         if ( ! empty( $price_sale ) ) {
-                            $output .= '<span class="dokan-ls-sale-price">' . wc_price( $price_sale ) . '</span>';
+                            $output .= '<span class="dokan-ls-sale-price">' . wc_price( $price_regular ) . '</span>';
                         }
                         $output .= '</div>';
                     }
@@ -200,7 +176,7 @@ class Module {
             'title'                => __( 'Live Search', 'dokan' ),
             'icon_url'             => plugins_url( 'assets/images/search.svg', __FILE__ ),
             'description'          => __( 'Ajax Live Search Control', 'dokan' ),
-            'document_link'        => 'https://wedevs.com/docs/dokan/modules/how-to-install-configure-use-dokan-live-search/',
+            'document_link'        => 'https://dokan.co/docs/wordpress/modules/how-to-install-configure-use-dokan-live-search/',
             'settings_title'       => __( 'Live Search Settings', 'dokan' ),
             'settings_description' => __( 'You can configure your site settings for customers to utilize when navigating stores for specific products.', 'dokan' ),
         ];
@@ -239,10 +215,15 @@ class Module {
     /**
      * Callback for Widget Initialization
      *
-     * @return void
+     * @since 3.10.2 Updated to comply with `dokan-lite` widget registration process
+     *
+     * @param array $widgets List of widgets to be registered
+     *
+     * @return array
      */
-    public function initialize_widget_register() {
-        register_widget( 'Dokan_Live_Search_Widget' );
+    public function initialize_widget_register( array $widgets ): array {
+        $widgets[ \Dokan_Live_Search_Widget::INSTANCE_KEY ] = \Dokan_Live_Search_Widget::class;
+        return $widgets;
     }
 
     /**

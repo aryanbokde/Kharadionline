@@ -66,8 +66,6 @@ class Talkjs {
         add_action( 'dokan_product_seller_tab_end', array( $this, 'dokan_render_live_chat_button_product_tab' ), 10, 2 );
 
         // enqueue various scripts
-        add_action( 'dokan_after_load_script', array( $this, 'dokan_include_scripts' ) );
-        add_action( 'dokan_enqueue_scripts', array( $this, 'dokan_include_scripts' ) );
         add_action( 'wp_enqueue_scripts', array( $this, 'dokan_enqueue_scripts' ) );
 
         // handle ajax call to login to chat
@@ -79,20 +77,6 @@ class Talkjs {
 
         // init chat sessions
         add_action( 'wp_head', array( $this, 'init_chat_sessions' ), 999 );
-    }
-
-    /**
-     * Initialize scripts after dokan script loaded
-     *
-     * @since  1.3.4
-     *
-     * @return void
-     */
-    public function dokan_include_scripts() {
-        if ( dokan_is_store_page() ) {
-            wp_enqueue_style( 'dokan-magnific-popup' );
-            wp_enqueue_script( 'dokan-magnific-popup' );
-        }
     }
 
     /**
@@ -576,7 +560,7 @@ class Talkjs {
                 </li>
             <?php
         } else {
-            printf( '<button type="submit" style="margin-left: 5px" class="dokan-live-chat-login button alt">%s</button>', __( 'Chat Now', 'dokan' ) );
+            printf( '<div class="dokan-live-chat-modals"></div><button type="submit" style="margin-left: 5px" class="dokan-live-chat-login button alt">%s</button>', __( 'Chat Now', 'dokan' ) );
         }
     }
 

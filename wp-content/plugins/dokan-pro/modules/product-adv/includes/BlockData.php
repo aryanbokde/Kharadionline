@@ -5,6 +5,7 @@ namespace WeDevs\DokanPro\Modules\ProductAdvertisement;
 use WeDevs\DokanPro\Modules\ProductAdvertisement\Helper;
 use WC_Product;
 use Exception;
+use WP_REST_Request;
 
 defined( 'ABSPATH' ) || exit;
 

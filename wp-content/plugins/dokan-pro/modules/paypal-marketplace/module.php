@@ -88,6 +88,8 @@ class Module {
         $this->container['delay_disburse_bg']   = new DelayDisburseFund();
         $this->container['vendor_subscription'] = new VendorSubscription();
         $this->container['hooks']               = new Hooks();
+        $this->container['reverse_withdrawal']  = new ReverseWithdrawal();
+
     }
 
     /**

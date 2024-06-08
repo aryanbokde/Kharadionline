@@ -30,6 +30,8 @@ class Shortcode {
     private function init_hooks() {
         add_shortcode( 'dps_product_pack', [ __CLASS__, 'create_subscription_package_shortcode' ] );
         add_action( 'dokan_after_saving_settings', [ __CLASS__, 'insert_shortcode_into_page' ], 10, 2 );
+
+        add_filter( 'dokan_button_shortcodes', array( $this, 'add_to_dokan_shortcode_menu' ) );
     }
 
     /**
@@ -49,7 +51,11 @@ class Shortcode {
         ob_start();
         ?>
 
-        <?php wc_print_notices(); ?>
+        <?php
+        if ( function_exists( 'wc_print_notices' ) ) {
+            wc_print_notices();
+        }
+        ?>
 
         <div class="dokan-subscription-content">
             <?php
@@ -143,7 +149,7 @@ class Shortcode {
 
                             <?php wp_nonce_field( $nonce ); ?>
                             <input type="hidden" name="<?php echo esc_attr( $input_name ); ?>" value="1">
-                            <input type="submit" name="dps_submit" class="<?php echo esc_attr( "btn btn-sm {$btn_class}" ); ?>" value="<?php echo esc_attr( ucfirst( $notice ) ); ?>">
+                            <input type="submit" name="dps_submit" class="<?php echo esc_attr( "btn btn-sm dokan-btn {$btn_class}" ); ?>" value="<?php echo esc_attr( ucfirst( $notice ) ); ?>">
                         </form>
                         </p>
                         <?php
@@ -191,9 +197,10 @@ class Shortcode {
                         $is_recurring       = $sub_pack->is_recurring();
                         $recurring_interval = $sub_pack->get_recurring_interval();
                         $recurring_period   = $sub_pack->get_period_type();
+                        $pack_id            = apply_filters( 'dokan_vendor_subscription_package_id', get_the_ID() );
                         ?>
 
-                        <div class="product_pack_item <?php echo ( Helper::is_vendor_subscribed_pack( get_the_ID() ) || Helper::pack_renew_seller( get_the_ID() ) ) ? 'current_pack ' : ''; ?><?php echo ( $sub_pack->is_trial() && Helper::has_used_trial_pack( get_current_user_id(), get_the_id() ) ) ? 'fp_already_taken' : ''; ?>">
+                        <div class="product_pack_item <?php echo ( Helper::is_vendor_subscribed_pack( $pack_id ) || Helper::pack_renew_seller( $pack_id ) ) ? 'current_pack ' : ''; ?><?php echo ( $sub_pack->is_trial() && Helper::has_used_trial_pack( get_current_user_id() ) ) ? 'fp_already_taken' : ''; ?>">
                             <div class="pack_price">
 
                                 <span class="dps-amount">
@@ -258,13 +265,13 @@ class Shortcode {
                             </div><!-- .pack_content -->
 
                             <div class="buy_pack_button">
-                                <?php if ( Helper::is_vendor_subscribed_pack( get_the_ID() ) ) : ?>
+                                <?php if ( Helper::is_vendor_subscribed_pack( $pack_id ) ) : ?>
 
                                     <a href="<?php echo get_permalink( get_the_ID() ); ?>" class="dokan-btn dokan-btn-theme buy_product_pack"><?php esc_html_e( 'Your Pack', 'dokan' ); ?></a>
 
-                                <?php elseif ( Helper::pack_renew_seller( get_the_ID() ) ) : ?>
+                                <?php elseif ( Helper::pack_renew_seller( $pack_id ) ) : ?>
 
-                                    <a href="<?php echo do_shortcode( '[add_to_cart_url id="' . get_the_ID() . '"]' ); ?>" class="dokan-btn dokan-btn-theme buy_product_pack"><?php esc_html_e( 'Renew', 'dokan' ); ?></a>
+                                    <a href="<?php echo do_shortcode( '[add_to_cart_url id="' . $pack_id . '"]' ); ?>" class="dokan-btn dokan-btn-theme buy_product_pack"><?php esc_html_e( 'Renew', 'dokan' ); ?></a>
 
                                 <?php else : ?>
 
@@ -335,6 +342,24 @@ class Shortcode {
         if ( is_wp_error( $insert ) ) {
             return wp_send_json_error( $insert->get_error_message() );
         }
+    }
+
+    /**
+     * Add product subscription shortocde to Dokan shortcode menu
+     *
+     * @since 3.9.0
+     *
+     * @param array $shortcodes
+     *
+     * @return array
+     */
+    public function add_to_dokan_shortcode_menu( $shortcodes ) {
+        $shortcodes['dps_product_pack'] = array(
+            'title'   => __( 'Create product subscription pack shortcode', 'dokan' ),
+            'content' => '[dps_product_pack]'
+        );
+
+        return $shortcodes;
     }
 }
 

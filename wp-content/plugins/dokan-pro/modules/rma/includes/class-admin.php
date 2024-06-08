@@ -13,6 +13,7 @@ class Dokan_RMA_Admin {
     public function __construct() {
         add_filter( 'dokan_settings_sections', array( $this, 'load_settings_section' ), 20 );
         add_filter( 'dokan_settings_fields', array( $this, 'load_settings_fields' ), 20 );
+        add_action( 'dokan_after_saving_settings', [ $this, 'after_save_settings' ], 10, 3 );
     }
 
     /**
@@ -28,7 +29,7 @@ class Dokan_RMA_Admin {
             'title'                => __( 'RMA', 'dokan' ),
             'icon_url'             => DOKAN_RMA_ASSETS_DIR . '/images/rma.svg',
             'description'          => __( 'Manage Return & Warranty', 'dokan' ),
-            'document_link'        => 'https://wedevs.com/docs/dokan/modules/vendor-rma/',
+            'document_link'        => 'https://dokan.co/docs/wordpress/modules/vendor-rma/',
             'settings_title'       => __( 'RMA Settings', 'dokan' ),
             'settings_description' => __( 'You can configure your site settings to allow vendors to offer customized return and warranty facility on their sold products.', 'dokan' ),
         ];
@@ -88,5 +89,26 @@ class Dokan_RMA_Admin {
         ];
 
         return $fields;
+    }
+
+    /**
+     * After Save Admin Settings.
+     *
+     * @since 3.10.0
+     *
+     * @param string $option_name Option Key (Section Key).
+     * @param array $option_value Option value.
+     * @param array $old_options Option Previous value.
+     *
+     * @return void
+     */
+    public function after_save_settings( $option_name, $option_value, $old_options ) {
+        if ( 'dokan_rma' !== $option_name ) {
+            return;
+        }
+
+        foreach ( $option_value['rma_reasons'] as $key => $status ) {
+            do_action( 'dokan_pro_register_rms_reason', $status['value'] );
+        }
     }
 }

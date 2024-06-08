@@ -132,8 +132,5 @@ class Dokan_Seller_Vacation_Store_Settings {
                 update_user_meta( $store_id, 'dokan_enable_seller_vacation', false );
             }
         }
-
-        $vendor = dokan()->vendor->get( $store_id );
-        dokan_seller_vacation_update_product_status( [ $vendor ], false );
     }
 }

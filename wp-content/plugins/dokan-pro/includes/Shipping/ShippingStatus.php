@@ -2,8 +2,10 @@
 
 namespace WeDevs\DokanPro\Shipping;
 
+use WC_Order;
 use WC_Order_Item_Product;
 use WeDevs\Dokan\Cache;
+use WP_Post;
 
 /**
  * Shipping Status Class
@@ -59,17 +61,26 @@ class ShippingStatus {
         add_action( 'dokan_order_detail_after_order_items', [ $this, 'render_shipment_content' ], 15 );
         add_action( 'wp_ajax_dokan_add_shipping_status_tracking_info', [ $this, 'add_shipping_status_tracking_info' ] );
         add_action( 'wp_ajax_dokan_update_shipping_status_tracking_info', [ $this, 'update_shipping_status_tracking_info' ] );
-        add_filter( 'manage_edit-shop_order_columns', [ $this, 'admin_shipping_status_tracking_columns' ], 10 );
-        add_action( 'manage_shop_order_posts_custom_column', [ $this, 'shop_order_shipping_status_columns' ], 11 );
         add_action( 'woocommerce_order_details_after_order_table', [ $this, 'shipment_order_details_after_order_table' ], 11 );
         add_action( 'woocommerce_account_orders_columns', [ $this, 'shipment_my_account_my_orders_columns' ], 11 );
         add_action( 'woocommerce_my_account_my_orders_column_dokan-shipment-status', [ $this, 'shipment_my_account_orders_column_data' ], 11 );
-        add_action( 'add_meta_boxes', [ $this, 'shipment_order_add_meta_boxes' ], 11 );
+        add_action( 'add_meta_boxes', [ $this, 'shipment_order_add_meta_boxes' ], 11, 2 );
         add_filter( 'dokan_localized_args', [ $this, 'set_localized_data' ] );
+        add_action( 'dokan_after_saving_settings', [ $this, 'after_save_settings' ], 10, 3 );
+
+        if ( dokan_pro_is_hpos_enabled() ) {
+            // hpos equivalent hooks for manage_edit-shop_order_columns
+            add_filter( 'manage_woocommerce_page_wc-orders_columns', [ $this, 'admin_shipping_status_tracking_columns' ], 10 );
+            // hpos equivalent hooks for `manage_shop_order_posts_custom_column`
+            add_action( 'manage_woocommerce_page_wc-orders_custom_column', [ $this, 'shop_order_shipping_status_columns' ], 11, 2 );
+        } else {
+            add_filter( 'manage_edit-shop_order_columns', [ $this, 'admin_shipping_status_tracking_columns' ], 10 );
+            add_action( 'manage_shop_order_posts_custom_column', [ $this, 'shop_order_shipping_status_columns' ], 11, 2 );
+        }
     }
 
     /**
-     * Add shipping status section in Dokan settings
+     * Add a shipping status section in Dokan settings
      *
      * @since 3.2.4
      *
@@ -83,7 +94,7 @@ class ShippingStatus {
             'title'                => __( 'Shipping Status', 'dokan' ),
             'icon_url'             => DOKAN_PRO_PLUGIN_ASSEST . '/images/admin-settings-icons/shipping.svg',
             'description'          => __( 'Manage Shipping Status', 'dokan' ),
-            'document_link'        => 'https://wedevs.com/docs/dokan/settings/dokan-shipping-status/',
+            'document_link'        => 'https://dokan.co/docs/wordpress/settings/dokan-shipping-status/',
             'settings_title'       => __( 'Shipping Status Settings', 'dokan' ),
             'settings_description' => __( 'You can configure settings to allow customers to track their products.', 'dokan' ),
         ];
@@ -99,29 +110,29 @@ class ShippingStatus {
      * @return void
      */
     public function render_shipping_status_settings( $fields ) {
-        $shipment_warning = array();
+        $shipment_warning = [];
         $selling_type     = dokan_pro()->digital_product->get_selling_product_type();
 
         if ( 'sell_digital' === $selling_type ) {
-            $shipment_warning['digital_warning'] = array(
+            $shipment_warning['digital_warning'] = [
                 'name'  => 'digital_warning',
                 'label' => __( 'Warning!', 'dokan' ),
                 'type'  => 'warning',
                 'desc'  => __( 'Your selling product type is Digital mode, shipping tracking system work with physical products only.', 'dokan' ),
-            );
+            ];
         }
 
         if ( ! $this->wc_shipping_enabled ) {
-            $shipment_warning['wc_warning'] = array(
+            $shipment_warning['wc_warning'] = [
                 'name'  => 'wc_warning',
                 'label' => __( 'Warning!', 'dokan' ),
                 'type'  => 'warning',
                 'desc'  => __( 'Your WooCommerce shipping is currently disabled, therefore you first need to enable WC Shipping then it will work for vendors', 'dokan' ),
-            );
+            ];
         }
 
         $fields['dokan_shipping_status_setting'] = [
-            'enabled' => [
+            'enabled'                  => [
                 'name'  => 'enabled',
                 'label' => __( 'Allow Shipment Tracking', 'dokan' ),
                 'type'  => 'switcher',
@@ -136,7 +147,7 @@ class ShippingStatus {
                 'options' => dokan_get_shipping_tracking_providers_list(),
                 'tooltip' => __( 'Choose the 3rd party shipping providers.', 'dokan' ),
             ],
-            'shipping_status_list' => [
+            'shipping_status_list'     => [
                 'name'  => 'shipping_status_list',
                 'label' => __( 'Shipping Status', 'dokan' ),
                 'type'  => 'repeatable',
@@ -191,7 +202,32 @@ class ShippingStatus {
                 ],
             ];
 
+            foreach ( $option['shipping_status_list'] as $key => $status ) {
+                do_action( 'dokan_pro_register_shipping_status', $status['value'] );
+            }
+
             update_option( 'dokan_shipping_status_setting', $option, false );
+        }
+    }
+
+    /**
+     * After Save Admin Settings.
+     *
+     * @since 3.10.0
+     *
+     * @param string $option_name Option Key (Section Key).
+     * @param array $option_value Option value.
+     * @param array $old_options Option Previous value.
+     *
+     * @return void
+     */
+    public function after_save_settings( $option_name, $option_value, $old_options ) {
+        if ( 'dokan_shipping_status_setting' !== $option_name ) {
+            return;
+        }
+
+        foreach ( $option_value['shipping_status_list'] as $key => $status ) {
+            do_action( 'dokan_pro_register_shipping_status', $status['value'] );
         }
     }
 
@@ -220,7 +256,7 @@ class ShippingStatus {
 
         if ( $order ) {
             $line_items    = $order->get_items( apply_filters( 'woocommerce_admin_order_item_types', 'line_item' ) );
-            $shipment_info = dokan_pro()->shipment->get_shipping_tracking_info( $order_id );
+            $shipment_info = $this->get_shipping_tracking_info( $order_id );
             $is_shipped    = $this->is_order_shipped( $order );
 
             if ( $order->get_status() === 'cancelled' || $order->get_status() === 'refunded' ) {
@@ -229,7 +265,7 @@ class ShippingStatus {
         }
 
         dokan_get_template_part(
-            'orders/shipment/html-shipping-status', '', array(
+            'orders/shipment/html-shipping-status', '', [
                 'pro'                 => true,
                 'd_providers'         => $default_providers,
                 's_providers'         => $selected_providers,
@@ -240,7 +276,7 @@ class ShippingStatus {
                 'shipment_info'       => $shipment_info,
                 'is_shipped'          => $is_shipped,
                 'disabled_create_btn' => $disabled_create_btn,
-            )
+            ]
         );
     }
 
@@ -249,13 +285,13 @@ class ShippingStatus {
      *
      * @since 3.2.4
      *
-     * @param obj $order
+     * @param WC_Order $order
      *
-     * @param boolean
+     * @return bool
      */
     public function is_order_shipped( $order = '' ) {
         if ( empty( $order ) ) {
-            return;
+            return false;
         }
 
         $get_items       = $order->get_items( 'line_item' );
@@ -263,7 +299,7 @@ class ShippingStatus {
         $items_available = [];
 
         foreach ( $get_items as $item_id => $item ) {
-            if ( ! dokan_pro()->shipment->get_status_order_item_shipped( $order_id, $item_id, $item['qty'], 0 ) ) {
+            if ( ! $this->get_status_order_item_shipped( $order_id, $item_id, $item['qty'], 0 ) ) {
                 $items_available[] = $item_id;
             }
         }
@@ -335,9 +371,9 @@ class ShippingStatus {
             do_action( 'dokan_order_shipping_status_tracking_notify', $post_id, $tracking_info, $ship_info, $user_id, true );
         }
 
-        dokan_pro()->shipment->add_shipping_status_tracking_notes( $post_id, $shipment_id, $ship_info, $order );
+        $this->add_shipping_status_tracking_notes( $post_id, $shipment_id, $ship_info, $order );
 
-        echo '' . esc_html__( 'Sucessfully Created New Shipment', 'dokan' ) . '';
+        echo esc_html__( 'Sucessfully Created New Shipment', 'dokan' );
 
         die();
     }
@@ -364,16 +400,13 @@ class ShippingStatus {
             die( -1 );
         }
 
-        $shipment_id = isset( $_POST['shipment_id'] ) ? absint( $_POST['shipment_id'] ) : 0;
-        $user_id     = dokan_get_current_user_id();
-
-        $time           = current_time( 'mysql' );
-        $status         = isset( $_POST['shipped_status'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['shipped_status'] ) ) ) : '';
-        $provider       = isset( $_POST['shipping_provider'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['shipping_provider'] ) ) ) : '';
-        $status_date    = isset( $_POST['shipped_status_date'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['shipped_status_date'] ) ) ) : '';
-        $number         = isset( $_POST['tracking_status_number'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['tracking_status_number'] ) ) ) : '';
-        $is_notify      = isset( $_POST['is_notify'] ) ? sanitize_text_field( wp_unslash( $_POST['is_notify'] ) ) : '';
-        $ship_comments  = isset( $_POST['shipment_comments'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['shipment_comments'] ) ) ) : '';
+        $shipment_id   = isset( $_POST['shipment_id'] ) ? absint( $_POST['shipment_id'] ) : 0;
+        $status        = isset( $_POST['shipped_status'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['shipped_status'] ) ) ) : '';
+        $provider      = isset( $_POST['shipping_provider'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['shipping_provider'] ) ) ) : '';
+        $status_date   = isset( $_POST['shipped_status_date'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['shipped_status_date'] ) ) ) : '';
+        $number        = isset( $_POST['tracking_status_number'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['tracking_status_number'] ) ) ) : '';
+        $is_notify     = isset( $_POST['is_notify'] ) ? sanitize_text_field( wp_unslash( $_POST['is_notify'] ) ) : '';
+        $ship_comments = isset( $_POST['shipment_comments'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['shipment_comments'] ) ) ) : '';
 
         $provider_label = dokan_get_shipping_tracking_provider_by_key( $provider, 'label' );
         $provider_url   = dokan_get_shipping_tracking_provider_by_key( $provider, 'url', $number );
@@ -396,7 +429,7 @@ class ShippingStatus {
 
         global $wpdb;
 
-        $old_tracking_info = dokan_pro()->shipment->get_shipping_tracking_info( $shipment_id, 'shipment_item' );
+        $old_tracking_info = $this->get_shipping_tracking_info( $shipment_id, 'shipment_item' );
 
         $ship_info = '';
 
@@ -452,10 +485,10 @@ class ShippingStatus {
 
         dokan_shipment_cache_clear_group( $post_id );
 
-        dokan_pro()->shipment->add_shipping_status_tracking_notes( $post_id, $shipment_id, $ship_info, $order );
+        $this->add_shipping_status_tracking_notes( $post_id, $shipment_id, $ship_info, $order );
 
         if ( 'on' === $is_notify ) {
-            $tracking_item = dokan_pro()->shipment->get_shipping_tracking_info( $shipment_id, 'shipment_item' );
+            $tracking_item = $this->get_shipping_tracking_info( $shipment_id, 'shipment_item' );
 
             do_action( 'dokan_order_shipping_status_tracking_notify', $post_id, $tracking_item, $ship_info, dokan_get_current_user_id(), false );
         }
@@ -472,11 +505,12 @@ class ShippingStatus {
      *
      * @since 3.2.4
      *
-     * @param int    $post_id
-     * @param string $ship_info
-     * @param obj    $order
+     * @param int      $post_id
+     * @param int      $shipment_id
+     * @param string   $ship_info
+     * @param WC_Order $order
      *
-     * @param void
+     * @return void
      */
     public function add_shipping_status_tracking_notes( $post_id, $shipment_id, $ship_info, $order ) {
         if ( 'on' !== $this->enabled || ! $this->wc_shipping_enabled ) {
@@ -516,15 +550,15 @@ class ShippingStatus {
      * @return array $notes
      */
     public function custom_get_order_notes( $order_id, $shipment_id ) {
-        $notes = array();
-        $args  = array(
+        $notes = [];
+        $args  = [
             'post_id' => (int) $order_id,
             'approve' => 'approve',
             'parent'  => $shipment_id,
             'type'    => 'shipment_order_note',
-        );
+        ];
 
-        remove_filter( 'comments_clauses', array( 'WC_Comments', 'exclude_order_comments' ) );
+        remove_filter( 'comments_clauses', [ 'WC_Comments', 'exclude_order_comments' ] );
 
         $comments = get_comments( $args );
 
@@ -533,7 +567,7 @@ class ShippingStatus {
             $notes[]                  = $comment;
         }
 
-        add_filter( 'comments_clauses', array( 'WC_Comments', 'exclude_order_comments' ) );
+        add_filter( 'comments_clauses', [ 'WC_Comments', 'exclude_order_comments' ] );
 
         return $notes;
     }
@@ -570,7 +604,7 @@ class ShippingStatus {
      *
      * @param array $post_data
      *
-     * @return void
+     * @return array|bool
      */
     public function prepare_for_db( $post_data ) {
         if ( empty( $post_data ) ) {
@@ -595,8 +629,8 @@ class ShippingStatus {
         }
 
         $request_items = json_decode( $item_qty );
-        $item_id_data  = array();
-        $item_qty_data = array();
+        $item_id_data  = [];
+        $item_qty_data = [];
 
         if ( is_object( $request_items ) ) {
             foreach ( $request_items as $item_id => $quantity ) {
@@ -606,7 +640,7 @@ class ShippingStatus {
                 $order_item_details = new WC_Order_Item_Product( $item_id );
                 $order_quantity     = $order_item_details->get_quantity();
 
-                $is_shiptted = dokan_pro()->shipment->get_status_order_item_shipped( $order_id, $item_id, $order_quantity, 1 );
+                $is_shiptted = $this->get_status_order_item_shipped( $order_id, $item_id, $order_quantity, 1 );
                 $item_qty    = $is_shiptted ? $is_shiptted : 0;
 
                 if ( $quantity <= (int) $item_qty && $quantity > 0 ) {
@@ -648,12 +682,12 @@ class ShippingStatus {
      *
      * @since 3.2.4
      *
-     * @param int $order_id
+     * @param int   $order_id
      *
      * @param array $shipment
      */
     public function get_shipping_tracking_data( $order_id ) {
-        // getting result from cache
+        // getting a result from cache
         $cache_group = 'seller_shipment_tracking_data_' . $order_id;
         $cache_key   = 'shipping_tracking_data_' . $order_id;
         $results     = Cache::get( $cache_key, $cache_group );
@@ -668,6 +702,7 @@ class ShippingStatus {
         if ( empty( $tracking_info ) ) {
             // no shipment is added, so set cache and return empty array
             Cache::set( $cache_key, [], $cache_group );
+
             return [];
         }
 
@@ -683,11 +718,11 @@ class ShippingStatus {
             $shipping_status_count[ $shipping_status ] = isset( $shipping_status_count[ $shipping_status ] ) ? $shipping_status_count[ $shipping_status ] + 1 : 1;
 
             // count total item
-            $total_item_count++;
+            ++$total_item_count;
 
             // count total item without cancelled shipping
             if ( 'ss_cancelled' !== $shipping_status ) {
-                $total_item_count_without_cancelled++;
+                ++$total_item_count_without_cancelled;
             }
 
             // count line item
@@ -723,11 +758,12 @@ class ShippingStatus {
      * @return array
      */
     public function admin_shipping_status_tracking_columns( $existing_columns ) {
-        $existing_columns['shipping_status_tracking'] = __( 'Shipment', 'dokan' );
-
-        if ( ! current_user_can( 'manage_woocommerce' ) || ( isset( $_GET['author'] ) && ! empty( $_GET['author'] ) ) ) {
-            unset( $existing_columns['shipping_status_tracking'] );
+        // Remove seller, suborder column if seller is viewing his own product
+        if ( ! current_user_can( 'manage_woocommerce' ) || ( ! empty( $_GET['author'] ) ) ) { // phpcs:ignore
+            return $existing_columns;
         }
+
+        $existing_columns['shipping_status_tracking'] = __( 'Shipment', 'dokan' );
 
         return apply_filters( 'dokan_edit_shop_order_columns', $existing_columns );
     }
@@ -737,31 +773,31 @@ class ShippingStatus {
      *
      * @since 3.2.4
      *
-     * @global type $post
-     * @global \WC_Order $the_order
-     *
-     * @param type $col
+     * @param string       $col
+     * @param int|WC_Order $post_id
      *
      * @return void
      */
-    public function shop_order_shipping_status_columns( $col ) {
-        global $post, $the_order;
-
-        if ( empty( $the_order ) || $the_order->get_id() !== $post->ID ) {
-            $the_order = new \WC_Order( $post->ID );
-        }
-
+    public function shop_order_shipping_status_columns( $col, $post_id ) {
+        // return if user doesn't have access
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
-            return $col;
+            return;
         }
 
-        $has_sub = get_post_meta( $post->ID, 'has_sub_order', true );
-        $status  = '';
+        // check if post_id is an order
+        if ( ! dokan_pro_is_order( $post_id ) ) {
+            return;
+        }
 
-        if ( $has_sub === '1' ) {
-            $status = dokan_get_main_order_shipment_current_status( $post->ID );
+        if ( 'shipping_status_tracking' !== $col ) {
+            return;
+        }
+
+        $order = wc_get_order( $post_id );
+        if ( $order->get_meta( 'has_sub_order' ) ) {
+            $status = dokan_get_main_order_shipment_current_status( $order->get_id() );
         } else {
-            $status = dokan_get_order_shipment_current_status( $post->ID );
+            $status = dokan_get_order_shipment_current_status( $order->get_id() );
         }
 
         switch ( $col ) {
@@ -776,25 +812,32 @@ class ShippingStatus {
      *
      * @since 3.2.4
      *
+     * $param string $post_type
+     * $param WP_POST|WC_Order $post
+     *
      * @return void
      */
-    public function shipment_order_add_meta_boxes() {
-        global $post;
+    public function shipment_order_add_meta_boxes( $post_type, $post ) {
+        $screen = dokan_pro_is_hpos_enabled()
+            ? wc_get_page_screen_id( 'shop-order' )
+            : 'shop_order';
 
-        $order = dokan()->order->get( $post->ID );
+        if ( $screen !== $post_type ) {
+            return;
+        }
+
+        $order_id = $post instanceof \WC_Abstract_Order ? $post->get_id() : $post->ID;
+        $order = dokan()->order->get( $order_id );
 
         if ( empty( $order ) ) {
             return;
         }
 
-        $has_sub = get_post_meta( $post->ID, 'has_sub_order', true );
-
-        if ( $has_sub === '1' ) {
+        if ( $order->get_meta( 'has_sub_order' ) ) {
             return;
         }
 
-        $has_sub = get_post_meta( $post->ID, 'has_sub_order', true );
-        add_meta_box( 'dokan_shipment_status_details', __( 'Shipments', 'dokan' ), [ self::class, 'shipment_order_details_add_meta_boxes' ], 'shop_order', 'normal', 'core' );
+        add_meta_box( 'dokan_shipment_status_details', __( 'Shipments', 'dokan' ), [ self::class, 'shipment_order_details_add_meta_boxes' ], $screen, 'normal', 'core' );
     }
 
     /**
@@ -806,11 +849,11 @@ class ShippingStatus {
      * @param string $context
      * @param bool   $ignore_cancelled
      *
-     * @param array $shipment
+     * @return array  $shipment
      */
     public function get_shipping_tracking_info( $id, $context = 'shipment_info', $ignore_cancelled = false ) {
         if ( empty( $id ) || ! in_array( $context, [ 'shipment_info', 'shipment_item' ], true ) ) {
-            return;
+            return [];
         }
 
         global $wpdb;
@@ -842,7 +885,7 @@ class ShippingStatus {
      * @param int $item_qty
      * @param int $need_available
      *
-     * @param mix
+     * @return  bool|int
      */
     public function get_status_order_item_shipped( $order_id, $item_id, $item_qty = 0, $need_available = 0 ) {
         // based on $need_available decide what to return in case of validation error
@@ -852,7 +895,7 @@ class ShippingStatus {
             return $return;
         }
 
-        // get all shipment related data for this order
+        // get all shipment-related data for this order
         $shipping_data = $this->get_shipping_tracking_data( $order_id );
 
         // check if data exits
@@ -887,11 +930,8 @@ class ShippingStatus {
      *
      * @return void
      */
-    public static function shipment_order_details_add_meta_boxes() {
-        global $post;
-
-        $order = dokan()->order->get( $post->ID );
-
+    public static function shipment_order_details_add_meta_boxes( $post_object ) {
+        $order = ( $post_object instanceof WP_Post ) ? wc_get_order( $post_object->ID ) : $post_object;
         if ( empty( $order ) ) {
             return;
         }
@@ -899,10 +939,10 @@ class ShippingStatus {
         $order_id      = $order->get_id();
         $shipment_info = dokan_pro()->shipment->get_shipping_tracking_info( $order_id );
         $incre         = 1;
-        $line_items    = [];
 
         if ( empty( $shipment_info ) ) {
             echo __( 'No shipment added for this order', 'dokan' );
+
             return;
         }
 
@@ -920,7 +960,7 @@ class ShippingStatus {
             $shipment_timeline = dokan_pro()->shipment->custom_get_order_notes( $order_id, $shipment_id );
 
             dokan_get_template_part(
-                'orders/shipment/html-shipments-list-admin', '', array(
+                'orders/shipment/html-shipments-list-admin', '', [
                     'pro'               => true,
                     'shipment_id'       => $shipment_id,
                     'order_id'          => $order_id,
@@ -932,12 +972,10 @@ class ShippingStatus {
                     'item_qty'          => $item_qty,
                     'order'             => $order,
                     'line_items'        => $line_items,
-                    'incre'             => $incre,
+                    'incre'             => $incre++,
                     'shipment_timeline' => $shipment_timeline,
-                )
+                ]
             );
-
-            $incre++;
         endforeach;
     }
 
@@ -946,7 +984,7 @@ class ShippingStatus {
      *
      * @since 3.2.4
      *
-     * @param Obj $order
+     * @param WC_Order $order
      *
      * @return void
      */
@@ -956,7 +994,7 @@ class ShippingStatus {
         }
 
         $order_id      = $order->get_id();
-        $shipment_info = dokan_pro()->shipment->get_shipping_tracking_info( $order_id );
+        $shipment_info = $this->get_shipping_tracking_info( $order_id );
         $line_items    = $order->get_items( 'line_item' );
 
         if ( empty( $shipment_info ) ) {
@@ -964,12 +1002,12 @@ class ShippingStatus {
         }
 
         dokan_get_template_part(
-            'orders/shipment/html-customer-shipments-list', '', array(
+            'orders/shipment/html-customer-shipments-list', '', [
                 'pro'           => true,
                 'shipment_info' => $shipment_info,
                 'order'         => $order,
                 'line_items'    => $line_items,
-            )
+            ]
         );
     }
 
@@ -983,7 +1021,7 @@ class ShippingStatus {
      * @return array
      */
     public function shipment_my_account_my_orders_columns( $columns ) {
-        $new_columns = array();
+        $new_columns = [];
 
         foreach ( $columns as $key => $name ) {
             $new_columns[ $key ] = $name;
@@ -1002,15 +1040,14 @@ class ShippingStatus {
      *
      * @since 3.2.4
      *
-     * @param obj $order
+     * @param WC_Order $order
      *
-     * @return mix
+     * @return void
      */
     public function shipment_my_account_orders_column_data( $order ) {
-        $has_sub = get_post_meta( $order->get_id(), 'has_sub_order', true );
-
-        if ( $has_sub === '1' ) {
+        if ( $order->get_meta( 'has_sub_order' ) ) {
             echo dokan_get_main_order_shipment_current_status( $order->get_id() );
+
             return;
         }
 
@@ -1027,7 +1064,7 @@ class ShippingStatus {
      * @return array
      */
     public function set_localized_data( $args ) {
-        $args['shipment_status_error_msg'] = __( 'Error! Please enter the correct data for all shipments', 'dokan' );
+        $args['shipment_status_error_msg']  = __( 'Error! Please enter the correct data for all shipments', 'dokan' );
         $args['shipment_status_update_msg'] = __( 'Shipment Successfully Updated', 'dokan' );
 
         return $args;

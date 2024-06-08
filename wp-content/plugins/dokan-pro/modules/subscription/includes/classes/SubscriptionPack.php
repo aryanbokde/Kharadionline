@@ -331,7 +331,7 @@ class SubscriptionPack extends VendorSubscription {
     public function get_package_title() {
         $package = $this->get_product();
 
-        return $package ? $package->get_title() : '';
+        return $package ? apply_filters( 'dokan_vendor_subscription_package_title', $package->get_title(), $package ) : '';
     }
 
     /**
@@ -533,6 +533,9 @@ class SubscriptionPack extends VendorSubscription {
         } else {
             update_user_meta( $this->get_vendor(), 'product_pack_enddate', $this->get_product_pack_end_date() );
         }
+
+        // set can_post_product to 1
+        update_user_meta( $this->get_vendor(), 'can_post_product', '1' );
 
         // reset subscription cancelled status
         $this->reset_active_cancelled_subscription();

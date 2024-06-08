@@ -35,7 +35,7 @@ do_action( 'woocommerce_email_header', $email_heading, $email );
                     <p class='dokan-stars'>
                         <?php
                         for ( $i = 0; $i < $rating; $i++ ) {
-                            printf( '<i class="star-%1$s dashicons dashicons-star-filled" data-rating="%2$s"></i>', $i, $i );
+                            echo '<span>&#9733;</span>';
                         }
                         ?>
                     </p>

@@ -7,15 +7,18 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'WeDevs\\DokanPro\\Modules\\Wholesale\\' => array($baseDir . '/modules/wholesale/includes'),
+    'WeDevs\\DokanPro\\Modules\\VendorVerification\\' => array($baseDir . '/modules/vendor-verification/includes'),
     'WeDevs\\DokanPro\\Modules\\VendorAnalytics\\' => array($baseDir . '/modules/vendor-analytics/includes'),
     'WeDevs\\DokanPro\\Modules\\TableRate\\' => array($baseDir . '/modules/table-rate-shipping/includes'),
     'WeDevs\\DokanPro\\Modules\\Stripe\\' => array($baseDir . '/modules/stripe/includes'),
     'WeDevs\\DokanPro\\Modules\\StripeExpress\\' => array($baseDir . '/modules/stripe-express/includes'),
+    'WeDevs\\DokanPro\\Modules\\StoreReviews\\' => array($baseDir . '/modules/store-reviews/classes'),
     'WeDevs\\DokanPro\\Modules\\SellerBadge\\' => array($baseDir . '/modules/seller-badge/includes'),
     'WeDevs\\DokanPro\\Modules\\RequestForQuotation\\' => array($baseDir . '/modules/request-for-quotation/includes'),
     'WeDevs\\DokanPro\\Modules\\Razorpay\\' => array($baseDir . '/modules/razorpay/includes'),
     'WeDevs\\DokanPro\\Modules\\RankMath\\' => array($baseDir . '/modules/rank-math/includes'),
     'WeDevs\\DokanPro\\Modules\\RMA\\' => array($baseDir . '/modules/rma/includes'),
+    'WeDevs\\DokanPro\\Modules\\ProductQA\\' => array($baseDir . '/modules/product-qa/includes'),
     'WeDevs\\DokanPro\\Modules\\ProductAdvertisement\\' => array($baseDir . '/modules/product-adv/includes'),
     'WeDevs\\DokanPro\\Modules\\PayPalMarketplace\\' => array($baseDir . '/modules/paypal-marketplace/includes'),
     'WeDevs\\DokanPro\\Modules\\OrderMinMax\\' => array($baseDir . '/modules/order-min-max/includes'),
@@ -25,6 +28,7 @@ return array(
     'WeDevs\\DokanPro\\Modules\\Geolocation\\' => array($baseDir . '/modules/geolocation/includes'),
     'WeDevs\\DokanPro\\Modules\\Elementor\\' => array($baseDir . '/modules/elementor/includes'),
     'WeDevs\\DokanPro\\Modules\\DeliveryTime\\' => array($baseDir . '/modules/delivery-time/includes'),
+    'WeDevs\\DokanPro\\Dependencies\\' => array($baseDir . '/dependencies'),
     'WeDevs\\DokanPro\\' => array($baseDir . '/includes'),
     'Twilio\\' => array($vendorDir . '/twilio/sdk/src/Twilio'),
     'Stripe\\' => array($vendorDir . '/stripe/stripe-php/lib'),
@@ -65,4 +69,5 @@ return array(
     'GPBMetadata\\Google\\Analytics\\Admin\\' => array($vendorDir . '/google/analytics-admin/metadata'),
     'GPBMetadata\\ApiCore\\' => array($vendorDir . '/google/gax/metadata/ApiCore'),
     'Firebase\\JWT\\' => array($vendorDir . '/firebase/php-jwt/src'),
+    'Appsero\\' => array($vendorDir . '/appsero/client/src', $vendorDir . '/appsero/updater/src'),
 );

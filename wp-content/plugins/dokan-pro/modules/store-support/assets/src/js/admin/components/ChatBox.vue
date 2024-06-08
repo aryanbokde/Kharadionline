@@ -8,7 +8,7 @@
         <div class="chat-info-box">
             <div class="chat-sender-info">
                 <div class="chat-user-box">
-                    <span class="chat-user">{{ user }}</span>
+                    <span class="chat-user" v-html="user"></span>
                 </div>
             </div>
             <div class="chat-text" :class="getClassByUserType()">

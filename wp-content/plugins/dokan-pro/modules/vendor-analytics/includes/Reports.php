@@ -25,13 +25,13 @@ use WP_Error;
  */
 class Reports {
     /**
-      * Handle product for staff uploading and editing
-      *
-      * @since 1.0.0
-      * @since 3.7.23 Return type changed to array.
-      *
-      * @return array
-      */
+     * Handle product for staff uploading and editing
+     *
+     * @since 1.0.0
+     * @since 3.7.23 Return type changed to array.
+     *
+     * @return array
+     */
     public function filter_page_path( array $filter ): array {
         if ( ! is_user_logged_in() ) {
             return $filter;
@@ -222,46 +222,46 @@ class Reports {
 
         $result = $this->dokan_get_vendor_analytics( $start_date, $end_date, $metrics, $dimensions, $sort, [], 5 );
 
-        if ( empty( $result ) || is_wp_error( $result ) ) {
+        dokan_analytics_date_form( $start_date, $end_date );
+
+        if ( is_wp_error( $result ) || ! $result || ! $result->getRows() ) {
             esc_html_e( 'There is no analytics found for your store.', 'dokan' );
             return;
         }
-
-        dokan_analytics_date_form( $start_date, $end_date );
 
         if ( ! empty( $result->getRowCount() ) ) {
             ?>
             <table class="table table-striped" style='table-layout: fixed; width: 100%'>
                 <thead>
+                <tr>
+                    <?php
+                    foreach ( $headers as $header ) {
+                        echo '<th>' . esc_html( $header ) . '</th>';
+                    }
+                    ?>
+                </tr>
+                </thead>
+                <tbody>
+                <?php
+                foreach ( $result->getRows() as $row ) :
+                    ?>
                     <tr>
                         <?php
-                        foreach ( $headers as $header ) {
-                            echo '<th>' . esc_html( $header ) . '</th>';
+                        foreach ( $row->getDimensionValues() as $index => $dimension ) {
+                            $dimension_value = ! empty( $formatters['dimension'][ $index ] ) && is_callable( $formatters['dimension'][ $index ] ) ? call_user_func( $formatters['dimension'][ $index ], $dimension->getValue() ) : $dimension->getValue();
+
+                            echo '<td style="word-wrap: break-word">' . esc_html( $dimension_value ) . '</td>';
+                        }
+                        foreach ( $row->getMetricValues() as $index => $metric ) {
+                            $metric_value = ! empty( $formatters['metric'][ $index ] ) && is_callable( $formatters['metric'][ $index ] ) ? call_user_func( $formatters['metric'][ $index ], $metric->getValue() ) : $metric->getValue();
+
+                            echo '<td style="word-wrap: break-word">' . esc_html( $metric_value ) . '</td>';
                         }
                         ?>
                     </tr>
-                </thead>
-                <tbody>
-                    <?php
-                    foreach ( $result->getRows() as $row ) :
-                        ?>
-                        <tr>
-                            <?php
-                            foreach ( $row->getDimensionValues() as $index => $dimension ) {
-                                $dimension_value = ! empty( $formatters['dimension'][ $index ] ) && is_callable( $formatters['dimension'][ $index ] ) ? call_user_func( $formatters['dimension'][ $index ], $dimension->getValue() ) : $dimension->getValue();
-
-                                echo '<td style="word-wrap: break-word">' . esc_html( $dimension_value ) . '</td>';
-                            }
-                            foreach ( $row->getMetricValues() as $index => $metric ) {
-                                $metric_value = ! empty( $formatters['metric'][ $index ] ) && is_callable( $formatters['metric'][ $index ] ) ? call_user_func( $formatters['metric'][ $index ], $metric->getValue() ) : $metric->getValue();
-
-                                echo '<td style="word-wrap: break-word">' . esc_html( $metric_value ) . '</td>';
-                            }
-                            ?>
-                        </tr>
-                        <?php
-                    endforeach;
-                    ?>
+                <?php
+                endforeach;
+                ?>
                 </tbody>
             </table>
             <?php

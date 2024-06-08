@@ -34,7 +34,7 @@ class BlockData {
 
     /**
      * Registers necessary hooks.
-     * 
+     *
      * @since 3.7.17
      *
      * @return void
@@ -117,6 +117,6 @@ class BlockData {
         $product->update_meta_data( 'dokan_geo_longitude', $dokan_geo_longitude );
         $product->update_meta_data( 'dokan_geo_address', $dokan_geo_address );
         $product->update_meta_data( 'dokan_geo_public', $dokan_geo_public );
-        $product->save_meta_data();
+        $product->save();
     }
 }

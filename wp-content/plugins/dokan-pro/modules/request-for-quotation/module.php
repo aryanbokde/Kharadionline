@@ -36,6 +36,25 @@ final class Module {
 
         // Session must be instantiated on template redirect hook. It's safe.
         add_action( 'template_redirect', [ Session::class, 'init' ] );
+        add_filter( 'dokan_button_shortcodes', array( $this, 'add_to_dokan_shortcode_menu' ) );
+    }
+
+    /**
+     * Add rfq shortocde to Dokan shortcode menu
+     *
+     * @since 3.9.0
+     *
+     * @param array $shortcodes
+     *
+     * @return array
+     */
+    public function add_to_dokan_shortcode_menu( $shortcodes ) {
+        $shortcodes['dokan-request-quote'] = array(
+            'title'   => __( 'Request for quotation', 'dokan' ),
+            'content' => '[dokan-request-quote]'
+        );
+
+        return $shortcodes;
     }
 
     /**
@@ -101,9 +120,9 @@ final class Module {
             $this->container['quote_admin_hooks']    = new Hooks();
             $this->container['quote_admin_settings'] = new Settings();
         } else {
-            $this->container['quote_frontend_hooks']     = new FrontendHooks();
             $this->container['quote_frontend_shortcode'] = new Shortcode();
         }
+        $this->container['quote_frontend_hooks']     = new FrontendHooks();
         $this->container['catalog_mode'] = new CatalogMode();
     }
 

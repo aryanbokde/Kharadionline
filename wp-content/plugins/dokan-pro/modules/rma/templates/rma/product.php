@@ -79,14 +79,16 @@
             <div class="dokan-clearfix"></div>
 
             <?php if ( ! empty( $reasons ) ): ?>
-
                 <div class="dokan-form-group">
                     <label class="form-label" for="dokan-warranty-length-duration"><?php _e( 'Refund Reasons: ', 'dokan' ); ?>
                         <span class="dokan-tooltips-help tips" data-placement="bottom" data-original-title="<?php _e( 'Select your return reasons which will be displayed in customer end', 'dokan' ); ?>">
                             <i class="fas fa-question-circle"></i>
                         </span>
                     </label>
-                    <?php foreach ( $reasons as $reason_key => $reason_value ): ?>
+                    <?php
+                    foreach ( $reasons as $reason_key => $reason_value ) :
+                        $reason_value = apply_filters( 'dokan_pro_rma_reason', $reason_value );
+                        ?>
                         <div class="dokan-form-group">
                             <div class="checkbox">
                                 <label for="warranty_reason[<?php echo $reason_key ?>]">

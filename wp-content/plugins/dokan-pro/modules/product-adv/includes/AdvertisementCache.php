@@ -30,6 +30,7 @@ class AdvertisementCache {
         add_action( 'dokan_before_batch_delete_product_advertisement', [ $this, 'batch_delete_product_advertisement' ], 10, 1 );
         add_action( 'dokan_before_batch_expire_product_advertisement', [ $this, 'batch_delete_product_advertisement' ], 10, 1 );
         // after product status has been updated
+        add_action( 'dokan_new_product_added', [ $this, 'after_product_update' ], 20, 1 );
         add_action( 'dokan_product_updated', [ $this, 'after_product_update' ], 20, 1 );
         add_action( 'woocommerce_update_product', [ $this, 'after_product_update' ], 20, 1 );
         add_action( 'wp_trash_post', [ $this, 'after_product_update' ], 20, 1 );

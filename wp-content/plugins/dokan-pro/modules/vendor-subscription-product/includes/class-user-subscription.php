@@ -12,7 +12,7 @@ class Dokan_VSP_User_Subscription {
      */
     public function __construct() {
         add_filter( 'dokan_query_var_filter', [ $this, 'load_subscription_query_var' ], 15, 1 );
-        add_filter( 'dokan_get_dashboard_nav', [ $this, 'add_subscription_menu' ], 15, 1 );
+        add_filter( 'dokan_get_dashboard_nav', [ $this, 'add_subscription_menu' ], 15 );
         add_filter( 'dokan_load_custom_template', [ $this, 'load_subscription_content' ], 15, 1 );
         add_action( 'dokan_vps_subscriptions_related_orders_meta_box_rows', [ $this, 'render_related_order_content' ], 15, 1 );
         add_action( 'template_redirect', [ $this, 'handle_subscription_schedule' ], 99 );
@@ -83,75 +83,107 @@ class Dokan_VSP_User_Subscription {
      *
      * @return void
      */
-    public function render_related_order_content( $post ) {
-        $subscriptions = array();
-        $orders        = array();
-        $is_subscription_screen = wcs_is_subscription( $post->ID );
+    public function render_related_order_content( $subscription ) {
+        $orders_to_display     = array();
+        $subscriptions         = array();
+        $orders_by_type        = array();
+        $unknown_orders        = array(); // Orders which couldn't be loaded.
+        $this_order            = $subscription;
 
-        // On the subscription page, just show related orders
-        if ( $is_subscription_screen ) {
-            $this_subscription = wcs_get_subscription( $post->ID );
-            $subscriptions[]   = $this_subscription;
-        } elseif ( wcs_order_contains_subscription( $post->ID, array( 'parent', 'renewal' ) ) ) {
-            $subscriptions = wcs_get_subscriptions_for_order( $post->ID, array( 'order_type' => array( 'parent', 'renewal' ) ) );
-        }
+        // If this is a subscription screen,
+        $subscriptions[] = $subscription;
 
-        // First, display all the subscriptions
+        // Resubscribed subscriptions and orders.
+        $initial_subscriptions         = wcs_get_subscriptions_for_resubscribe_order( $subscription );
+        $orders_by_type['resubscribe'] = WCS_Related_Order_Store::instance()->get_related_order_ids( $subscription, 'resubscribe' );
+
         foreach ( $subscriptions as $subscription ) {
-            wcs_set_objects_property( $subscription, 'relationship', __( 'Subscription', 'woocommerce-subscriptions' ), 'set_prop_only' );
-            $orders[] = $subscription;
-        }
-
-        //Resubscribed
-        $initial_subscriptions = array();
-
-        if ( $is_subscription_screen ) {
-
-            $initial_subscriptions = wcs_get_subscriptions_for_resubscribe_order( $this_subscription );
-
-            $resubscribe_order_ids = WCS_Related_Order_Store::instance()->get_related_order_ids( $this_subscription, 'resubscribe' );
-
-            foreach ( $resubscribe_order_ids as $order_id ) {
-                $order    = wc_get_order( $order_id );
-                $relation = wcs_is_subscription( $order ) ? _x( 'Resubscribed Subscription', 'relation to order', 'woocommerce-subscriptions' ) : _x( 'Resubscribe Order', 'relation to order', 'woocommerce-subscriptions' );
-                wcs_set_objects_property( $order, 'relationship', $relation, 'set_prop_only' );
-                $orders[] = $order;
+            // If we're on a single subscription or renewal order's page, display the parent orders
+            if ( 1 === count( $subscriptions ) && $subscription->get_parent_id() ) {
+                $orders_by_type['parent'][] = $subscription->get_parent_id();
             }
-        } else if ( wcs_order_contains_subscription( $post->ID, array( 'resubscribe' ) ) ) {
-            $initial_subscriptions = wcs_get_subscriptions_for_order( $post->ID, array( 'order_type' => array( 'resubscribe' ) ) );
+
+            // Finally, display the renewal orders
+            $orders_by_type['renewal'] = $subscription->get_related_orders( 'ids', 'renewal' );
+
+            // Build the array of subscriptions and orders to display.
+            $subscription->update_meta_data( '_relationship', _x( 'Subscription', 'relation to order', 'woocommerce-subscriptions' ) );
+            $orders_to_display[] = $subscription;
         }
 
         foreach ( $initial_subscriptions as $subscription ) {
-            wcs_set_objects_property( $subscription, 'relationship', _x( 'Initial Subscription', 'relation to order', 'woocommerce-subscriptions' ), 'set_prop_only' );
-            $orders[] = $subscription;
+            $subscription->update_meta_data( '_relationship', _x( 'Initial Subscription', 'relation to order', 'woocommerce-subscriptions' ) );
+            $orders_to_display[] = $subscription;
         }
 
-        // Now, if we're on a single subscription or renewal order's page, display the parent orders
-        if ( 1 == count( $subscriptions ) ) {
-            foreach ( $subscriptions as $subscription ) {
-                if ( $subscription->get_parent_id() ) {
-                    $order = $subscription->get_parent();
-                    wcs_set_objects_property( $order, 'relationship', _x( 'Parent Order', 'relation to order', 'woocommerce-subscriptions' ), 'set_prop_only' );
-                    $orders[] = $order;
+        // Assign all order and subscription relationships and filter out non-objects.
+        foreach ( $orders_by_type as $order_type => $orders ) {
+            foreach ( $orders as $order_id ) {
+                $order = wc_get_order( $order_id );
+
+                switch ( $order_type ) {
+                    case 'renewal':
+                        $relation = _x( 'Renewal Order', 'relation to order', 'woocommerce-subscriptions' );
+                        break;
+                    case 'parent':
+                        $relation = _x( 'Parent Order', 'relation to order', 'woocommerce-subscriptions' );
+                        break;
+                    case 'resubscribe':
+                        $relation = wcs_is_subscription( $order ) ? _x( 'Resubscribed Subscription', 'relation to order', 'woocommerce-subscriptions' ) : _x( 'Resubscribe Order', 'relation to order', 'woocommerce-subscriptions' );
+                        break;
+                    default:
+                        $relation = _x( 'Unknown Order Type', 'relation to order', 'woocommerce-subscriptions' );
+                        break;
+                }
+
+                if ( $order ) {
+                    $order->update_meta_data( '_relationship', $relation );
+                    $orders_to_display[] = $order;
+                } else {
+                    $unknown_orders[] = array(
+                        'order_id' => $order_id,
+                        'relation' => $relation,
+                    );
                 }
             }
         }
 
-        // Finally, display the renewal orders
-        foreach ( $subscriptions as $subscription ) {
+        if ( has_filter( 'woocommerce_subscriptions_admin_related_orders_to_display' ) ) {
+            wcs_deprecated_hook( 'woocommerce_subscriptions_admin_related_orders_to_display', '3.8.0', 'wcs_admin_subscription_related_orders_to_display' );
 
-            foreach ( $subscription->get_related_orders( 'all', 'renewal' ) as $order ) {
-                wcs_set_objects_property( $order, 'relationship', _x( 'Renewal Order', 'relation to order', 'woocommerce-subscriptions' ), 'set_prop_only' );
-                $orders[] = $order;
-            }
+            /**
+             * Filters the orders to display in the Related Orders meta box.
+             *
+             * This filter is deprecated in favour of 'wcs_admin_subscription_related_orders_to_display'.
+             *
+             * @deprecated 3.8.0
+             *
+             * @param array   $orders_to_display An array of orders to display in the Related Orders meta box.
+             * @param array   $subscriptions An array of subscriptions related to the order.
+             * @param WP_Post $post The order post object.
+             */
+            $orders_to_display = apply_filters( 'woocommerce_subscriptions_admin_related_orders_to_display', $orders_to_display, $subscriptions, get_post( $this_order->get_id() ) );
         }
 
-        $orders = apply_filters( 'woocommerce_subscriptions_admin_related_orders_to_display', $orders, $subscriptions, $post );
+        /**
+         * Filters the orders to display in the Related Orders meta box.
+         *
+         * @since 3.8.0
+         *
+         * @param array    $orders_to_display An array of orders to display in the Related Orders meta box.
+         * @param array    $subscriptions An array of subscriptions related to the order.
+         * @param WC_Order $order The order object.
+         */
+        $orders_to_display = apply_filters( 'wcs_admin_subscription_related_orders_to_display', $orders_to_display, $subscriptions, $this_order );
 
-        foreach ( $orders as $order ) {
-            if ( wcs_get_objects_property( $order, 'id' ) == $post->ID ) {
+        wcs_sort_objects( $orders_to_display, 'date_created', 'descending' );
+
+        foreach ( $orders_to_display as $order ) {
+            // Skip the current order or subscription being viewed.
+            if ( $order->get_id() === $this_order->get_id() ) {
                 continue;
             }
+
             dokan_get_template_part( 'subscription/html-related-orders-row', '', [ 'is_subscription_product' => true, 'order' => $order ] );
         }
     }

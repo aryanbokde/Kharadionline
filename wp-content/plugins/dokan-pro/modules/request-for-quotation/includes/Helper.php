@@ -919,4 +919,59 @@ class Helper {
 
         return wp_parse_args( $filtered_args, $defaults );
     }
+
+    /**
+     * Returns site administrators id
+     *
+     * @since 3.9.3
+     *
+     * @return int
+     */
+    protected static function get_site_admin_id(): int {
+        $administrator = current( get_users( [ 'role' => 'administrator' ] ) );
+        return ! empty( $administrator ) ? $administrator->ID: 0;
+    }
+
+    /**
+     * Creates add to quote page
+     *
+     * @since 3.9.3
+     *
+     * @return int
+     */
+    protected static function create_add_to_quote_page(): int {
+
+        $new_page = [
+            'post_status'    => 'publish',
+            'post_type'      => 'page',
+            'post_author'    => static::get_site_admin_id(),
+            'post_name'      => 'request-quote',
+            'post_title'     => 'Request for Quote',
+            'post_content'   => '[dokan-request-quote]',
+            'post_parent'    => 0,
+            'comment_status' => 'closed',
+        ];
+        $page_id = wp_insert_post( $new_page );
+        $page_id = is_wp_error( $page_id ) ? 0: $page_id;
+        update_option( 'dokan_request_quote_page_id', $page_id );
+        return $page_id;
+    }
+
+    /**
+     * Returns quote page id, creates is necessary
+     *
+     * @since 3.9.3
+     *
+     * @return int
+     */
+    public static function get_quote_page_id(): int {
+        $page_id = get_option( 'dokan_request_quote_page_id', 0 );
+        $page    = get_post( $page_id );
+
+        if ( ! $page || 'publish' !== $page->post_status ) {
+            $page_id = static::create_add_to_quote_page();
+        }
+
+        return apply_filters( 'dokan_get_translated_page_id', $page_id );
+    }
 }

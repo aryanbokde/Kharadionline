@@ -59,9 +59,9 @@ trait Dokan_RMA_Common {
                     'thumbnail' => wp_get_attachment_url( $product->get_image_id() ),
                     'quantity'  => $quantites[ $key ],
                     'url'       => $product->get_permalink(),
-                    'price'     => wc_format_decimal( $line_item->get_subtotal() ) / $line_item->get_quantity(),
+                    'price'     => wc_format_decimal( $line_item->get_total() ) / $line_item->get_quantity(),
                     'item_id'   => $item_id[ $key ],
-                    'tax'       => wc_format_decimal( $line_item->get_subtotal_tax() ) / $line_item->get_quantity(),
+                    'tax'       => wc_format_decimal( $line_item->get_total_tax() ) / $line_item->get_quantity(),
                 ];
             }
         }

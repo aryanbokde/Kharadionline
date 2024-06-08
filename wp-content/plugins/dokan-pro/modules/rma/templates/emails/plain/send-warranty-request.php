@@ -16,14 +16,21 @@ $details    = isset( $data['details'] ) ? $data['details'] : '';
 $type       = isset( $data['type'] ) ? ucwords( $data['type'] ) : '';
 $order_id   = isset( $data['order_id'] ) ? $data['order_id'] : '';
 $reason     = isset( $data['reasons'] ) ? ucwords( $data['reasons'] ) : '';
-$order_link = wp_nonce_url( add_query_arg( [ 'order_id' => $order_id ], dokan_get_navigation_url( 'orders' ) ), 'dokan_view_order' );
-
+$order_link = esc_url(
+    add_query_arg(
+        [
+            'order_id'   => $order_id,
+            '_view_mode' => 'email',
+            'permission' => '1',
+        ], dokan_get_navigation_url( 'orders' )
+    )
+);
 echo "= " . $email_heading . " =\n\n";
 ?>
 
 <?php _e( 'Hello there,', 'dokan' );  echo " \n\n";?>
 
-<?php printf( __( 'A new refund request is made by %s', 'dokan' ), $replace['customer_name'] ); echo " \n\n"; ?>
+<?php printf( __( 'A new refunds and return request is made by %s', 'dokan' ), $replace['customer_name'] ); echo " \n\n"; ?>
 
 <?php _e( 'Summary of the Refund Request:', 'dokan' ); ?>
 

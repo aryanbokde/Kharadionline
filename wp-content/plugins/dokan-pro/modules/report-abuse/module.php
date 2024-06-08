@@ -80,7 +80,7 @@ final class Module {
      * @return void
      */
     public static function activate() {
-        $option = get_option( 'dokan_report_abuse', [] );
+        $option = (array) get_option( 'dokan_report_abuse', [] );
 
         if ( empty( $option['abuse_reasons'] ) ) {
             $option['abuse_reasons'] = [
@@ -117,6 +117,10 @@ final class Module {
                     'value' => esc_html__( 'Other', 'dokan' )
                 ],
             ];
+
+            foreach ( $option['abuse_reasons'] as $key => $status ) {
+                do_action( 'dokan_pro_register_abuse_report_reason', $status['value'] );
+            }
 
             update_option( 'dokan_report_abuse', $option, false );
         }

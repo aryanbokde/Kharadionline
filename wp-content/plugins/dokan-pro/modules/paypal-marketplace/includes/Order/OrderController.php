@@ -77,8 +77,17 @@ class OrderController {
         try {
             $order_id = $this->do_validation();
 
-            $paypal_order_id = get_post_meta( $order_id, '_dokan_paypal_order_id', true );
+            $order = wc_get_order( $order_id );
+            if ( ! $order ) {
+                wp_send_json_error(
+                    [
+                        'type'    => 'no_order_id',
+                        'message' => __( 'No PayPal order id found.', 'dokan' ),
+                    ]
+                );
+            }
 
+            $paypal_order_id = $order->get_meta( '_dokan_paypal_order_id' );
             if ( ! $paypal_order_id ) {
                 wp_send_json_error(
                     [
@@ -151,7 +160,7 @@ class OrderController {
 
         //store paypal debug id
         $order->update_meta_data( '_dokan_paypal_capture_payment_debug_id', $capture_payment['paypal_debug_id'] );
-        $order->save_meta_data();
+        $order->save();
 
         //process order data
         OrderManager::handle_order_complete_status( $capture_payment['purchase_units'], $paypal_order_id );

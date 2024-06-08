@@ -45,40 +45,6 @@ class WeDevs_Dokan_SMS_Gateways {
     }
 
     /**
-     * Check for sms send throttleing
-     * Users should not request for sms frquently
-     *
-     * @return bool false means not send sms now
-     */
-    public function check_throttle() {
-        $offset       = (int) wedevs_sms_get_option( 'sms_throttle_offset' ); //minutes
-        $sms_throttle = wedevs_sms_get_option( 'sms_throttle' );
-
-        //not enabled? bail out
-        if ( 'on' !== (string) $sms_throttle ) {
-            return true;
-        }
-
-        //check users
-        if ( is_user_logged_in() ) {
-            $last_sent = get_user_meta( get_current_user_id(), 'sms_last_sent', true );
-        } else {
-            // @codingStandardsIgnoreLine
-            $last_sent = isset( $_COOKIE['sms_last_sent'] ) ? $_COOKIE['sms_last_sent'] : 1;
-        }
-
-        if ( $last_sent ) {
-            $last_sent = strtotime( $last_sent ) + $offset * 60;
-
-            if ( ( time() - $last_sent ) > 0 ) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * Set last sms sent time
      */
     public function set_last_sent() {
@@ -159,6 +125,11 @@ class WeDevs_Dokan_SMS_Gateways {
         $token = dokan_get_option( 'twilio_pass', 'dokan_verification_sms_gateways' );
         $from  = dokan_get_option( 'twilio_number', 'dokan_verification_sms_gateways' );
 
+        $twilio_enable_status = dokan_get_option( 'twilio_enable_status', 'dokan_verification_sms_gateways', 'on' );
+        if ( 'off' === $twilio_enable_status ) {
+            return $response;
+        }
+
         $client = new Client( $sid, $token );
 
         try {
@@ -206,6 +177,11 @@ class WeDevs_Dokan_SMS_Gateways {
         $username = dokan_get_option( 'nexmo_username', 'dokan_verification_sms_gateways' );
         $password = dokan_get_option( 'nexmo_pass', 'dokan_verification_sms_gateways' );
         $from     = dokan_get_option( 'sender_name', 'dokan_verification_sms_gateways' );
+
+        $nexmo_enable_status = dokan_get_option( 'nexmo_enable_status', 'dokan_verification_sms_gateways', 'on' );
+        if ( 'off' === $nexmo_enable_status ) {
+            return $response;
+        }
 
         $api_key    = $username;
         $api_secret = $password;

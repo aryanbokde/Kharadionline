@@ -3,7 +3,7 @@
 namespace WeDevs\DokanPro\Coupons;
 
 use WC_Data_Store;
-use WeDevs\DokanPro\Admin\Announcement;
+use WeDevs\DokanPro\Announcement\Announcement;
 
 /**
 * Admin Coupons Class
@@ -26,6 +26,7 @@ class AdminCoupons {
         add_action( 'wp_ajax_dokan_admin_coupons_search_vendors', [ $this, 'dokan_admin_coupons_search_vendors' ] );
         add_action( 'wp_ajax_dokan_json_search_products_and_variations_for_coupon', [ $this, 'dokan_json_search_products_and_variations_for_coupon' ] );
         add_action( 'woocommerce_coupon_is_valid_for_product', [ $this, 'coupon_is_valid_for_product' ], 15, 3 );
+        add_filter( 'woocommerce_product_coupon_types', [ $this, 'add_fixed_cart_to_product_coupon_types' ] );
     }
 
     /**
@@ -628,7 +629,7 @@ class AdminCoupons {
         if ( $product->get_parent_id() > 0 ) {
             $products[] = $product->get_parent_id();
         }
-        return dokan_pro()->coupon->is_admin_coupon_valid( $coupon, $vendors, $products );
+        return dokan_pro()->coupon->is_admin_coupon_valid( $coupon, $vendors, $products, [], $valid );
     }
 
     /**
@@ -695,10 +696,7 @@ class AdminCoupons {
         update_post_meta( $post_id, 'admin_coupons_show_on_stores', $show_on_stores );
 
         if ( 'yes' === $notify_to_vendors ) {
-            /**
-             * @var $announcement Announcement
-             */
-            $announcement       = dokan_pro()->announcement;
+            $announcement       = dokan_pro()->announcement->manager;
             $vendors_ids        = array();
             $exclude_sellers    = array();
             $discount_type      = $coupon->get_discount_type();
@@ -746,12 +744,12 @@ class AdminCoupons {
             $content .= '<p>' . $coupons_list_link . '</p>';
 
             $args = [
-                'title'               => __( 'Admin Created a Coupon for Your Store.', 'dokan' ),
-                'content'             => $content,
-                'sender_type'         => 'yes' === $enabled_for_vendor ? 'all_seller' : 'selected_seller',
-                'sender_ids'          => $vendors_ids,
-                'exclude_sellers_ids' => $exclude_sellers,
-                'status'              => 'publish',
+                'title'              => __( 'Admin Created a Coupon for Your Store.', 'dokan' ),
+                'content'            => $content,
+                'announcement_type'  => 'yes' === $enabled_for_vendor ? 'all_seller' : 'selected_seller',
+                'sender_ids'         => $vendors_ids,
+                'exclude_seller_ids' => $exclude_sellers,
+                'status'             => 'publish',
             ];
 
             $notice = $announcement->create_announcement( $args );
@@ -763,5 +761,27 @@ class AdminCoupons {
         }
 
         do_action( 'dokan_admin_coupon_options_save', $post_id, $coupon );
+    }
+
+    /**
+     * For fixed cart admin created coupon for specific vendor is getting applied for admin products. While validating the coupon in woocommerce in class-wc-discounts.php#L838 and in class-wc-coupon.php#L903
+     * the valid value is by default false and in `woocommerce_coupon_is_valid_for_product` filter_hook in dokan pro it is getting false and ignoring and
+     * `fixed_cart` is not in product coupon types the rest so validation in class-wc-coupon.php#L903 are not working the the expected, the solution works properly if all validation runs properly
+     * after class-wc-coupon.php#L903 and at class-wc-coupon.php#L940 the `woocommerce_coupon_is_valid_for_product` hook will get called and dokan pro will validate the coupon properly.
+     * so we are adding the `fixed_cart` to product coupon types, and all the validation runs properly in class-wc-coupon.php#L903.
+     *
+     * @see https://github.com/woocommerce/woocommerce/blob/91272dde6f465acd159e9050202b627f81c8dd94/plugins/woocommerce/includes/class-wc-discounts.php#L838
+     * @see https://github.com/woocommerce/woocommerce/blob/91272dde6f465acd159e9050202b627f81c8dd94/plugins/woocommerce/includes/class-wc-coupon.php#L903
+     * @see https://github.com/woocommerce/woocommerce/blob/91272dde6f465acd159e9050202b627f81c8dd94/plugins/woocommerce/includes/class-wc-coupon.php#L901-L941
+     *
+     * @see https://github.com/getdokan/dokan-pro/issues/3094
+     *
+     * @param $types
+     * @return array
+     */
+    public function add_fixed_cart_to_product_coupon_types( $types ) {
+        $types[] = 'fixed_cart';
+
+        return $types;
     }
 }

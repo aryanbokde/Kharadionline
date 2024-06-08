@@ -16,6 +16,7 @@ class Dokan_Wholesale_Vendor {
         add_action( 'dokan_product_edit_after_inventory_variants', [ $this, 'load_wholesale_content' ], 30, 2 );
         add_action( 'dokan_product_after_variable_attributes', [ $this, 'load_wholesale_content_variation' ], 30, 3 );
 
+        add_action( 'dokan_new_product_added', [ $this, 'save_wholesale_data' ], 12 );
         add_action( 'dokan_product_updated', [ $this, 'save_wholesale_data' ], 12 );
         add_action( 'dokan_process_product_meta', [ $this, 'save_variation_wholesale_data' ], 12 );
         add_action( 'dokan_ajax_save_product_variations', [ $this, 'save_variation_wholesale_data' ], 12 );

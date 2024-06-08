@@ -16,6 +16,15 @@ if ( ! class_exists( 'Dokan_Email_Booking_New' ) ) :
  * @extends     WC_Email
  */
 class Dokan_Email_Booking_New extends WC_Email {
+    /**
+     * @var string|null
+     */
+    private $heading_confirmation;
+
+    /**
+     * @var string|null
+     */
+    private $subject_confirmation;
 
     /**
      * Constructor.

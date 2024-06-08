@@ -3,6 +3,7 @@
 namespace WeDevs\DokanPro\Modules\VendorVerification\Emails;
 
 use WC_Email;
+use WeDevs\DokanPro\Modules\VendorVerification\Models\VerificationRequest;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -25,17 +26,17 @@ class RequestSubmission extends WC_Email {
         $this->id             = 'dokan_vendor_verification_request_submission';
         $this->title          = __( 'Seller Verification Request Submitted', 'dokan' );
         $this->description    = __( 'This email will be sent to the admin after submitting documents by a vendor for verification.', 'dokan' );
-        $this->template_html  = '/emails/vendor-verification-request-submission.php';
-        $this->template_plain = '/emails/plain/vendor-verification-request-submission.php';
+        $this->template_html  = 'emails/vendor-verification-request-submission.php';
+        $this->template_plain = 'emails/plain/vendor-verification-request-submission.php';
         $this->template_base  = DOKAN_VERFICATION_TEMPLATE_DIR;
         $this->placeholders   = [
             '{store_name}' => '',
-            '{site_name}'  => '',
-            '{site_url}'   => '',
+            '{site_name}'  => $this->get_from_name(),
         ];
 
         // Triggers for this email
         add_action( 'dokan_verification_summitted', [ $this, 'trigger' ], 20, 1 );
+        add_action( 'dokan_pro_vendor_verification_request_created', [ $this, 'trigger_for_verification' ], 20, 1 );
 
         // Call parent constructor
         parent::__construct();
@@ -94,7 +95,7 @@ class RequestSubmission extends WC_Email {
         if ( empty( $seller_id ) || ! user_can( $seller_id, 'dokandar' ) ) {
             return;
         }
-
+        $this->setup_locale();
         $seller_info = dokan_get_store_info( $seller_id );
         $store_name  = $seller_info['store_name'];
         $admin_email = get_option( 'admin_email' );
@@ -104,18 +105,31 @@ class RequestSubmission extends WC_Email {
         $this->placeholders = [
             '{site_name}'  => $site_name,
             '{store_name}' => $store_name,
-            '{site_url}'   => $site_url,
         ];
 
         $this->data = [
             'store_name' => $store_name,
             'home_url'   => $site_url,
-            'admin_url'  => admin_url( 'admin.php?page=dokan-seller-verifications' ),
+            'admin_url'  => admin_url( 'admin.php?page=dokan#/verifications?status=pending' ),
         ];
 
-        $this->setup_locale();
         $this->send( $admin_email, $this->get_subject(), $this->get_content(), $this->get_headers(), $this->get_attachments() );
         $this->restore_locale();
+    }
+
+    /**
+     * Trigger email.
+     *
+     * @since 3.11.1
+     *
+     * @param int $request_id ID of the request.
+     *
+     * @return void
+     */
+    public function trigger_for_verification( int $request_id ) {
+        $request = new VerificationRequest( $request_id );
+
+        $this->trigger( $request->get_vendor_id() );
     }
 
     /**
@@ -127,8 +141,7 @@ class RequestSubmission extends WC_Email {
      * @return string
      */
     public function get_content_html() {
-        ob_start();
-        wc_get_template(
+        return wc_get_template_html(
             $this->template_html,
             [
                 'email_heading'      => $this->get_heading(),
@@ -143,8 +156,6 @@ class RequestSubmission extends WC_Email {
             'dokan/',
             $this->template_base
         );
-
-        return ob_get_clean();
     }
 
     /**
@@ -156,23 +167,21 @@ class RequestSubmission extends WC_Email {
      * @return string
      */
     public function get_content_plain() {
-        ob_start();
-        wc_get_template(
+        return wc_get_template_html(
             $this->template_plain,
             [
-                'email_heading' => $this->get_heading(),
-                'sent_to_admin' => true,
-                'plain_text'    => true,
-                'email'         => $this,
-                'store_name'    => $this->data['admin_name'],
-                'home_url'      => $this->data['home_url'],
-                'admin_url'     => $this->data['admin_url'],
+                'email_heading'      => $this->get_heading(),
+                'sent_to_admin'      => true,
+                'plain_text'         => true,
+                'email'              => $this,
+                'store_name'         => $this->data['admin_name'],
+                'home_url'           => $this->data['home_url'],
+                'admin_url'          => $this->data['admin_url'],
+                'additional_content' => $this->get_additional_content(),
             ],
             'dokan/',
             $this->template_base
         );
-
-        return ob_get_clean();
     }
 
     /**

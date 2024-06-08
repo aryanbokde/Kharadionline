@@ -70,12 +70,21 @@ class Admin {
      * @return mixed
      */
     public function admin_settings( $settings ) {
+        // New subsection for min max settings
+        $settings['min_max_sub_section'] = [
+            'name'          => 'min_max_sub_section',
+            'type'          => 'sub_section',
+            'label'         => __( 'Min Max Quantities', 'dokan' ),
+            'description'   => __( 'Set a minimum or maximum purchase quantity or amount for the products of your marketplace.', 'dokan' ),
+            'content_class' => 'sub-section-styles',
+        ];
+
         $settings['enable_min_max_quantity'] = [
             'name'    => 'enable_min_max_quantity',
             'label'   => __( 'Enable Min/Max Quantities', 'dokan' ),
             'desc'    => __( 'Activating this will set min and max quantities for selected products.', 'dokan' ),
             'type'    => 'switcher',
-            'default' => 'on',
+            'default' => 'off',
             'tooltip' => __( 'When checked, this will allow vendors to set min and max quantities for selected products of their store.', 'dokan' ),
         ];
         $settings['enable_min_max_amount']   = [
@@ -83,7 +92,7 @@ class Admin {
             'label'   => __( 'Enable Min/Max Amount', 'dokan' ),
             'desc'    => __( 'Activating this will set min and max amount for selected products.', 'dokan' ),
             'type'    => 'switcher',
-            'default' => 'on',
+            'default' => 'off',
             'tooltip' => __( 'When checked, this will allow vendors to set min and max amount for selected products of their store.', 'dokan' ),
         ];
 
@@ -230,6 +239,7 @@ class Admin {
                     'value'         => isset( $dokan_min_max_meta['product_wise_activation'] ) ? $dokan_min_max_meta['product_wise_activation'] : 'no',
                     'style'         => 'margin: 2px 5px !important',
                     'wrapper_class' => 'form-row form-row-full form-field',
+                    'label'         => '',
                     'description'   => __( 'Enable Min Max Rule for this product', 'dokan' ),
                 ]
             );

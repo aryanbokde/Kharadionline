@@ -35,7 +35,7 @@ class Settings {
             'title'                => __( 'EU Compliance Fields', 'dokan' ),
             'icon_url'             => DOKAN_GERMANIZED_ASSETS_DIR . '/images/compliance.svg',
             'description'          => __( 'Configure EU Compliance Fields', 'dokan' ),
-            'document_link'        => 'https://wedevs.com/docs/dokan/modules/eu-compliance-fields/',
+            'document_link'        => 'https://dokan.co/docs/wordpress/modules/eu-compliance-fields/',
             'settings_title'       => __( 'EU Compliance Settings', 'dokan' ),
             'settings_description' => __( 'Comply with EU guidelines when selling products on your marketplace with this integration. Configure which fields to display or make mandatory on your site.', 'dokan' ),
         ];

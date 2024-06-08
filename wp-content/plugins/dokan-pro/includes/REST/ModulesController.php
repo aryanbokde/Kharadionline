@@ -3,6 +3,8 @@
 namespace WeDevs\DokanPro\REST;
 
 use WP_Error;
+use WP_REST_Request;
+use WP_REST_Response;
 use WP_REST_Server;
 use WeDevs\Dokan\Abstracts\DokanRESTAdminController;
 
@@ -80,7 +82,7 @@ class ModulesController extends DokanRESTAdminController {
      *
      * @param array $modules
      *
-     * @return bool|\WP_Error
+     * @return bool|WP_Error
      */
     public function validate_modules( $modules ) {
         if ( ! is_array( $modules ) ) {
@@ -106,9 +108,9 @@ class ModulesController extends DokanRESTAdminController {
     /**
      * Get all modules
      *
-     * @param \WP_REST_Request $request
+     * @param WP_REST_Request $request
      *
-     * @return \WP_REST_Response
+     * @return WP_REST_Response
      */
     public function get_items( $request ) {
         $data             = [];
@@ -132,7 +134,7 @@ class ModulesController extends DokanRESTAdminController {
                 'thumbnail'      => $module['thumbnail'],
                 'plan'           => $module['plan'],
                 'active'         => in_array( $module['id'], $activate_modules, true ),
-                'available'      => file_exists( $module['module_file'] ),
+                'available'      => file_exists( $module['module_file'] ) && dokan_pro()->module->is_module_available_under_package( $module ),
                 'doc_id'         => isset( $module['doc_id'] ) ? $module['doc_id'] : null,
                 'doc_link'       => isset( $module['doc_link'] ) ? $module['doc_link'] : null,
                 'mod_link'       => isset( $module['mod_link'] ) ? $module['mod_link'] : null,

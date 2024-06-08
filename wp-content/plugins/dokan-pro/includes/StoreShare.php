@@ -65,8 +65,6 @@ class StoreShare {
         if ( dokan_is_store_page() ) {
             wp_enqueue_script( 'dokan-social-script' );
             wp_enqueue_style( 'dokan-social-style' );
-            wp_enqueue_style( 'dokan-magnific-popup' );
-            wp_enqueue_script( 'dokan-magnific-popup' );
             wp_enqueue_style( 'dokan-social-theme-minimal' );
         }
 
@@ -84,7 +82,12 @@ class StoreShare {
     public function render_html() {
         ob_start();
         ?>
-        <div class="dokan-share-wrap">
+        <div class="dokan-share-wrap dokan-izimodal-wraper">
+            <div class="dokan-izimodal-close-btn">
+                <button data-iziModal-close class="icon-close">
+                    <i class="fa fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
             <?php echo $this->share_text; ?>
             <div class="dokan-share">
 
@@ -101,6 +104,7 @@ class StoreShare {
      */
     public function render_share_button() {
         ?>
+        <div class="dokan-share-store-modals"></div>
         <li class="dokan-share-btn-wrap dokan-right">
             <button class="dokan-share-btn dokan-btn dokan-btn-theme dokan-btn-sm"><?php echo esc_html( $this->share_text ); ?>  <i class="fas fa-external-link-alt"></i></button>
         </li>
@@ -121,8 +125,15 @@ class StoreShare {
             (function($){
 
                 var Dokan_share = {
+                    modal: null,
 
                     init : function(){
+                        // If the iziModal container div does not exists.
+                        if ( ! $('.dokan-share-store-modals').length ) {
+                            var $div = $('<div />').appendTo('body');
+                            $div.attr('class', 'dokan-share-store-modals');
+                        }
+
                         this.init_share();
                         $('.dokan-share-btn').on( 'click', this.showPopup );
                     },
@@ -131,18 +142,23 @@ class StoreShare {
                         $(".dokan-share").jsSocials({
                         showCount: false,
                         showLabel: false,
-                           shares: ["facebook", "twitter", "linkedin", "pinterest", "email"]
+                            shares: ["facebook", "twitter", "linkedin", "pinterest", "email"]
                         });
+
+                        this.modal = $( '.dokan-share-store-modals' ).iziModal( {
+                            // width: 430,
+                            closeButton: true,
+                            appendTo: 'body',
+                            title: '',
+                            headerColor: window.dokan.modal_header_color
+                        } );
                     },
 
                     showPopup : function(){
                         var content = <?php echo wp_json_encode( $this->render_html() ); ?>;
-                        $.magnificPopup.open({
-                            items: {
-                                src: '<div class="white-popup dokan-share-popup-wrapper"><div id="ds-error-msg" ></div>'+ content +'</div>',
-                                type: 'inline'
-                           }
-                        });
+
+                        Dokan_share.modal.iziModal( 'setContent', content.trim() );
+                        Dokan_share.modal.iziModal( 'open' );
 
                         Dokan_share.init_share();
                     }

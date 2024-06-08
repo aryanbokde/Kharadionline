@@ -205,11 +205,9 @@ class Module {
 
         // if invoice created successfully
         if ( isset( $response->event ) && $response->event == 'invoice.created' ) {
-            global $wpdb;
-
             $subscription_code = $response->resource->subscription_code;
 
-            $user_id = $wpdb->get_var( "SELECT `user_id` FROM $wpdb->usermeta WHERE `meta_key` = 'subscription_code' AND `meta_value`='$subscription_code'" );
+            $user_id = $this->get_user_id_by_subscription_code( $subscription_code );
 
             require_once MOIP_INC . '/admin/class-moip-subscription.php';
 
@@ -248,10 +246,8 @@ class Module {
         }
 
         if ( isset( $response->event ) && $response->event == 'subscription.expired' ) {
-            global $wpdb;
-
             $subscription_code = $response->resource->code;
-            $user_id           = $wpdb->get_var( "SELECT `user_id` FROM $wpdb->usermeta WHERE `meta_key` = 'subscription_code' AND `meta_value`='$subscription_code'" );
+            $user_id           = $this->get_user_id_by_subscription_code( $subscription_code );
 
             // subscriptoin expired
             update_user_meta( $user_id, 'can_post_product', '0' );
@@ -271,10 +267,8 @@ class Module {
                 return;
             }
 
-            global $wpdb;
-
             $subscription_code = $response->resource->code;
-            $user_id           = $wpdb->get_var( "SELECT `user_id` FROM $wpdb->usermeta WHERE `meta_key` = 'subscription_code' AND `meta_value`='$subscription_code'" );
+            $user_id           = $this->get_user_id_by_subscription_code( $subscription_code );
 
             $product_id = $response->resource->plan->code;
 
@@ -388,7 +382,7 @@ class Module {
         add_filter( 'dokan_can_add_product', array( $this, 'can_seller_add_product' ) );
 
         // hide withdraw page
-        add_filter( 'dokan_get_dashboard_nav', array( $this, 'remove_withdraw_page' ) );
+        add_filter( 'dokan_get_dashboard_nav', [ $this, 'remove_withdraw_page' ], 10 );
     }
 
     /**
@@ -508,5 +502,17 @@ class Module {
         return $user_id;
     }
 
+    /**
+     * Get user ID by subscription code.
+     *
+     * @param string $subscription_code
+     * @return int
+     */
+    private function get_user_id_by_subscription_code( $subscription_code ) {
+        global $wpdb;
 
+        $user_id = $wpdb->get_var( $wpdb->prepare( "SELECT `user_id` FROM $wpdb->usermeta WHERE `meta_key` = 'subscription_code' AND `meta_value`=%s", $subscription_code ) );
+
+        return (int) $user_id;
+    }
 }

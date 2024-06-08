@@ -1,5 +1,13 @@
 <?php
 
+// BEGIN iThemes Security - Do not modify or remove this line
+// iThemes Security Config Details: 2
+define( 'FORCE_SSL_ADMIN', true ); // Redirect All HTTP Page Requests to HTTPS - Security > Settings > Enforce SSL
+define( 'DISALLOW_FILE_EDIT', true ); // Disable File Editor - Security > Settings > WordPress Tweaks > File Editor
+// END iThemes Security - Do not modify or remove this line
+
+define( 'ITSEC_ENCRYPTION_KEY', 'ZnglZ0lBUThjRig6NHFkZmN7K3YsWUQpYUdJeF1RfDRxd3VXZlo0PnY1QGZbKkA0IyUyfTZ9WFMwTHhZOzlKWQ==' );
+
 /**
  * The base configuration for WordPress
  *
@@ -21,7 +29,7 @@
 
 // ** Database settings - You can get this info from your web host ** //
 /** The name of the database for WordPress */
-define( 'DB_NAME', 'kharadionline' );
+define( 'DB_NAME', 'bns' );
 
 /** Database username */
 define( 'DB_USER', 'root' );
@@ -49,14 +57,14 @@ define( 'DB_COLLATE', '' );
  *
  * @since 2.6.0
  */
-define( 'AUTH_KEY',         'YHIxwoV6c>A#Uce.J?nN%PWzWOgTFWc*!VmYFM4Bf[|oYoY}N}{Wra]fBr8m2*^o' );
-define( 'SECURE_AUTH_KEY',  'uKN^r@u!3NNYQQ+de1 u^O1PbnA+)?4UAPrq7U5mSOg^zb5Hx ajDu,2n@#V<;Q>' );
-define( 'LOGGED_IN_KEY',    'W+&=73G{+sxa`[Aoh8UxaH=o!g SNaHd>W(?op=]mZ6;ZrBdl<DD.:2m+Jr< COj' );
-define( 'NONCE_KEY',        'e(i;oW/u|saw2VS),/L1fX+0G(_lg)l0Xf^gt>i!u6%E2@`m*kiND,&NR|Xr vn4' );
-define( 'AUTH_SALT',        'z{2cNK kbK0c1g6lZFaGEZ`|U7 i~~X:luUiUY: sfU|n:{&$}_,nY)?6sNK-d?V' );
-define( 'SECURE_AUTH_SALT', '~YF7}DA6nB,bM9v0N(1l]j`_6ui}e&02<mH3S*VHWfXV5xtRD5_!l02dH:g&;b~A' );
-define( 'LOGGED_IN_SALT',   '.73TF^4i&1wD$Jl# W3fVfRcZqk_ixd%vUq^tAl+4ZTj Dj27Foet4p.[l4y~&`d' );
-define( 'NONCE_SALT',       'mw/BPO)lR1NOo&~]9gHe_-7(A+YYHu!ekQ~1^jrv@k[@d{D|A-O] =g:5${O75oh' );
+define( 'AUTH_KEY',         'm!B1_,C4E Y*-raCuTg:[SmzTwo&}mP[AH5VSL.LDk^DbfCdh1.*|,.}AE[Va&*>' );
+define( 'SECURE_AUTH_KEY',  'O#Hyn=2:(}tRtw]^P`h~Dw,zv#;NW:~IL{T`Vgtg7YS=e woPH[fLNtDRB&<&KcT' );
+define( 'LOGGED_IN_KEY',    '2L3dB_^C@sbO3#ziF-Ni]at-c2P%}c0I): 3SadeLV9Q@Jq36mdnE;V~YLj(.OJt' );
+define( 'NONCE_KEY',        'm-n``HZLf$.P%K}oQ;Xyjg=<&<3<0oIB%|lJnwpZ<rb/2D.C6{|{Dt*pf%B%=[AT' );
+define( 'AUTH_SALT',        'zAI+v87Gx8h9Dz`/ZQ8 7UYC|*jJ$K{<K;=Z/q(2q**&63l3tO2uRtXvJ&4?9f/s' );
+define( 'SECURE_AUTH_SALT', 'A)iF8h&1H}}$MV|LW&<mcA[{/~5UzjwklFtSn#9KK0H$P?qgUbf&/%JmOn,y[fu,' );
+define( 'LOGGED_IN_SALT',   'P.LJpb$fwE}i0csu#Oh-(zO=<[7-+}hCPpwElPm ,?vGfs#z[6Ms%toad>7d7{^7' );
+define( 'NONCE_SALT',       '}t3hS3rL^9nZ%AM?a}Xc,@~:/c1ZxkxH(d5Mly:[F% &+}d1fuTIl;wl*ob5{/YY' );
 
 /**#@-*/
 
@@ -66,7 +74,7 @@ define( 'NONCE_SALT',       'mw/BPO)lR1NOo&~]9gHe_-7(A+YYHu!ekQ~1^jrv@k[@d{D|A-O
  * You can have multiple installations in one database if you give each
  * a unique prefix. Only numbers, letters, and underscores please!
  */
-$table_prefix = 'ko_';
+$table_prefix = 'knbz0l_';
 
 /**
  * For developers: WordPress debugging mode.

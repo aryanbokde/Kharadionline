@@ -31,6 +31,8 @@ class Module {
         add_filter( 'dokan_email_list', array( $this, 'set_email_template_directory' ) );
         // flush rewrite rules
         add_action( 'woocommerce_flush_rewrite_rules', [ $this, 'flush_rewrite_rules' ] );
+
+        add_filter( 'dokan_rest_api_class_map', [ $this, 'rest_api_class_map' ] );
     }
 
     /**
@@ -56,6 +58,7 @@ class Module {
         require_once DOKAN_VENDOR_STAFF_INC_DIR . '/functions.php';
         require_once DOKAN_VENDOR_STAFF_INC_DIR . '/class-staffs.php';
         require_once DOKAN_VENDOR_STAFF_INC_DIR . '/VendorStaffCache.php';
+//        require_once DOKAN_VENDOR_STAFF_INC_DIR . '/REST/VendorStaff.php';
     }
 
     /**
@@ -303,13 +306,15 @@ class Module {
      * @return array $urls
      */
     public function add_staffs_page( $urls ) {
+        $menu = [
+            'title' => __( 'Staff', 'dokan' ),
+            'icon'  => '<i class="fas fa-users"></i>',
+            'url'   => dokan_get_navigation_url( 'staffs' ),
+            'pos'   => 172,
+        ];
+
         if ( dokan_is_seller_enabled( get_current_user_id() ) && current_user_can( 'dokandar' ) && ! current_user_can( 'vendor_staff' ) ) {
-            $urls['staffs'] = array(
-                'title' => __( 'Staff', 'dokan' ),
-                'icon'  => '<i class="fas fa-users"></i>',
-                'url'   => dokan_get_navigation_url( 'staffs' ),
-                'pos'   => 172,
-            );
+            $urls['staffs'] = $menu;
         }
 
         return $urls;
@@ -341,5 +346,20 @@ class Module {
         array_push( $template_array, 'staff-password-update.php' );
 
         return $template_array;
+    }
+
+    /**
+     * Rest api class map
+     *
+     * @param array $classes
+     *
+     * @since 3.9.0
+     *
+     * @return array
+     */
+    public function rest_api_class_map( $classes ) {
+        $class[ DOKAN_VENDOR_STAFF_INC_DIR . '/REST/VendorStaff.php' ] = '\WeDevs\DokanPro\Modules\VendorStaff\REST\VendorStaff';
+
+        return array_merge( $classes, $class );
     }
 }

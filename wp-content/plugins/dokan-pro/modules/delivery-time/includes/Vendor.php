@@ -56,7 +56,7 @@ class Vendor {
             'title'      => __( 'Delivery Time', 'dokan' ),
             'icon'       => '<i class="far fa-clock"></i>',
             'url'        => dokan_get_navigation_url( 'settings/delivery-time' ),
-            'pos'        => 60,
+            'pos'        => 61,
         );
 
         return $urls;
@@ -72,12 +72,12 @@ class Vendor {
      * @return array
      */
     public function register_delivery_calender_menu( $urls ) {
-        $urls['delivery-time-dashboard'] = array(
+        $urls['delivery-time-dashboard'] = [
             'title'      => __( 'Delivery Time', 'dokan' ),
             'icon'       => '<i class="far fa-clock"></i>',
             'url'        => dokan_get_navigation_url( 'delivery-time-dashboard' ),
-            'pos'        => 60,
-        );
+            'pos'        => 61,
+        ];
 
         return $urls;
     }
@@ -108,7 +108,7 @@ class Vendor {
                 'index'            => $index,
                 'status'           => $working_status,
                 'place_end'        => __( 'Closes at', 'dokan' ),
-                'add_action'       => __( 'Add hours', 'dokan' ),
+                'add_action'       => '<span class="fas fa-plus"></span>',
                 'place_start'      => __( 'Opens at', 'dokan' ),
                 'current_day'      => $current_day,
                 'opening_time'     => Helper::get_delivery_times( $current_day, $delivery_opening_times, $index ),
@@ -161,7 +161,7 @@ class Vendor {
 
             $data = [
                 'place_end'     => __( 'Closes at', 'dokan' ),
-                'add_action'    => __( 'Add hours', 'dokan' ),
+                'add_action'    => '<span class="fas fa-plus"></span>',
                 'place_start'   => __( 'Opens at', 'dokan' ),
                 'fullDayString' => __( 'Full Day', 'dokan' ),
             ];
@@ -216,7 +216,7 @@ class Vendor {
             'form', '', [
                 'all_day'                       => __( 'Full Day', 'dokan' ),
                 'place_end'                     => __( 'Closes at', 'dokan' ),
-                'add_action'                    => __( 'Add hours', 'dokan' ),
+                'add_action'                    => '<span class="fas fa-plus"></span>',
                 'place_start'                   => __( 'Opens at', 'dokan' ),
                 'is_delivery_time'              => true,
                 'all_delivery_days'             => dokan_get_translated_days(),

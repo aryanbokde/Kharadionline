@@ -108,14 +108,15 @@ class Templates {
      * @return array|bool $data Template library data
      */
     public static function add_template_library_data_to_transient( $data ) {
+        $store_templates = self::get_dokan_elementor_templates();
+
+        // Return only dokan templates if data false.
         if ( false === $data ) {
-            return $data;
+            return $store_templates;
         }
 
-        $store_templates = self::get_dokan_elementor_templates();
-        $data            = array_merge( $store_templates, $data );
-
-        return $data;
+        // Merge library data with dokan elementor templates.
+        return array_merge( $store_templates, $data );
     }
 
     /**

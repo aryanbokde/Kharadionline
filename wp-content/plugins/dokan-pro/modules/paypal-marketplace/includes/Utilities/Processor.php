@@ -80,7 +80,7 @@ class Processor {
      *
      * @return string|WP_Error
      */
-    public function create_partner_referral( $vendor_email_address, $tracking_id, $products = [ 'PPCP' ] ) {
+    public function create_partner_referral( $vendor_email_address, $tracking_id, $products = [ 'EXPRESS_CHECKOUT' ] ) {
         $partner_referral_data = [
             'email'                   => $vendor_email_address,
             'preferred_language_code' => 'en-US',

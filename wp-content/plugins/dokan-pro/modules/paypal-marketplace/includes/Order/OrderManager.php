@@ -41,9 +41,13 @@ class OrderManager {
 
         // check if this is suborder
         $order_id = $order->get_parent_id() ? $order->get_parent_id() : $order->get_id();
+        $parent_order = wc_get_order( $order_id );
+        if ( ! $parent_order ) {
+            return false;
+        }
 
         //using get_post_meta is intentional
-        return wc_string_to_bool( get_post_meta( $order_id, '_dokan_paypal_payment_charge_captured', true ) );
+        return wc_string_to_bool( $parent_order->get_meta( '_dokan_paypal_payment_charge_captured', true ) );
     }
 
     /**
@@ -57,6 +61,7 @@ class OrderManager {
      */
     public static function make_purchase_unit_data( \WC_Order $order ) {
         $subtotal       = $order->get_subtotal();
+        $subtotal       += $order->get_total_fees();
         $tax_total      = static::get_tax_amount( $order );
         $shipping_total = wc_format_decimal( $order->get_shipping_total(), 2 );
 
@@ -124,6 +129,11 @@ class OrderManager {
             'invoice_id'          => $order->get_parent_id() ? $order->get_parent_id() : $order->get_id(),
             'custom_id'           => $order->get_id(),
         ];
+
+        // Check if order has negative fees. If yes, remove the line items information.
+        if ( self::is_order_has_negative_fees( $order ) ) {
+            unset( $purchase_units['items'] );
+        }
 
         return $purchase_units;
     }
@@ -258,6 +268,19 @@ class OrderManager {
             ];
         }
 
+        if ( ! empty( $order->get_total_fees() ) ) {
+            foreach ( $order->get_fees() as $fee ) {
+                $items[] = [
+                    'name'        => $fee->get_name(),
+                    'unit_amount' => [
+                        'currency_code' => get_woocommerce_currency(),
+                        'value'         => wc_format_decimal( $fee->get_total(), 2 ), // this was causing same problem with decimal points, intentionally set quantity to 1 and sending value as line subtotal
+                    ],
+                    'quantity'    => 1,
+                ];
+            }
+        }
+
         return $items;
     }
 
@@ -278,6 +301,25 @@ class OrderManager {
     }
 
     /**
+     * Is order has negative fee applied.
+     *
+     * @since 3.10.4
+     *
+     * @param \WC_Order $order Order.
+     *
+     * @return bool
+     */
+    public static function is_order_has_negative_fees( \WC_Order $order ): bool {
+        foreach ( $order->get_fees() as $fee ) {
+            if ( $fee->get_total() < 0 ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Get Lot Discount
      *
      * @param \WC_Order $order
@@ -287,13 +329,7 @@ class OrderManager {
      * @return float
      */
     public static function get_lot_discount( \WC_Order $order ) {
-        // check discount exists on order meta
-        $quantity_discount = $order->get_meta( 'dokan_quantity_discount' );
-        if ( $quantity_discount ) {
-            return floatval( $quantity_discount );
-        }
-
-        return 0;
+        return dokan_pro()->vendor_discount->deprecated_methods->get_product_quantity_discount( $order );
     }
 
 
@@ -307,12 +343,7 @@ class OrderManager {
      * @return float
      */
     public static function get_minimum_order_discount( \WC_Order $order ) {
-        // check discount exists on order meta
-        $discounts = $order->get_meta( 'dokan_order_discount' );
-        if ( $discounts ) {
-            return floatval( $discounts );
-        }
-        return 0;
+        return dokan_pro()->vendor_discount->deprecated_methods->get_order_discount( $order );
     }
 
     /**
@@ -336,7 +367,7 @@ class OrderManager {
 
         // store charge capture data to prevent same processing to happen via webhook request
         $order->update_meta_data( '_dokan_paypal_payment_charge_captured', 'yes' );
-        $order->save_meta_data();
+        $order->save();
 
         static::store_capture_payment_data( $purchase_units, $order );
 
@@ -398,13 +429,14 @@ class OrderManager {
                 );
             }
 
+            $_order->set_payment_method( Helper::get_gateway_id() );
             $_order->update_meta_data( '_dokan_paypal_payment_capture_id', $capture_id );
             $_order->update_meta_data( '_dokan_paypal_payment_processing_fee', $paypal_processing_fee );
             $_order->update_meta_data( '_dokan_paypal_payment_processing_currency', $paypal_processing_fee_currency );
             $_order->update_meta_data( '_dokan_paypal_payment_platform_fee', $platform_fee );
             $_order->update_meta_data( 'dokan_gateway_fee', $paypal_processing_fee );
             $_order->update_meta_data( 'dokan_gateway_fee_paid_by', 'seller' );
-            $_order->save_meta_data();
+            $_order->save();
 
             $test_mode = Helper::is_test_mode() ? __( 'PayPal Sandbox Transaction ID', 'dokan' ) : __( 'PayPal Transaction ID', 'dokan' );
             $_order->add_order_note(
@@ -527,20 +559,39 @@ class OrderManager {
             return new WP_Error( 'insert_vendor_withdraw_balance_error', sprintf( '[insert_vendor_withdraw_balance] Invalid order id. data: %1$s', print_r( $withdraw, true ) ) );
         }
 
+        $order = wc_get_order( $withdraw['order_id'] );
+        if ( ! $order ) {
+            return new WP_Error( 'insert_vendor_withdraw_balance_error', sprintf( '[insert_vendor_withdraw_balance] Invalid order id. data: %1$s', print_r( $withdraw, true ) ) );
+        }
+
         // check disbursement mode
-        if ( false === $insert_now && get_post_meta( $withdraw['order_id'], '_dokan_paypal_payment_disbursement_mode', true ) !== 'INSTANT' ) {
+        if ( false === $insert_now && $order->get_meta( '_dokan_paypal_payment_disbursement_mode', true ) !== 'INSTANT' ) {
             // don't insert withdraw balance, store withdraw data as order meta
-            update_post_meta( $withdraw['order_id'], '_dokan_paypal_payment_withdraw_data', $withdraw );
-            update_post_meta( $withdraw['order_id'], '_dokan_paypal_payment_withdraw_balance_added', 'no' );
+            $order->update_meta_data( '_dokan_paypal_payment_withdraw_data', $withdraw );
+            $order->update_meta_data( '_dokan_paypal_payment_withdraw_balance_added', 'no' );
+            $order->save();
             return true;
         }
 
         // check if withdraw data is already inserted
-        if ( get_post_meta( $withdraw['order_id'], '_dokan_paypal_payment_withdraw_balance_added', true ) === 'yes' ) {
+        if ( $order->get_meta( '_dokan_paypal_payment_withdraw_balance_added', true ) === 'yes' ) {
             return true;
         }
 
         global $wpdb;
+
+        // check if already inserted
+        $withdraw_data = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT 1 FROM {$wpdb->prefix}dokan_vendor_balance WHERE trn_id = %d AND trn_type = %s",
+                [ $withdraw['order_id'], 'dokan_withdraw' ]
+            )
+        );
+
+        if ( $withdraw_data ) {
+            return true;
+        }
+
         //insert withdraw amount as credit in dokan vendor balance table
         $inserted = $wpdb->insert(
             $wpdb->prefix . 'dokan_vendor_balance',
@@ -590,7 +641,8 @@ class OrderManager {
             return $withdraw_data_inserted;
         }
 
-        update_post_meta( $withdraw['order_id'], '_dokan_paypal_payment_withdraw_balance_added', 'yes' );
+        $order->update_meta_data( '_dokan_paypal_payment_withdraw_balance_added', 'yes' );
+        $order->save();
 
         //remove cache for seller earning
         $cache_key = "get_earning_from_order_table_{$withdraw['order_id']}_seller";

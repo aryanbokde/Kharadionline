@@ -39,7 +39,7 @@ class Dokan_Wholesale_Admin {
             'title'                => __( 'Wholesale', 'dokan' ),
             'icon_url'             => DOKAN_WHOLESALE_ASSETS_DIR . '/images/wholesale.svg',
             'description'          => __( 'Wholesale Channel Config', 'dokan' ),
-            'document_link'        => 'https://wedevs.com/docs/dokan/modules/dokan-wholesale/',
+            'document_link'        => 'https://dokan.co/docs/wordpress/modules/dokan-wholesale/',
             'settings_title'       => __( 'Wholesale Settings', 'dokan' ),
             'settings_description' => __( 'You can configure wholesale settings for your store and allow vendors to operate on wholesale price and quantity.', 'dokan' ),
         ];

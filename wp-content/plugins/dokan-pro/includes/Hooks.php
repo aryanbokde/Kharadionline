@@ -21,6 +21,7 @@ class Hooks {
         add_filter( 'dokan_withdraw_disable', [ $this, 'withdraw_disable_withdraw_operation' ], 3 );
         add_filter( 'dokan_prepare_for_calculation', [ $this, 'add_combine_commission' ], 10, 6 );
         add_action( 'dokan_before_update_vendor', [ $this, 'save_admin_additional_commission' ], 10, 2 );
+        add_action( 'dokan_seller_wizard_payment_field_save', [ $this, 'update_progressbar_for_payment_gateway' ], 10 );
     }
 
     /**
@@ -100,6 +101,51 @@ class Hooks {
             $vendor = dokan()->vendor->get( $vendor_id );
             $vendor->update_meta( 'dokan_admin_additional_fee', wc_format_decimal( $data['admin_additional_fee'] ) );
         }
+    }
+
+    /**
+     * Increase progressbar for skrill and custom payment method.
+     *
+     * @since DOKAN_SINCE
+     *
+     * @param $instance
+     *
+     * @return void
+     */
+    public function update_progressbar_for_payment_gateway( $instance ) {
+        $dokan_settings = get_user_meta( $instance->store_id, 'dokan_profile_settings', true );
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        if ( ! empty( $_POST['settings']['skrill']['email'] ) ) {
+            $dokan_settings['payment']['skrill'] = [
+                'email' => sanitize_email( wp_unslash( $_POST['settings']['skrill']['email'] ) ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            ];
+
+            $dokan_settings['profile_completion']['skrill'] = $dokan_settings['profile_completion']['progress_vals']['payment_method_val'];
+            $dokan_settings['profile_completion']['paypal'] = 0;
+            $dokan_settings['profile_completion']['bank'] = 0;
+            $dokan_settings['profile_completion']['dokan_custom'] = 0;
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        if ( ! empty( $_POST['settings']['dokan_custom']['value'] ) ) {
+            $dokan_settings['payment']['dokan_custom'] = [
+                'value' => sanitize_text_field( wp_unslash( $_POST['settings']['dokan_custom']['value'] ) ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            ];
+            $dokan_settings['profile_completion']['skrill'] = 0;
+            $dokan_settings['profile_completion']['paypal'] = 0;
+            $dokan_settings['profile_completion']['bank'] = 0;
+            $dokan_settings['profile_completion']['dokan_custom'] = $dokan_settings['profile_completion']['progress_vals']['payment_method_val'];
+        }
+
+        // Check any payment methods setups and add manually value on Profile Completion also increase progress value
+        if ( isset( $dokan_settings['profile_completion']['skrill'] ) || isset( $dokan_settings['profile_completion']['dokan_custom'] ) ) {
+            if ( ! empty( $dokan_settings['profile_completion']['progress'] ) ) {
+                $dokan_settings['profile_completion']['progress'] = $dokan_settings['profile_completion']['progress'] + $dokan_settings['profile_completion']['progress_vals']['payment_method_val'];
+            }
+        }
+
+        update_user_meta( $instance->store_id, 'dokan_profile_settings', $dokan_settings );
     }
 }
 

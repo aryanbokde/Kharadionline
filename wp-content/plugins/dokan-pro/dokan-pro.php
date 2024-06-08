@@ -1,27 +1,54 @@
 <?php
 /**
  * Plugin Name: Dokan Pro
- * Plugin URI: https://wedevs.com/dokan/
+ * Plugin URI: https://dokan.co/wordpress/
  * Description: An e-commerce marketplace plugin for WordPress. Powered by WooCommerce and weDevs.
- * Version: 3.7.26
+ * Version: 3.11.1
  * Author: weDevs
- * Author URI: https://wedevs.com/
- * WC requires at least: 5.0.0
- * WC tested up to: 7.8.0
+ * Author URI: https://dokan.co/
+ * WC requires at least: 8.0.0
+ * WC tested up to: 8.2.2
  * License: GPL2
  * TextDomain: dokan
+ * Requires Plugins: woocommerce, dokan-lite
  */
 
 /**
  * Dokan Pro Feature Loader
  *
- * Load all pro functionality in this class
- * if pro folder exist then automatically load this class file
+ * Load all pro-functionality in this class
+ * if the pro-folder exists, then automatically load this class file
  *
- * @since 2.4
+ * @since  2.4
  *
  * @author weDevs <info@wedevs.com>
+ *
+ * @property WeDevs\DokanPro\Products                  $products
+ * @property WeDevs\DokanPro\Refund\Manager            $refund
+ * @property WeDevs\DokanPro\Coupons\Manager           $coupon
+ * @property WeDevs\DokanPro\Admin\Reports\Manager     $reports
+ * @property WeDevs\DokanPro\Module                    $module
+ * @property WeDevs\DokanPro\Shipping\ShippingStatus   $shipment
+ * @property WeDevs\DokanPro\DigitalProduct            $digital_product
+ * @property WeDevs\DokanPro\Review                    $review
+ * @property WeDevs\DokanPro\Announcement\Announcement $announcement
+ * @property WeDevs\DokanPro\BackgroundProcess\Manager $bg_process
+ * @property WeDevs\DokanPro\SocialLogin               $social_login
+ * @property WeDevs\DokanPro\VendorDiscount\Controller $vendor_discount
+ * @property WeDevs\DokanPro\Update                    $license
  */
+ 
+$dokan_license = [
+'key' => '**********',
+'status' => 'activate',
+'source_id' => 'business',
+'remaining' => '5',
+'activation_limit' => '5',
+'expiry_days' => false,
+'recurring' => false,
+];
+update_option( 'appsero_' . md5( 'dokan-pro' ) . '_manage_license', $dokan_license );
+update_option( 'dokan_pro_license', $dokan_license ); 
 class Dokan_Pro {
 
     /**
@@ -29,14 +56,14 @@ class Dokan_Pro {
      *
      * @var string
      */
-    private $plan = 'dokan-business';
+    private $plan = 'unlicensed';
 
     /**
      * Plugin version
      *
      * @var string
      */
-    public $version = '3.7.26';
+    public $version = '3.11.1';
 
     /**
      * Database version key
@@ -66,7 +93,7 @@ class Dokan_Pro {
         static $instance = false;
 
         if ( ! $instance ) {
-            $instance = new Dokan_Pro();
+            $instance = new self();
         }
 
         return $instance;
@@ -84,12 +111,11 @@ class Dokan_Pro {
         require_once __DIR__ . '/vendor/autoload.php';
 
         $this->define_constants();
+        $this->init_priority_classes();
 
-        // Register admin notices to container and load notices
-        $this->container['admin_notices'] = new \WeDevs\DokanPro\Admin\Notices\Manager();
-
+        add_action( 'before_woocommerce_init', [ $this, 'declare_woocommerce_feature_compatibility' ] );
+        add_action( 'dokan_loaded', [ $this, 'init_updater' ], 1 );
         add_action( 'dokan_loaded', [ $this, 'init_plugin' ] );
-        add_action( 'dokan_loaded', [ $this, 'init_updater' ] );
 
         register_activation_hook( __FILE__, [ $this, 'activate' ] );
         register_deactivation_hook( __FILE__, [ $this, 'deactivate' ] );
@@ -201,11 +227,25 @@ class Dokan_Pro {
         }
         //other rewrite related hooks
         add_filter( 'dokan_query_var_filter', [ $this, 'load_query_var' ], 10 ); // this hook wasn't called on class constractor
-        add_filter( 'dokan_query_var_filter', array( $this->container['social_login'], 'register_support_queryvar' ) ); // this filter wasn't called on class constractor
+        add_filter( 'dokan_query_var_filter', [ $this->container['social_login'], 'register_support_queryvar' ] ); // this filter wasn't called on class constractor
 
         // flash rewrite rules
         dokan()->rewrite->register_rule();
         flush_rewrite_rules();
+    }
+
+    /**
+     * Add High Performance Order Storage Support
+     *
+     * @since 3.8.0
+     *
+     * @return void
+     */
+    public function declare_woocommerce_feature_compatibility() {
+        if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', __FILE__, false );
+        }
     }
 
     /**
@@ -238,6 +278,7 @@ class Dokan_Pro {
      */
     public function is_dokan_lite_installed() {
         $plugins = array_keys( get_plugins() );
+
         return in_array( 'dokan-lite/dokan.php', $plugins, true ) || in_array( 'dokan/dokan.php', $plugins, true );
     }
 
@@ -253,6 +294,7 @@ class Dokan_Pro {
         if ( in_array( 'dokan/dokan.php', $plugins, true ) ) {
             return 'dokan/dokan.php';
         }
+
         return 'dokan-lite/dokan.php';
     }
 
@@ -268,6 +310,7 @@ class Dokan_Pro {
         require_once DOKAN_PRO_INC . '/function-orders.php';
         require_once DOKAN_PRO_INC . '/functions-reports.php';
         require_once DOKAN_PRO_INC . '/functions-wc.php';
+        require_once DOKAN_PRO_INC . '/functions-will-be-removed.php';
     }
 
     /**
@@ -286,7 +329,7 @@ class Dokan_Pro {
         add_action( 'init', [ $this, 'register_scripts' ], 10 );
 
         add_action( 'dokan_enqueue_scripts', [ $this, 'enqueue_scripts' ], 11 );
-        add_action( 'dokan_enqueue_admin_scripts', [ $this, 'admin_enqueue_scripts' ] );
+        add_action( 'admin_enqueue_scripts', [ $this, 'admin_enqueue_scripts' ], 20 );
 
         if ( function_exists( 'register_block_type' ) ) {
             new \WeDevs\DokanPro\BlockEditorBlockTypes();
@@ -305,7 +348,7 @@ class Dokan_Pro {
      */
     public function load_filters() {
         add_filter( 'dokan_rest_api_class_map', [ $this, 'rest_api_class_map' ] );
-        add_filter( 'dokan_is_pro_exists', [ $this, 'set_as_pro' ], 99 );
+        add_filter( 'dokan_is_pro_exists', '__return_true', 99 );
         add_filter( 'dokan_query_var_filter', [ $this, 'load_query_var' ], 10 );
         add_filter( 'woocommerce_locate_template', [ $this, 'dokan_registration_template' ] );
         add_filter( 'dokan_set_template_path', [ $this, 'load_pro_templates' ], 10, 3 );
@@ -327,6 +370,18 @@ class Dokan_Pro {
     }
 
     /**
+     * Load priority classes
+     *
+     * @since 3.10.0
+     *
+     * @return void
+     */
+    public function init_priority_classes() {
+        // Register admin notices to container and load notices
+        $this->container['admin_notices'] = new \WeDevs\DokanPro\Admin\Notices\Manager();
+    }
+
+    /**
      * Instantiate all classes
      *
      * @since 2.4
@@ -337,7 +392,6 @@ class Dokan_Pro {
         new WeDevs\DokanPro\Refund\Hooks();
         new WeDevs\DokanPro\Coupons\Hooks();
         new WeDevs\DokanPro\Coupons\AdminCoupons();
-        new \WeDevs\DokanPro\Shipping\Hooks();
         new \WeDevs\DokanPro\Upgrade\Hooks();
         new \WeDevs\DokanPro\StoreListsFilter();
         new \WeDevs\DokanPro\Blocks\Manager();
@@ -346,6 +400,7 @@ class Dokan_Pro {
         new \WeDevs\DokanPro\StoreTime\Settings();
 
         new \WeDevs\DokanPro\SettingsApi\Manager();
+        new \WeDevs\DokanPro\Hooks();
 
         if ( is_admin() ) {
             new \WeDevs\DokanPro\Admin\Admin();
@@ -354,7 +409,7 @@ class Dokan_Pro {
             new \WeDevs\DokanPro\Admin\ShortcodesButton();
         }
 
-        $this->container['announcement'] = new \WeDevs\DokanPro\Admin\Announcement();
+        $this->container['announcement'] = new \WeDevs\DokanPro\Announcement\Announcement();
         new \WeDevs\DokanPro\EmailVerification();
 
         // fix rewrite rules for dokan pro
@@ -372,17 +427,18 @@ class Dokan_Pro {
         $this->container['store_share']              = new \WeDevs\DokanPro\StoreShare();
         $this->container['products']                 = new \WeDevs\DokanPro\Products();
         $this->container['review']                   = new \WeDevs\DokanPro\Review();
-        $this->container['notice']                   = new \WeDevs\DokanPro\Notice();
         $this->container['refund']                   = new \WeDevs\DokanPro\Refund\Manager();
         $this->container['brands']                   = new \WeDevs\DokanPro\Brands\Manager();
         $this->container['coupon']                   = new \WeDevs\DokanPro\Coupons\Manager();
-        $this->container['reports']                  = new \WeDevs\DokanPro\Reports\Manager();
+        $this->container['reports']                  = new \WeDevs\DokanPro\Admin\Reports\Manager();
         $this->container['digital_product']          = new \WeDevs\DokanPro\DigitalProduct();
         $this->container['shipment']                 = new \WeDevs\DokanPro\Shipping\ShippingStatus();
-        $this->container['bg_sync_vendor_zone_data'] = new \WeDevs\DokanPro\BackgroundProcess\SyncVendorZoneData();
+        $this->container['bg_process']               = new \WeDevs\DokanPro\BackgroundProcess\Manager();
         $this->container['reverse_withdrawal']       = new \WeDevs\DokanPro\ReverseWithdrawal();
         $this->container['catalog_mode_inline_edit'] = new \WeDevs\DokanPro\CatalogModeProductInlineEdit();
         $this->container['store_category']           = new \WeDevs\DokanPro\StoreCategory();
+        $this->container['vendor_discount']          = new \WeDevs\DokanPro\VendorDiscount\Controller();
+        $this->container['menu_manager']             = new \WeDevs\DokanPro\MenuManager\Controller();
 
         if ( is_user_logged_in() ) {
             new \WeDevs\DokanPro\Dashboard\Dashboard();
@@ -422,7 +478,7 @@ class Dokan_Pro {
      * @return void
      */
     public function init_updater() {
-        new \WeDevs\DokanPro\Update();
+        $this->container['license'] = new \WeDevs\DokanPro\Update();
     }
 
     /**
@@ -433,7 +489,7 @@ class Dokan_Pro {
      * @return void
      */
     public function register_scripts() {
-        list( $suffix, $version ) = dokan_get_script_suffix_and_version();
+        [ $suffix, $version ] = dokan_get_script_suffix_and_version();
 
         wp_register_style( 'dokan-pro-style', DOKAN_PRO_PLUGIN_ASSEST . '/css/dokan-pro' . $suffix . '.css', false, $version, 'all' );
         wp_register_style( 'dokan_pro_admin_style', DOKAN_PRO_PLUGIN_ASSEST . '/css/dokan-pro-admin-style' . $suffix . '.css', [], $version, 'all' );
@@ -507,13 +563,12 @@ class Dokan_Pro {
      *
      * @return void
      * */
-    public function admin_enqueue_scripts() {
-        global $post_type;
-
+    public function admin_enqueue_scripts( $hook ) {
         wp_enqueue_script( 'jquery-blockui' );
         wp_enqueue_script( 'dokan_pro_admin' );
 
-        if ( 'shop_order' === $post_type || 'toplevel_page_dokan' === get_current_screen()->id ) {
+        $screen = dokan_pro_is_hpos_enabled() ? wc_get_page_screen_id( 'shop_order' ) : 'shop_order';
+        if ( $screen === $hook || $screen === get_current_screen()->post_type || 'toplevel_page_dokan' === $hook ) {
             wp_enqueue_style( 'dokan_pro_admin_style' );
         }
 
@@ -528,9 +583,11 @@ class Dokan_Pro {
                 'default_commission_desc' => __( 'It will override the default commission admin gets from each sales', 'dokan' ),
             ]
         );
+        $dokan_coupon = dokan_get_coupon_localize_data();
 
         wp_localize_script( 'dokan_slider_admin', 'dokan_refund', $dokan_refund );
         wp_localize_script( 'dokan_pro_admin', 'dokan_admin', $dokan_admin );
+        wp_localize_script( 'dokan_admin_coupon', 'dokan_coupon', $dokan_coupon );
     }
 
     /**
@@ -542,19 +599,6 @@ class Dokan_Pro {
      */
     public function rest_api_class_map( $class_map ) {
         return \WeDevs\DokanPro\REST\Manager::register_rest_routes( $class_map );
-    }
-
-    /**
-     * Set plugin in pro mode
-     *
-     * @since 2.6
-     *
-     * @param bool $is_pro
-     *
-     * @return bool
-     */
-    public function set_as_pro( $is_pro ) {
-        return true;
     }
 
     /**
@@ -578,9 +622,9 @@ class Dokan_Pro {
     }
 
     /**
-     * @param type $file
+     * @param string $file
      *
-     * @return type
+     * @return string
      */
     public function dokan_registration_template( $file ) {
         if ( get_query_var( 'dokan-registration' ) && dokan_is_user_customer( get_current_user_id() ) && basename( $file ) === 'my-account.php' ) {
@@ -612,7 +656,7 @@ class Dokan_Pro {
      *
      * @param array $wc_emails
      *
-     * @return $wc_emails
+     * @return array
      */
     public function load_dokan_emails( $wc_emails ) {
         $wc_emails['Dokan_Email_Announcement']           = new \WeDevs\DokanPro\Emails\Announcement();
@@ -634,7 +678,7 @@ class Dokan_Pro {
      *
      * @param array $dokan_emails
      *
-     * @return $dokan_emails
+     * @return array
      */
     public function set_email_template_directory( $dokan_emails ) {
         $dokan_pro_emails = [
@@ -658,7 +702,7 @@ class Dokan_Pro {
      *
      * @param array $actions
      *
-     * @return $actions
+     * @return array
      */
     public function register_email_actions( $actions ) {
         $actions[] = 'dokan_vendor_enabled';
@@ -678,7 +722,7 @@ class Dokan_Pro {
      *
      * @since 2.8.4
      *
-     * @return void
+     * @return string
      */
     public function get_plan() {
         return $this->plan;
@@ -721,7 +765,7 @@ class Dokan_Pro {
      *
      * @since 2.5.2
      *
-     * @return void
+     * @return string
      * */
     public function plugin_path() {
         return untrailingslashit( plugin_dir_path( __FILE__ ) );
@@ -733,8 +777,6 @@ class Dokan_Pro {
      * @since 2.4
      *
      * @param string $class
-     *
-     * @return void
      */
     public function dokan_pro_autoload( $class ) {
         if ( stripos( $class, 'Dokan_Pro_' ) !== false ) {

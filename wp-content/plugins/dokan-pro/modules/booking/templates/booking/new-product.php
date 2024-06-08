@@ -23,10 +23,22 @@ if ( isset( $_GET['product_id'] ) ) {
     $product = new WC_Product_Booking();
     $product->set_status( $post_status );
 
-    $post_id          = $product->save();
+    $post_id = $product->save();
+    wp_update_post(
+        [
+            'ID'          => $post_id,
+            'post_author' => dokan_get_current_user_id(),
+        ]
+    );
+
     $post             = get_post( $post_id );
     $new_product_form = true;
 }
+
+// set new post status
+$post_status = dokan_get_default_product_status( dokan_get_current_user_id() );
+$post_status = $product->get_status() === 'auto-draft' ? $post_status : $product->get_status();
+$post_status = apply_filters( 'dokan_post_edit_default_status', $post_status, $product );
 
 $_visibility        = $product->get_catalog_visibility();
 $visibility_options = dokan_get_product_visibility_options();
@@ -195,6 +207,15 @@ if ( empty( $post_id ) || $new_product_form ) {
                             echo str_replace( '<select', '<select data-placeholder="' . __( 'Select product tags', 'dokan' ) . '" multiple="multiple" ', $drop_down_tags );
                             ?>
                         </div>
+
+                        <?php
+                            // Add YITH brand plugin support
+                            if ( empty( $post_id ) ) {
+                                echo do_action( 'dokan_booking_new_product_after_product_tags' );
+                            } else  {
+                                echo do_action( 'dokan_booking_edit_product_after_product_tags', $post, $post_id );
+                            }
+                        ?>
 
                     </div><!-- .content-half-part -->
 
@@ -723,23 +744,14 @@ if ( empty( $post_id ) || $new_product_form ) {
                     <div class="dokan-section-content">
                         <div class="dokan-form-group content-half-part">
                             <label for="post_status" class="form-label"><?php _e( 'Product Status', 'dokan' ); ?></label>
-                            <?php if ( $post_status != 'pending' ) { ?>
-                                <?php
-                                $post_statuses = apply_filters( 'dokan_post_status', array(
-                                    'publish' => __( 'Online', 'dokan' ),
-                                    'draft'   => __( 'Draft', 'dokan' )
-                                ), $post );
-                                ?>
-
-                                <select id="post_status" class="dokan-form-control" name="post_status">
-                                    <?php foreach ( $post_statuses as $status => $label ) { ?>
-                                        <option value="<?php echo $status; ?>"<?php selected( $post_status, $status ); ?>><?php echo $label; ?></option>
-                                <?php } ?>
-                                </select>
-                            <?php } else { ?>
-                                <?php $pending_class = $post_status == 'pending' ? '  dokan-label dokan-label-warning' : ''; ?>
-                                <span class="dokan-toggle-selected-display<?php echo $pending_class; ?>"><?php echo dokan_get_post_status( $post_status ); ?></span>
+                            <?php
+                            $post_statuses = dokan_get_available_post_status( $post->ID );
+                            ?>
+                            <select id="post_status" class="dokan-form-control" name="post_status">
+                                <?php foreach ( $post_statuses as $status => $label ) { ?>
+                                    <option value="<?php echo $status; ?>"<?php selected( $post_status, $status ); ?>><?php echo $label; ?></option>
                             <?php } ?>
+                            </select>
                         </div>
 
                         <div class="dokan-form-group content-half-part">
@@ -810,7 +822,11 @@ if ( empty( $post_id ) || $new_product_form ) {
 <script type="text/javascript">
         ( function ( $ ) {
 
+            let postId = <?php echo esc_html( $post_id ); ?>
+
             $( document ).ready( function () {
+                window.wc_bookings_writepanel_js_params.post = postId;
+
                 var duration_type = $( 'select#_wc_booking_duration_type' );
                 duration_type.on( 'change', function () {
                     if ( duration_type.val() == 'customer' ) {

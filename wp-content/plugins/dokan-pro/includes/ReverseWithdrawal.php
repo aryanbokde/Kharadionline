@@ -1,10 +1,10 @@
 <?php
 namespace WeDevs\DokanPro;
 
-use WeDevs\DokanPro\Refund\Refund;
-use WeDevs\Dokan\ReverseWithdrawal\SettingsHelper;
-use WeDevs\Dokan\ReverseWithdrawal\Manager as ReverseWithdrawalManager;
 use WeDevs\Dokan\ReverseWithdrawal\Helper as ReverseWithdrawalHelper;
+use WeDevs\Dokan\ReverseWithdrawal\Manager as ReverseWithdrawalManager;
+use WeDevs\Dokan\ReverseWithdrawal\SettingsHelper;
+use WeDevs\DokanPro\Refund\Refund;
 
 /**
  * Class ReverseWithdrawal
@@ -87,16 +87,13 @@ class ReverseWithdrawal {
             $due_status['due_date']
         );
 
-        /**
-         * @var $announcement \WeDevs\DokanPro\Admin\Announcement
-         */
-        $announcement = dokan_pro()->announcement;
-        // sent announcement message
+        $announcement = dokan_pro()->announcement->manager;
+        // sent an announcement message
         $args = [
-            'title'         => html_entity_decode( $message ),
-            'sender_type'   => 'selected_seller',
-            'sender_ids'    => [ $vendor_id ],
-            'status'        => 'publish',
+            'title'             => html_entity_decode( $message ),
+            'announcement_type' => 'selected_seller',
+            'sender_ids'        => [ $vendor_id ],
+            'status'            => 'publish',
         ];
         $notice = $announcement->create_announcement( $args );
 

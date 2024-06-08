@@ -15,6 +15,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Dokan_Live_Search_Widget extends WP_Widget {
 
     /**
+     * Instance key to keep track of the widget inside widget container in dokan-lite
+     *
+     * @since 3.10.2
+     *
+     * @var string
+     */
+    const INSTANCE_KEY = 'live_search__Dokan_Live_Search_Widget'; // Naming Structure: {module_slug}__{ClassName}
+
+    /**
      * Constructor for the Dokan_Live_Search_Widget class
      *
      * @uses is_admin()
@@ -41,7 +50,7 @@ class Dokan_Live_Search_Widget extends WP_Widget {
         }
 
         $title              = isset( $instance['title'] ) ? apply_filters( 'widget_title', $instance['title'], $instance, $this->id_base ) : '';
-        $live_search_option = dokan_get_option( 'live_search_option', 'dokan_live_search_setting', 'default' );
+        $live_search_option = dokan_get_option( 'live_search_option', 'dokan_live_search_setting', 'old_live_search' );
 
         if ( 'old_live_search' === $live_search_option ) {
             $live_search_option_class = '';

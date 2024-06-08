@@ -42,6 +42,10 @@
 
 
             <article class="dokan-rma-request-area">
+                <header class="dokan-dashboard-header">
+                    <h1 class="entry-title"><?php _e( 'Return Requests', 'dokan' ); ?></h1>
+                </header><!-- .entry-header -->
+
                 <?php  dokan_warranty_request_listing_status_filter(); ?>
 
                 <table class="dokan-table table table-striped rma-request-listing-table">
@@ -67,8 +71,8 @@
                                         } else {
                                             $order_link = '<strong>' . sprintf( __( 'Order %s', 'dokan' ), esc_attr( $request['order_id'] ) ) . '</strong>';
                                         }
-
-                                        echo sprintf( '<a href="%s">#%d</a> by %s on %s', add_query_arg( [ 'request' => $request['id'] ], dokan_get_navigation_url( 'return-request' ) ), $request['id'], $request['customer']['name'], $order_link );
+                                        // translators:  1: Return Request URL 2: Return request ID 3: Customer name 4: Order link
+                                        echo sprintf( __( '<a href="%s">#%s</a> by %s on %s', 'dokan' ), add_query_arg( [ 'request' => $request['id'] ], dokan_get_navigation_url( 'return-request' ) ), number_format_i18n( $request['id'] ), $request['customer']['name'], $order_link );
                                         ?>
 
                                         <div class="row-actions">

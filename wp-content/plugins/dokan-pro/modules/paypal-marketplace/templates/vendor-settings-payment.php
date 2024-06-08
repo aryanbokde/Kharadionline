@@ -79,7 +79,7 @@ if ( $load_connect_js ) :
                     '        <p class="dokan-text-left">\n' +
                     '            <a\n' +
                     '                data-paypal-button="true"\n' +
-                    '                target="PPFrame"\n' +
+                    '                target="_self"\n' +
                     '                href="'+ connect_url +'"\n' +
                     '                id="vendor_paypal_connect"\n' +
                     '                class="button button-primary"\n' +

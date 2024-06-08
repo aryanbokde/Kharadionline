@@ -22,7 +22,7 @@ if ( ! class_exists( 'Dokan_Staff_New_Order' ) ) :
      * @extends     WC_Email
      */
     class Dokan_Staff_New_Order extends WC_Email {
-
+        public $order_info;
         /**
          * Constructor.
          */

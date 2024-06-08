@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<strong>#<?php echo esc_html( $resource_id ); ?> &mdash; <span class="resource_name"><?php echo $resource->post_title; ?></span></strong>
 
 		<input type="hidden" name="resource_id[<?php echo $loop; ?>]" value="<?php echo esc_attr( $resource_id ); ?>" />
+		<input type="hidden" name="resource_title[<?php echo esc_attr( $loop ); ?>]" value="<?php echo sprintf( '#%d - %s', esc_attr( $resource_id ), esc_attr( $resource->post_title ) ); ?>" />
 		<input type="hidden" class="resource_menu_order" name="resource_menu_order[<?php echo $loop; ?>]" value="<?php echo $loop; ?>" />
 	</h3>
 	<table cellpadding="0" cellspacing="0" class="wc-metabox-content">

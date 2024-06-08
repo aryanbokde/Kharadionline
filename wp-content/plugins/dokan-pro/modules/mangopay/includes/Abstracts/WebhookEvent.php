@@ -13,6 +13,8 @@ abstract class WebhookEvent {
 
     /**
      * Event holder
+     *
+     * @var string
      */
     private $event;
 
@@ -28,7 +30,7 @@ abstract class WebhookEvent {
     /**
      * Set event
      *
-     * @param $event
+     * @param string $event
      *
      * @since 3.5.0
      *
@@ -43,7 +45,7 @@ abstract class WebhookEvent {
      *
      * @since 3.5.0
      *
-     * @return array
+     * @return string
      */
     public function get_event() {
         return $this->event;

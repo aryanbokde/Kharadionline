@@ -5,6 +5,7 @@ namespace DokanPro\Modules\Subscription;
 use WeDevs\Dokan\Traits\Singleton;
 use DokanPro\Modules\Subscription\Helper;
 use WeDevs\DokanPro\Modules\Subscription\HelperChangerProductStatus;
+use WP_REST_Request;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -34,6 +35,7 @@ class ProductStatusChanger {
         add_filter( 'dokan_rest_pre_product_listing_args', [ $this, 'filter_products_for_api' ], 15, 2 );
         add_action( 'dokan_vendor_purchased_subscription', [ $this, 'change_product_status' ] );
         add_filter( 'dokan_background_process_container', [ $this, 'init_change_product_status_bg_class' ] );
+        add_action( 'dps_after_bulk_publish_product_single', 'dokan_trigger_product_create_email', 10, 1 );
     }
 
     /**
@@ -72,7 +74,7 @@ class ProductStatusChanger {
 
         $vendor_id          = dokan_get_current_user_id();
         $remaining_products = Helper::get_vendor_remaining_products( $vendor_id );
-        $new_status         = dokan_is_seller_trusted( $vendor_id ) ? 'publish' : 'pending';
+        $new_status         = dokan_get_new_post_status( $vendor_id );
         if ( ! $remaining_products ) {
             return;
         }
@@ -80,7 +82,7 @@ class ProductStatusChanger {
         foreach ( $product_ids as $product_id ) {
             $product = wc_get_product( $product_id );
 
-            if ( ! $product || $product->get_status() === $new_status ) {
+            if ( ! $product || $product->get_status() === $new_status || 'publish' === $product->get_status() ) {
                 continue;
             }
 
@@ -89,6 +91,7 @@ class ProductStatusChanger {
                 $product->delete_meta_data( '_dokan_product_status' );
                 $product->save();
                 $remaining_products = true === $remaining_products ? $remaining_products : $remaining_products - 1;
+                do_action( 'dps_after_bulk_publish_product_single', $product, $new_status );
             } else {
                 break;
             }

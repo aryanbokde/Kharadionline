@@ -120,7 +120,6 @@ class OrderValidator {
         if ( ! $connected_vendor_id ) {
             // old order note for reference: Vendor's payment will be transferred to admin account since the vendor had not connected to Razorpay.
             $order->add_order_note( sprintf( __( 'Vendor payment will be transferred to the admin account since the vendor had not connected to Razorpay.', 'dokan' ) ) );
-            $order->save_meta_data();
             return false;
         }
 
@@ -134,7 +133,6 @@ class OrderValidator {
                     $order->get_currency()
                 )
             );
-            $order->save_meta_data();
             return false;
         }
 

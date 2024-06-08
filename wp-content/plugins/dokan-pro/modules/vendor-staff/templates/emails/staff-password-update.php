@@ -48,7 +48,7 @@ do_action( 'woocommerce_email_header', $email_heading, $email );
     ?>
 </p>
 <br>
-<p>
+<p style="text-align: <?php echo esc_attr( $text_align ); ?>">
     <?php
     /**
      * Show user-defined additional content - this is set in each email's settings.

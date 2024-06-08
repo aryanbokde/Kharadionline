@@ -44,7 +44,7 @@ class Settings {
             'title'                => __( 'Product Advertising', 'dokan' ),
             'icon_url'             => DOKAN_PRODUCT_ADVERTISEMENT_ASSETS . '/images/advertisment.svg',
             'description'          => __( 'Manage Product Advertising', 'dokan' ),
-            'document_link'        => 'https://wedevs.com/docs/dokan/modules/product-advertising/',
+            'document_link'        => 'https://dokan.co/docs/wordpress/modules/product-advertising/',
             'settings_title'       => __( 'Product Advertisement Settings', 'dokan' ),
             'settings_description' => __( 'Configure settings for your vendor to feature their products on store pages.', 'dokan' ),
         ];

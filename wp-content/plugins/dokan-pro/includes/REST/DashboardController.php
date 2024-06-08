@@ -53,7 +53,7 @@ class DashboardController extends DokanRESTController {
     }
 
     /**
-     * Check permission if current user can see profile progress bar data.
+     * Check permission if the current user can see profile progress bar data.
      *
      * Only seller will get the access to get profile progressbar.
      *

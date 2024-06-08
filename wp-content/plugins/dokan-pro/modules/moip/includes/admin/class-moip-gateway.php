@@ -601,7 +601,7 @@ class Dokan_Moip_Connect extends WC_Payment_Gateway {
      * Process seller payment
      *
      * @param int $order_id
-     * @param object $order
+     * @param \WC_Order $order
      * @param string $access_token
      * @return void
      * @throws Exception
@@ -609,24 +609,14 @@ class Dokan_Moip_Connect extends WC_Payment_Gateway {
     public function process_seller_payment( $order_id, $order, $access_token ) {
         $currency     = strtolower( get_woocommerce_currency() );
         $order_desc   = sprintf( __( '%1$s - Order %2$s', 'dokan' ), esc_html( get_bloginfo( 'name' ) ), $order->get_order_number() );
-        $has_suborder = get_post_meta( $order_id, 'has_sub_order', true );
+        $has_suborder = $order->get_meta( 'has_sub_order', true );
         $all_orders   = array();
 
         // put orders in an array
         // if has sub-orders, pick only sub-orders
         // if it's a single order, get the single order only
         if ( $has_suborder === '1' ) {
-            $sub_orders = get_children(
-                array(
-                    'post_parent' => $order_id,
-                    'post_type' => 'shop_order',
-                )
-            );
-
-            foreach ( $sub_orders as $order_post ) {
-                $sub_order    = wc_get_order( $order_post->ID );
-                $all_orders[] = $sub_order;
-            }
+            $all_orders = dokan()->order->get_child_orders( $order_id );
         } else {
             $all_orders[] = $order;
         }
@@ -729,7 +719,7 @@ class Dokan_Moip_Connect extends WC_Payment_Gateway {
      * Format moip customer and holder data
      *
      * @param object $moip
-     * @param object $order
+     * @param WC_Order $order
      *
      * @return array
      */
@@ -842,6 +832,8 @@ class Dokan_Moip_Connect extends WC_Payment_Gateway {
 
     /**
      * Check is subscription order
+     *
+     * @param WC_Order $order
      *
      * @return void
      **/

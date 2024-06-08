@@ -79,6 +79,7 @@ class Dokan_Moip_Withdraw {
         add_filter( 'dokan_withdraw_method_settings_title', [ $this, 'get_heading' ], 10, 2 );
         add_filter( 'dokan_withdraw_method_icon', [ $this, 'get_icon' ], 10, 2 );
         add_filter( 'dokan_is_seller_connected_to_payment_method', [ $this, 'is_seller_connected' ], 10, 3 );
+        add_filter( 'dokan_vendor_to_array', [ $this, 'add_moip_to_vendor_profile_data' ] );
     }
 
     /**
@@ -320,6 +321,27 @@ class Dokan_Moip_Withdraw {
         }
 
         return $connected;
+    }
+
+    /**
+     * Returns true if venddor enabled moip
+     *
+     * @since 3.9.1
+     *
+     * @param $data
+     *
+     * @return array
+     */
+    public function add_moip_to_vendor_profile_data( $data ) {
+        $vendor_id = ! empty( $data['id'] ) ? absint( $data['id'] ) : 0;
+
+        if ( ! current_user_can( 'manage_woocommerce' ) && $vendor_id !== dokan_get_current_user_id() ) {
+            return $data;
+        }
+
+        $data['payment']['dokan-moip-connect'] = $this->is_seller_connected( false, 'dokan-moip-connect', $vendor_id );
+
+        return $data;
     }
 }
 

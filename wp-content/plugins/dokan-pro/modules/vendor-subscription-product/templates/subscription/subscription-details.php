@@ -15,7 +15,6 @@ $subscription_id    = isset( $_GET['subscription_id'] ) ? intval( $_GET['subscri
 $subscription       = new WC_Subscription($subscription_id);
 $statuses           = wcs_get_subscription_statuses();
 $hide_customer_info = dokan_get_option( 'hide_customer_info', 'dokan_selling', 'off' );
-$subscription_post  = get_post( $subscription_id );
 ?>
 
 <?php do_action( 'dokan_dashboard_wrap_start' ); ?>
@@ -82,23 +81,20 @@ $subscription_post  = get_post( $subscription_id );
 
                           switch ( $item['type'] ) {
                             case 'line_item' :
-                            if ( version_compare( WC_VERSION, '4.4.0', '>=' ) ) {
                                 $_product = $item->get_product();
-                            } else {
-                                $_product = $subscription->get_product_from_item( $item );
-                            }
 
-                            dokan_get_template_part( 'orders/order-item-html', '', array(
-                              'order'    => $subscription,
-                              'item_id'  => $item_id,
-                              '_product' => $_product,
-                              'item'     => $item
-                            ) );
+                                dokan_get_template_part( 'orders/order-item-html', '', array(
+                                  'order'    => $subscription,
+                                  'item_id'  => $item_id,
+                                  '_product' => $_product,
+                                  'item'     => $item
+                                ) );
                             break;
+
                             case 'fee' :
-                            dokan_get_template_part( 'orders/order-fee-html', '', array(
-                              'item_id' => $item_id,
-                            ) );
+                                dokan_get_template_part( 'orders/order-fee-html', '', array(
+                                  'item_id' => $item_id,
+                                ) );
 
                             break;
                           }
@@ -217,7 +213,7 @@ $subscription_post  = get_post( $subscription_id );
                       </tr>
                     </thead>
                     <tbody>
-                      <?php do_action( 'dokan_vps_subscriptions_related_orders_meta_box_rows', $subscription_post ); ?>
+                      <?php do_action( 'dokan_vps_subscriptions_related_orders_meta_box_rows', $subscription ); ?>
                     </tbody>
                   </table>
                 </div>

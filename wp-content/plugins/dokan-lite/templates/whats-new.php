@@ -4,6 +4,171 @@
  */
 $changelog = [
     [
+        'version'  => 'Version 3.11.2',
+        'released' => '2024-05-27',
+        'changes'  => [
+            'Improvement'         => [
+                [
+                    'title'       => 'WooCommerce 8.9.1 Compatibility added.',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.11.1',
+        'released' => '2024-05-16',
+        'changes'  => [
+            'New'         => [
+                [
+                    'title'       => 'Action hook `dokan_dashboard_sidebar_start` added.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Action hook `dokan_dashboard_sidebar_end` added.',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.11.0',
+        'released' => '2024-05-10',
+        'changes'  => [
+            'Fix'         => [
+                [
+                    'title'       => 'The status of sub-orders does not update to completed if it contains only virtual products.',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.10.4',
+        'released' => '2024-04-25',
+        'changes'  => [
+            'Fix'         => [
+                [
+                    'title'       => 'Vendor dashboard Order status filter menu displayed a duplicate border',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Vendor dashboard withdraw page display get hidden',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.10.3',
+        'released' => '2024-04-17',
+        'changes'  => [
+            'Improvement' => [
+                [
+                    'title'       => 'Notification count support added for vendor dashboard',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Added a new filter to set a default value for I am a customer / I am a vendor radio button',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Processing Order count added for vendor dashboard orders menu',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Performance improvements for vendor dashboard -> order details page -> downloadable product permission section',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Admin can change product author from REST API',
+                    'description' => 'Previously, product_author was read-only property, now admin can change product_author for an existing product or create a new product for another author.',
+                ],
+                [
+                    'title'       => 'Warning message styling for selecting fixed cart discount on admin coupon add edit page',
+                    'description' => '',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => 'Advertisement product not purchasable for own product purchasing restriction',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Header Template number one breaks without background image',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'HTML entity showing in product tag selection in vendor dashboard',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Vendor add notification switch in admin dashboard',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Under wooCommerce my-account registration section, `I am a customer` was forced to be set as the default value. With this PR this problem has been fixed',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.10.2',
+        'released' => '2024-04-01',
+        'changes'  => [
+            'Improvement' => [
+                [
+                    'title'       => 'Email placeholder, additional content support and formatting added',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Add requires plugin header for dokan so that required plugin check can be initiated',
+                    'description' => '',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => 'Vendor profile progress bar doesn\'t update if the address is filled from the vendor registration form',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Color synchronization issue in vendor dashboard order notes',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Product review email cannot be disabled without also disabling Contact Vendor email',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Order Export to CSV on the filtered list not working',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.10.1',
+        'released' => '2024-03-18',
+        'changes'  => [
+            'Improvement' => [
+                [
+                    'title'       => 'Update Categories Easily from Vendor Edit Page',
+                    'description' => 'In earlier versions of the Dokan plugin for WordPress and WooCommerce, editing store categories was limited to the vendor details view page. This approach created confusion and made it difficult for users to manage their store categories effectively. However, with the latest update, a significant improvement has been introduced.
+                    Now, you can conveniently edit and update your store categories directly from the vendor edit page in the admin dashboard. This enhancement provides a more intuitive and user-friendly experience, allowing you to efficiently manage and organize your store categories in one central location.',
+                ],
+                [
+                    'title'       => 'Threads social media platform added as a Store Socials Option. Thanks `@fisher2470`',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Vendor Dashboard settings submenu translation support added',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
         'version'  => 'Version 3.10.0',
         'released' => '2024-03-04',
         'changes'  => [

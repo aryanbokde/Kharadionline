@@ -16,7 +16,9 @@
         do_action( 'dokan_dashboard_content_before' );
     ?>
     <div class="dokan-dashboard-content">
-        <h3 class="entry-title"><?php esc_html_e( 'Store Followers', 'dokan' ); ?></h3>
+        <header class="dokan-dashboard-header">
+            <h1 class="entry-title"><?php _e( 'Store Followers', 'dokan' ); ?></h1>
+        </header><!-- .entry-header -->
 
         <article class="dashboard-content-area">
             <table class="dokan-table dokan-table-striped product-listing-table dokan-inline-editable-table">

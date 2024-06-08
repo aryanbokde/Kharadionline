@@ -11,6 +11,7 @@ use WeDevs\DokanPro\Modules\StripeExpress\Support\Helper;
 use WeDevs\DokanPro\Modules\StripeExpress\Support\Settings;
 use WeDevs\DokanPro\Modules\StripeExpress\Processors\Order;
 use WeDevs\DokanPro\Modules\StripeExpress\Support\OrderMeta;
+use WeDevs\DokanPro\Modules\StripeExpress\Support\UserMeta;
 use WeDevs\DokanPro\Modules\StripeExpress\Api\PaymentIntent;
 use WeDevs\DokanPro\Modules\StripeExpress\Processors\Payment;
 use WeDevs\DokanPro\Modules\StripeExpress\Processors\Customer;
@@ -100,15 +101,15 @@ class Checkout {
             $order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : null;
             $order    = wc_get_order( $order_id );
 
-            if ( ! is_a( $order, 'WC_Order' ) ) {
+            if ( ! $order ) {
                 $amount   = WC()->cart->get_total( false );
                 $currency = get_woocommerce_currency();
+                $metadata = [];
             } else {
                 $amount   = $order->get_total();
                 $currency = $order->get_currency();
+                $metadata = Payment::generate_data( $order )['metadata'];
             }
-
-            $metadata = Payment::generate_data( new WC_Order( $order_id ) )['metadata'];
 
             $payment_intent = PaymentIntent::create(
                 [
@@ -162,7 +163,10 @@ class Checkout {
             $save_payment_method = isset( $_POST['save_payment_method'] ) && 'yes' === sanitize_text_field( wp_unslash( $_POST['save_payment_method'] ) );
             $payment_type        = ! empty( $_POST['payment_type'] ) ? sanitize_text_field( wp_unslash( $_POST['payment_type'] ) ) : '';
 
-            $payment_intent = Payment::update_intent( $payment_intent_id, $order_id, [], false, $save_payment_method, $payment_type );
+            // get the order object
+            $order = wc_get_order( $order_id );
+
+            $payment_intent = Payment::update_intent( $payment_intent_id, $order, [], false, $save_payment_method, $payment_type );
 
             wp_send_json_success( $payment_intent, 200 );
         } catch ( DokanException $e ) {
@@ -476,7 +480,37 @@ class Checkout {
              */
             $subscription_data = apply_filters( 'dokan_stripe_express_process_subscription_data', $subscription_data, $product_id, $order_id );
 
-            $subscription = Subscription::create( $subscription_data );
+            // get subscription id from order meta
+            $stripe_subscription_id = Subscription::get_temporary_subscription_id( get_current_user_id() );
+            if ( empty( $stripe_subscription_id ) ) {
+                $subscription = Subscription::create( $subscription_data );
+            } else {
+                // get subscription data
+                $subscription = Subscription::get( $stripe_subscription_id );
+                // if the subscription status is incomplete, cancel it first as incomplete subscription can't be updated
+                if ( 'incomplete' === $subscription->status ) {
+                    try {
+                        $subscription->cancel();
+                        $subscription = Subscription::create( $subscription_data );
+                    } catch ( Exception $exception ) { // phpcs:ignore
+                        // in case of api error
+                        throw new Exception( $exception->getMessage() );
+                    }
+                } elseif ( 'incomplete_expired' === $subscription->status ) {
+                    // if the subscription status is incomplete_expired, try to create a new subscription
+                    $subscription = Subscription::create( $subscription_data );
+                } else {
+                    // update subscription
+                    $subscription = Subscription::update( $subscription_data, $stripe_subscription_id, get_current_user_id(), $order_id );
+                    if ( is_wp_error( $subscription ) ) {
+                        // now create a new subscription
+                        $subscription = Subscription::create( $subscription_data );
+                    } else {
+                        // get subscription object
+                        $subscription = Subscription::get( $stripe_subscription_id );
+                    }
+                }
+            }
 
             if ( is_wp_error( $subscription ) ) {
                 throw new Exception( $subscription->get_error_message() );
@@ -485,6 +519,9 @@ class Checkout {
             if ( empty( $subscription ) || ! $subscription instanceof \Stripe\Subscription ) {
                 throw new Exception( __( "We're not able to process this payment. Please try again later.", 'dokan' ) );
             }
+
+            // store subscription id in order meta
+            UserMeta::update_stripe_temp_subscription_id( get_current_user_id(), $subscription->id );
 
             $client_secret = ! empty( $subscription->latest_invoice->payment_intent->client_secret )
                 ? $subscription->latest_invoice->payment_intent->client_secret

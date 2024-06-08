@@ -14,7 +14,6 @@ if ( ! function_exists( 'qi_addons_for_elementor_framework_template_part' ) ) {
 	 * @param string $template full path of the template to load
 	 * @param string $slug
 	 * @param array $params array of parameters to pass to template
-	 *
 	 */
 	function qi_addons_for_elementor_framework_template_part( $root, $module, $template, $slug = '', $params = array() ) {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -49,6 +48,12 @@ if ( ! function_exists( 'qi_addons_for_elementor_framework_get_template_part' ) 
 			$template = '';
 		}
 
+		if ( is_scalar( $slug ) ) {
+			$slug = preg_replace( $available_characters, '', $slug );
+		} else {
+			$slug = '';
+		}
+
 		$temp = $root . '/' . $module . '/' . $template;
 
 		$template = qi_addons_for_elementor_framework_get_template_with_slug( $temp, $slug );
@@ -66,7 +71,6 @@ if ( ! function_exists( 'qi_addons_for_elementor_framework_list_sc_template_part
 	 * @param string $template full path of the template to load
 	 * @param string $slug
 	 * @param array $params array of parameters to pass to template
-	 *
 	 */
 	function qi_addons_for_elementor_framework_list_sc_template_part( $root, $module, $template, $slug = '', $params = array() ) {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -302,6 +306,14 @@ if ( ! function_exists( 'qi_addons_for_elementor_framework_get_inline_attr' ) ) 
 	 * @return string generated html attribute
 	 */
 	function qi_addons_for_elementor_framework_get_inline_attr( $value, $attr, $glue = '', $allow_zero_values = false ) {
+		$properties = '';
+
+		// Leave only allowed characters in attr.
+		preg_match( '/[-_a-z0-9]+/', $attr, $attr_matches );
+
+		$single_attr_key = $attr_matches[0];
+
+		// Concatenate values in one variable and check for zero values.
 		if ( $allow_zero_values ) {
 			if ( '' !== $value ) {
 
@@ -310,8 +322,6 @@ if ( ! function_exists( 'qi_addons_for_elementor_framework_get_inline_attr' ) ) 
 				} else {
 					$properties = $value;
 				}
-
-				return $attr . '="' . esc_attr( $properties ) . '"';
 			}
 		} else {
 			if ( ! empty( $value ) ) {
@@ -323,9 +333,23 @@ if ( ! function_exists( 'qi_addons_for_elementor_framework_get_inline_attr' ) ) 
 				} else {
 					return '';
 				}
-
-				return $attr . '="' . esc_attr( $properties ) . '"';
 			}
+		}
+
+		// Leave only allowed characters in value, everything that is not a number, char, space or dash will be removed.
+		preg_replace( '/[^\p{L}\p{N}\s\-_]+/u', '', $properties );
+
+		if ( empty( $properties ) || empty( $attr_matches[0] ) ) {
+			return '';
+		}
+
+		// Remove not allowed js events.
+		if ( 'on' === substr( $single_attr_key, 0, 2 ) || 'href' === $single_attr_key || 'on' === substr( $properties, 0, 2 ) || 'href' === $properties ) {
+			return '';
+		}
+
+		if ( '' !== $properties ) {
+			return $attr . '="' . esc_attr( $properties ) . '"';
 		}
 
 		return '';
@@ -339,7 +363,6 @@ if ( ! function_exists( 'qi_addons_for_elementor_framework_inline_attr' ) ) {
 	 * @param string|array $value value of html attribute
 	 * @param string $attr - name of html attribute to generate
 	 * @param string $glue - glue with which to implode $attr. Used only when $attr is array
-	 *
 	 */
 	function qi_addons_for_elementor_framework_inline_attr( $value, $attr, $glue = '' ) {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -470,7 +493,6 @@ if ( ! function_exists( 'qi_addons_for_elementor_framework_wp_kses_html' ) ) {
 	 *
 	 * @return string escaped output
 	 * @see wp_kses()
-	 *
 	 */
 	function qi_addons_for_elementor_framework_wp_kses_html( $type, $content ) {
 		switch ( $type ) {
@@ -701,7 +723,6 @@ if ( ! function_exists( 'qi_addons_for_elementor_framework_sanitize_tags' ) ) {
 	 *
 	 * @return string escaped output
 	 * @see wp_kses()
-	 *
 	 */
 	function qi_addons_for_elementor_framework_sanitize_tags( $tag, $type = 'title', $exclude = array(), $include = array() ) {
 		$allowed_tags = array();
@@ -933,6 +954,8 @@ if ( ! function_exists( 'qi_addons_for_elementor_framework_is_shortcode_on_page_
 
 if ( ! function_exists( 'qi_addons_for_elementor_framework_call_shortcode' ) ) {
 	/**
+	 * Function that render shortcode
+	 *
 	 * @param      $base - shortcode base
 	 * @param      $params - shortcode parameters
 	 * @param null $content - shortcode content
@@ -966,6 +989,8 @@ if ( ! function_exists( 'qi_addons_for_elementor_framework_call_shortcode' ) ) {
 
 if ( ! function_exists( 'qi_addons_for_elementor_framework_map_shortcode_fields' ) ) {
 	/**
+	 * Function that map shortcode fields
+	 *
 	 * @param array $default_options - default supported options
 	 * @param array $params - params set
 	 *

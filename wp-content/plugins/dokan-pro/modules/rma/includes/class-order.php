@@ -179,7 +179,7 @@ class Dokan_RMA_Order {
      */
     public function dokan_rma_requests_link( $menu_links ){
         $menu_links = array_slice( $menu_links, 0, 5, true )
-        + array( 'rma-requests' => __( 'RMA Requests', 'dokan' ) )
+        + array( 'rma-requests' => __( 'Returns & Refunds', 'dokan' ) )
         + array_slice( $menu_links, 5, NULL, true );
 
         return $menu_links;

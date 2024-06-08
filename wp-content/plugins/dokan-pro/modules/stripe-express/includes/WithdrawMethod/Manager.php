@@ -4,9 +4,8 @@ namespace WeDevs\DokanPro\Modules\StripeExpress\WithdrawMethod;
 
 defined( 'ABSPATH' ) || exit; // Exit if called directly
 
-use WeDevs\DokanPro\Admin\Announcement;
-use WeDevs\DokanPro\Modules\StripeExpress\Support\Helper;
 use WeDevs\DokanPro\Modules\StripeExpress\Processors\User;
+use WeDevs\DokanPro\Modules\StripeExpress\Support\Helper;
 use WeDevs\DokanPro\Modules\StripeExpress\Support\Settings;
 
 /**
@@ -225,18 +224,16 @@ class Manager {
         }
 
         if ( false === get_transient( "dokan_stripe_express_notice_intervals_$seller_id" ) ) {
-            $announcement = new Announcement();
-            $args         = [
-                'title'       => $this->notice_to_connect(),
-                'sender_type' => 'selected_seller',
-                'sender_ids'  => [ $seller_id ],
-                'status'      => 'publish',
-            ];
-
-            $notice = $announcement->create_announcement( $args );
+            $notice = dokan_pro()->announcement->manager->create_announcement( [
+                'title'             => $this->notice_to_connect_title(),
+                'content'           => $this->notice_to_connect_content(),
+                'announcement_type' => 'selected_seller',
+                'sender_ids'        => [ $seller_id ],
+                'status'            => 'publish',
+            ] );
 
             if ( is_wp_error( $notice ) ) {
-                return Helper::log(
+                Helper::log(
                     sprintf(
                         'Error creating announcement for non-connected seller %1$s. Error Message: %2$s',
                         $seller_id,
@@ -286,21 +283,33 @@ class Manager {
             return;
         }
 
-        echo '<div class="dokan-alert dokan-alert-danger dokan-panel-alert">' . $this->notice_to_connect() . '</div>';
+        echo '<div class="dokan-alert dokan-alert-danger dokan-panel-alert">' . $this->notice_to_connect_content() . '</div>';
     }
 
     /**
-     * Retrieves notice for non-connected sellers.
+     * Retrieves the notice title for non-connected sellers.
      *
-     * @since 3.6.1
+     * @since 3.11.1
      *
      * @return string
      */
-    private function notice_to_connect() {
+    private function notice_to_connect_title() {
+        return esc_html__( 'Your Account is not connected to Stripe Express', 'dokan' );
+    }
+
+    /**
+     * Retrieves the notice content for non-connected sellers.
+     *
+     * @since 3.6.1
+     * @since 3.11.1 Renamed to notice_to_connect_content
+     *
+     * @return string
+     */
+    private function notice_to_connect_content() {
         return wp_kses(
             sprintf(
             /* translators: 1) opening <a> tag with link to the payment settings, 2) closing </a> tag  */
-                __( 'Your account is not connected with Stripe Express. Sign up for a %1$sStripe Express%2$s account to receive automatic payouts.', 'dokan' ),
+                __( 'Create a Stripe Express Account to receive automatic payouts. %1$sSignup Here%2$s', 'dokan' ),
                 sprintf( '<a href="%s">', esc_url_raw( Helper::get_payment_settings_url() ) ),
                 '</a>'
             ),

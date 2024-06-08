@@ -60,6 +60,7 @@ class DigitalProduct {
                     'sell_both'     => __( 'Both', 'dokan' ),
                 ]
             ),
+            'is_lite' => false,
         );
 
         return $settings_fields;

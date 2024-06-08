@@ -3,6 +3,7 @@
 namespace WeDevs\DokanPro\Modules\DeliveryTime;
 
 use WeDevs\DokanPro\Modules\DeliveryTime\StorePickup\Helper as StorePickupHelper;
+use WeDevs\Dokan\Vendor\Vendor;
 
 /**
  * Class Frontend
@@ -25,6 +26,8 @@ class Frontend {
         add_action( 'dokan_create_parent_order', [ $this, 'save_delivery_time_args' ], 20, 2 );
         add_action( 'dokan_checkout_update_order_meta', [ $this, 'save_delivery_time_args' ], 20, 2 );
         add_action( 'woocommerce_order_details_before_order_table_items', [ $this, 'render_delivery_time_wc_order_details' ], 20, 1 );
+
+        // Specific day delivery slots
         add_action( 'wp_ajax_nopriv_dokan_get_delivery_time_slot', [ $this, 'get_vendor_delivery_time_slot' ] );
         add_action( 'wp_ajax_dokan_get_delivery_time_slot', [ $this, 'get_vendor_delivery_time_slot' ] );
         add_action( 'woocommerce_after_checkout_validation', [ $this, 'validate_delivery_time_slot_args' ], 20, 2 );
@@ -45,6 +48,14 @@ class Frontend {
         if ( empty( $vendor_infos ) ) {
             return;
         }
+
+        $json_infos   = wp_json_encode(
+            [
+                'vendor_data' => $vendor_infos
+            ]
+        );
+
+        wp_add_inline_script( 'dokan-delivery-time-main-script', "var dokan_delivery_time_infos = {$json_infos}", 'before' );
 
         dokan_get_template_part(
             'delivery-time-box', '', [
@@ -199,7 +210,8 @@ class Frontend {
             ], $data, $vendor_id
         );
 
-        Helper::save_delivery_time_date_slot( $data );
+        Helper::save_delivery_time_date_slot( $data, $order );
+        $order->save();
     }
 
     /**

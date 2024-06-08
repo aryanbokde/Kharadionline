@@ -82,18 +82,13 @@ class PayInRefundSucceeded extends WebhookEvent {
         $order->add_order_note( sprintf( __( '[%1$s] Incoming Webhook %2$s Resource Id: %3$s', 'dokan' ), Helper::get_gateway_title(), $this->get_event(), $payload['RessourceId'] ) );
 
         if ( $order->get_meta( 'has_sub_order' ) ) {
-            $sub_orders = get_children(
-                array(
-                    'post_parent' => $order->get_id(),
-                    'post_type'   => 'shop_order'
-                )
-            );
+            $sub_orders = dokan()->order->get_child_orders( $order->get_id() );
 
             foreach ( $sub_orders as $sub_order ) {
-                $vendor_id = dokan_get_seller_id_by_order( $sub_order->ID );
+                $vendor_id = dokan_get_seller_id_by_order( $sub_order->get_id() );
 
                 if ( array_key_exists( $vendor_id, $vendor_amount ) ) {
-                    $vendor_amount[ $vendor_id ]['order_id'] = $sub_order->ID;
+                    $vendor_amount[ $vendor_id ]['order_id'] = $sub_order->get_id();
                 }
             }
         } else {

@@ -4,7 +4,9 @@
 
     var wrapper            = $( '.dokan-store-tabs' );
     var support_btn        = $( '.dokan-store-support-btn' );
+    var support_btn_text   = $( '.dokan-store-support-btn' ).html();
     var custom_support_btn = support_btn.html();
+    var storeSuppportModal = null;
 
     var Dokan_Store_Support = {
 
@@ -12,10 +14,28 @@
             $('.dokan-store-support-btn').on( 'click', this.popUp.show );
             $('body').on( 'submit', '#dokan-support-login', this.popUp.submitLogin );
             $('body').on( 'submit', '#dokan-support-form', this.popUp.submitSupportMsg );
+
+            // If the iziModal container div does not exists.
+            if ( ! $('.dokan-store-support-modals').length ) {
+                var $div = $('<div />').appendTo('body');
+                $div.attr('class', 'dokan-store-support-modals');
+            }
+
+            storeSuppportModal = $( '.dokan-store-support-modals' ).iziModal( {
+                width: 430,
+                closeButton: true,
+                appendTo: 'body',
+                title: '',
+                headerColor: dokan.modal_header_color,
+                onClosed: function(){
+                    $( '.dokan-store-support-btn' ).html( support_btn_text );
+                },
+            } );
         },
         popUp : {
             show : function(e){
                 e.preventDefault();
+                support_btn_text = $( '.dokan-store-support-btn' ).html();
                 support_btn.html( dokan_store_support_i18n.wait );
                 if (support_btn.hasClass('user_logged_out')){
                     Dokan_Store_Support.popUp.getForm( 'login_form' );
@@ -24,22 +44,20 @@
                 }
             },
             getForm : function( data ){
-
                 var s_data = {
                     action: 'dokan_support_ajax_handler',
                     data: data,
                     store_id : support_btn.data( 'store_id' ),
                     order_id : support_btn.data( 'order_id' ),
                 };
+
                 $.post( dokan.ajaxurl, s_data, function ( resp ) {
                     if ( resp.success == true ) {
-                        $.magnificPopup.open({
-                            items: {
-                                src: '<div class="white-popup dokan-support-login-wrapper"><div id="ds-error-msg" ></div>' + resp.data + '</div>',
-                                type: 'inline'
-                           }
-                        });
-                        support_btn.html(custom_support_btn);
+                        const template = '<div class="white-popup dokan-support-login-wrapper dokan-izimodal-wraper" style="position: relative;">' +
+                            '<div class="dokan-izimodal-close-btn" style="position: absolute; top: 0; right: 0;"><button data-iziModal-close class="icon-close" style="background: white; padding: 0.2em 0.5em 0 0;"><i class="fa fa-times" aria-hidden="true"></i></button></div>' +
+                            '<div id="ds-error-msg" ></div>' + resp.data + '</div>';
+                        storeSuppportModal.iziModal( 'setContent', template.trim() );
+                        storeSuppportModal.iziModal( 'open' );
                     } else {
                         alert('failed');
                         support_btn.html(custom_support_btn);
@@ -48,6 +66,8 @@
             },
             submitLogin : function(e){
                 e.preventDefault();
+                storeSuppportModal.iziModal('startLoading');
+
                 var self = $(this);
                 var s_data = {
                     action : 'dokan_support_ajax_handler',
@@ -57,8 +77,8 @@
                 var $e_msg = $('#ds-error-msg');
                 $e_msg.addClass('dokan-hide');
                 $.post( dokan.ajaxurl, s_data, function ( resp ) {
+                    storeSuppportModal.iziModal('stopLoading');
                     if ( resp.success == true ) {
-                        $.magnificPopup.close();
                         Dokan_Store_Support.popUp.getForm( 'get_support_form' );
                         support_btn.html(custom_support_btn);
                     }else if (resp.success == false){
@@ -76,6 +96,7 @@
                 e.preventDefault();
                 //prevent multiple submission
                 $( '#support-submit-btn' ).prop('disabled', true);
+                storeSuppportModal.iziModal('startLoading');
 
                 var self = $(this);
                 var s_data = {
@@ -86,16 +107,12 @@
                 var $e_msg = $('#ds-error-msg');
 
                 $.post( dokan.ajaxurl, s_data, function ( resp ) {
+                    storeSuppportModal.iziModal('stopLoading');
                     if ( resp.success == true ) {
                         self.trigger( 'reset' );
-                        $.magnificPopup.close();
-                        $.magnificPopup.open({
-                            items: {
-                                src: '<div class="white-popup dokan-support-login-wrapper dokan-alert dokan-alert-success">' + resp.msg + '</div>',
-                                type: 'inline'
-                           }
-                        });
 
+                        const template = '<div class="white-popup dokan-support-login-wrapper dokan-alert dokan-alert-success dokan-izimodal-wraper"><div class="dokan-izimodal-close-btn"><button data-iziModal-close class="icon-close"><i class="fa fa-times" aria-hidden="true"></i></button></div>' + resp.msg + '</div>';
+                        storeSuppportModal.iziModal( 'setContent', template.trim() );
                     } else if ( resp.success == false ) {
                         $e_msg.removeClass('dokan-hide');
                         $e_msg.html(resp.msg);
@@ -105,6 +122,8 @@
                         alert('failed');
                         $( '#support-submit-btn' ).prop('disabled', false );
                     }
+
+                    support_btn.html(custom_support_btn);
                 } )
             }
         },

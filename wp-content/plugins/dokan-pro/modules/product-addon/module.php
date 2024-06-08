@@ -203,7 +203,7 @@ class Module {
             $this->enqueue_scripts();
         }
 
-        if ( isset( $wp->query_vars['booking'] ) && 'edit' === $wp->query_vars['booking'] ) {
+        if ( isset( $wp->query_vars['booking'] ) && ( 'edit' === $wp->query_vars['booking'] || 'new-product' === $wp->query_vars['booking'] ) ) {
             $this->enqueue_scripts();
         }
 
@@ -217,7 +217,7 @@ class Module {
         }
 
         // Vendor product edit page when product is pending review
-        if ( isset( $wp->query_vars['products'] ) && ! empty( $_GET['product_id'] ) && ! empty( $_GET['action'] ) && 'edit' === $_GET['action'] ) { //phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        if ( isset( $wp->query_vars['products'] ) && isset( $_GET['product_id'] ) && ! empty( $_GET['action'] ) && 'edit' === $_GET['action'] ) { //phpcs:ignore WordPress.Security.NonceVerification.Recommended
             $this->enqueue_scripts();
         }
     }

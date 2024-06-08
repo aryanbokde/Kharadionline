@@ -1,6 +1,7 @@
 <?php
 
 use DokanPro\Modules\Subscription\Helper;
+use WeDevs\Dokan\Utilities\OrderUtil;
 
 /**
  * Admin related functions
@@ -37,12 +38,18 @@ class DPS_Admin {
         add_action( 'add_meta_boxes', [ $this, 'add_meta_boxes' ], 99, 10, 2 );
         add_action( 'dokan_vendor_subscription_related_orders_meta_box_rows', [ $this, 'render_subscriptions_related_order' ], 10, 1 );
 
-        // Add column that indicates whether an order is parent or renewal for a subscription
-        add_filter( 'manage_edit-shop_order_columns', [ $this, 'add_contains_subscription_column' ], 8, 1 );
-        add_action( 'manage_shop_order_posts_custom_column', [ $this, 'add_contains_subscription_column_content' ], 8, 1 );
+        if ( dokan_pro_is_hpos_enabled() ) {
+            // Add a column that indicates whether an order is parent or renewal for a subscription
+            add_filter( 'manage_woocommerce_page_wc-orders_columns', [ $this, 'add_contains_subscription_column' ], 8, 1 );
+            add_action( 'manage_woocommerce_page_wc-orders_custom_column', [ $this, 'add_contains_subscription_column_content' ], 8, 2 );
+        } else {
+            // Add a column that indicates whether an order is parent or renewal for a subscription
+            add_filter( 'manage_edit-shop_order_columns', [ $this, 'add_contains_subscription_column' ], 8, 1 );
+            add_action( 'manage_shop_order_posts_custom_column', [ $this, 'add_contains_subscription_column_content' ], 8, 2 );
+        }
 
         // remove sub-order class
-        add_filter( 'post_class', [ $this, 'admin_shop_order_row_classes' ], 20, 1 );
+        add_filter( 'post_class', [ $this, 'admin_shop_order_row_classes' ], 20, 1 ); // no need to add hpos support for this filter
         add_filter( 'dokan_manage_shop_order_custom_columns_order_number', [ $this, 'remove_suborder_notes' ], 10, 2 );
     }
 
@@ -124,8 +131,16 @@ class DPS_Admin {
      *
      * @return void
      */
-    public static function add_contains_subscription_column_content( $column ) {
-        global $post;
+    public static function add_contains_subscription_column_content( $column, $post_id ) {
+        // return if user doesn't have access
+        if ( ! current_user_can( 'manage_woocommerce' ) ) {
+            return;
+        }
+
+        // check if post_id is an order
+        if ( ! dokan_pro_is_order( $post_id ) ) {
+            return;
+        }
 
         // early return if not subscription_relationship column
         if ( 'subscription_relationship' !== $column ) {
@@ -135,17 +150,20 @@ class DPS_Admin {
         if ( class_exists( 'WC_Subscriptions_Order' ) ) {
             // remove wc subscription hooks to render this column content
             remove_action( 'manage_shop_order_posts_custom_column', 'WC_Subscriptions_Order::add_contains_subscription_column_content', 10 );
+            add_filter( 'manage_edit-shop_order_columns', 'WC_Subscriptions_Order::add_contains_subscription_column' );
+            add_action( 'manage_shop_order_posts_custom_column', 'WC_Subscriptions_Order::add_contains_subscription_column_content', 10, 1 );
 
             // populate wc subscription field data
             $output = '';
-            if ( wcs_order_contains_subscription( $post->ID, 'renewal' ) ) {
+            if ( wcs_order_contains_subscription( $post_id, 'renewal' ) ) {
                 $output = '<span class="subscription_renewal_order tips" data-tip="' . esc_attr__( 'Renewal Order', 'woocommerce-subscriptions' ) . '"></span>'; //phpcs:ignore
-            } elseif ( wcs_order_contains_subscription( $post->ID, 'resubscribe' ) ) {
+            } elseif ( wcs_order_contains_subscription( $post_id, 'resubscribe' ) ) {
                 $output = '<span class="subscription_resubscribe_order tips" data-tip="' . esc_attr__( 'Resubscribe Order', 'woocommerce-subscriptions' ) . '"></span>'; //phpcs:ignore
-            } elseif ( wcs_order_contains_subscription( $post->ID, 'parent' ) ) {
+            } elseif ( wcs_order_contains_subscription( $post_id, 'parent' ) ) {
                 $output = '<span class="subscription_parent_order tips" data-tip="' . esc_attr__( 'Parent Order', 'woocommerce-subscriptions' ) . '"></span>';  //phpcs:ignore
             }
-            // early return if its a wc subscription order
+
+            // early return if its wc subscription order
             if ( ! empty( $output ) ) {
                 echo $output;
                 return;
@@ -153,7 +171,7 @@ class DPS_Admin {
         }
 
         // get order
-        $order = wc_get_order( $post->ID );
+        $order = wc_get_order( $post_id );
         // check if vendor subscription order
         if ( ! Helper::is_vendor_subscription_order( $order ) ) {
             echo '<span class="normal_order">&ndash;</span>';
@@ -194,19 +212,32 @@ class DPS_Admin {
      * @return void
      */
     public function add_meta_boxes( $post_type, $post ) {
+        $screen = dokan_pro_is_hpos_enabled()
+            ? wc_get_page_screen_id( 'shop-order' )
+            : 'shop_order';
+
+        if ( $screen !== $post_type ) {
+            return;
+        }
+
+        $order_id = OrderUtil::get_post_or_order_id( $post );
+
         // Only display the meta box if an order relates to a subscription
-        if ( 'shop_order' !== $post_type || ! Helper::is_vendor_subscription_order( $post->ID ) ) {
+        if ( ! Helper::is_vendor_subscription_order( $order_id ) ) {
             return;
         }
 
         //remove woocommerce subscription metaox
-        remove_meta_box( 'woocommerce-order-data', 'shop_subscription', 'normal' );
+        $subscription_screen_id = dokan_pro_is_hpos_enabled() ? wc_get_page_screen_id( 'shop_subscription' ) : 'shop_subscription';
+        if ( ! empty( $subscription_screen_id ) ) {
+            remove_meta_box( 'woocommerce-order-data', $subscription_screen_id, 'normal' );
+        }
 
         // remove delivery time metabox
-        remove_meta_box( 'dokan_delivery_time_fields', 'shop_order', 'side' );
+        remove_meta_box( 'dokan_delivery_time_fields', $screen, 'side' );
 
         // add subscription metabox
-        add_meta_box( 'dokan_vendor_subscription_renewal_orders', __( 'Vendor Subscriptions Related Orders', 'dokan' ), [ $this, 'subscription_metabox_content' ], 'shop_order', 'normal', 'high' );
+        add_meta_box( 'dokan_vendor_subscription_renewal_orders', __( 'Vendor Subscriptions Related Orders', 'dokan' ), [ $this, 'subscription_metabox_content' ], $screen, 'normal', 'high' );
     }
 
     /**
@@ -219,8 +250,9 @@ class DPS_Admin {
      * @return void
      */
     public function subscription_metabox_content( $post ) {
-        $order = wc_get_order( $post->ID );
+        $order_id = OrderUtil::get_post_or_order_id( $post );
 
+        $order = wc_get_order( $order_id );
         if ( ! $order ) {
             return;
         }
@@ -246,7 +278,8 @@ class DPS_Admin {
      * @throws Exception
      */
     public function render_subscriptions_related_order( $post ) {
-        $order = wc_get_order( $post->ID );
+        $order_id = OrderUtil::get_post_or_order_id( $post );
+        $order    = wc_get_order( $order_id );
 
         if ( ! $order ) {
             dokan_get_template_part( 'admin/related-orders-empty-row', '', [ 'is_subscription' => true ] );
@@ -291,7 +324,7 @@ class DPS_Admin {
 
         foreach ( $orders_to_display as $order ) {
             // Skip the order being viewed.
-            if ( $order->get_id() === (int) $post->ID ) {
+            if ( $order->get_id() === $order_id ) {
                 continue;
             }
 
@@ -305,7 +338,7 @@ class DPS_Admin {
      * @since 3.7.4
      */
     public function register_scripts() {
-        list( $suffix, $version ) = dokan_get_script_suffix_and_version();
+        [ $suffix, $version ] = dokan_get_script_suffix_and_version();
 
         wp_register_style( 'dps-custom-style', DPS_URL . '/assets/css/style' . $suffix . '.css', false, $version );
         wp_register_script( 'dps-custom-admin-js', DPS_URL . '/assets/js/admin-script' . $suffix . '.js', array( 'jquery' ), $version, true );
@@ -313,10 +346,7 @@ class DPS_Admin {
         wp_register_script( 'dps-subscription', DPS_URL . '/assets/js/subscription' . $suffix . '.js', array( 'jquery', 'dokan-vue-vendor', 'dokan-vue-bootstrap' ), $version, true );
     }
 
-    public function admin_enqueue_scripts() {
-        // Get admin screen id
-        $screen = get_current_screen();
-
+    public function admin_enqueue_scripts( $hook ) {
         wp_enqueue_style( 'dps-custom-style' );
         wp_enqueue_script( 'dps-custom-admin-js' );
 
@@ -327,8 +357,8 @@ class DPS_Admin {
             )
         );
 
-
-        if ( 'shop_order' === $screen->post_type ) {
+        $screen = dokan_pro_is_hpos_enabled() ? wc_get_page_screen_id( 'shop_order' ) : 'shop_order';
+        if ( $screen === $hook || $screen === get_current_screen()->post_type ) {
             add_action( 'admin_head', [ $this, 'load_admin_order_page_css' ], 10 );
         }
     }
@@ -845,7 +875,7 @@ class DPS_Admin {
             'title'                => __( 'Vendor Subscription', 'dokan' ),
             'icon_url'             => DPS_URL . '/assets/images/subscription.svg',
             'description'          => __( 'Manage Subscription Plans', 'dokan' ),
-            'document_link'        => 'https://wedevs.com/docs/dokan/modules/how-to-install-use-dokan-subscription/',
+            'document_link'        => 'https://dokan.co/docs/wordpress/modules/how-to-install-use-dokan-subscription/',
             'settings_title'       => __( 'Vendor Subscription Settings', 'dokan' ),
             'settings_description' => __( 'Configure marketplace settings to authorize vendors to create subscription products for their stores.', 'dokan' ),
         ];

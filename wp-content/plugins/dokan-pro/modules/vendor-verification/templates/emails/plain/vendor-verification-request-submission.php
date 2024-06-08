@@ -14,9 +14,17 @@ echo '= ' . esc_html( wp_strip_all_tags( $email_heading ) ) . " =\n\n";
 echo sprintf( __( 'Hi, %1$s', 'dokan' ), " \n\n" );
 // translators: 1: Store name, 2: Newline character.
 echo sprintf( __( 'A new verification request has been made by %1$s %2$s.', 'dokan' ), wp_strip_all_tags( $store_name ), " \n\n" );
-// translators: 1: Admin URL, 2: Dokan Admin Dashboard, 3: Newline character.
-echo sprintf( __( 'You can approve or reject it by going to the <a href="%1$s">%2$s</a>. %3$s', 'dokan' ), esc_url( $admin_url ), __( 'Dokan Admin Dashboard', 'dokan' ), " \n\n" );
+// translators: 1: Newline character, 2: Admin URL, 3: Newline character.
+echo sprintf( __( 'You can approve or reject it by going to the Dokan Admin Dashboard by following the URL Below %1$s %2$s %3$s', 'dokan' ), " \n", esc_url( $admin_url ), " \n\n" );
 
 echo "\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n";
 
-echo wp_kses_post( apply_filters( 'woocommerce_email_footer_text', get_option( 'woocommerce_email_footer_text' ) ) );
+/**
+ * Show user-defined additional content - this is set in each email's settings.
+ */
+if ( ! empty( $additional_content ) ) {
+    echo esc_html( wp_strip_all_tags( wptexturize( $additional_content ) ) );
+    echo "\n\n----------------------------------------\n\n";
+}
+
+echo esc_html( wp_strip_all_tags( wptexturize( apply_filters( 'woocommerce_email_footer_text', get_option( 'woocommerce_email_footer_text' ) ) ) ) );

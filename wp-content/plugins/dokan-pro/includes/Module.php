@@ -4,6 +4,12 @@ namespace WeDevs\DokanPro;
 
 use WeDevs\Dokan\Traits\ChainableContainer;
 
+/**
+ * Dokan Pro Modules
+ *
+ * @property Modules\VendorVerification\Module $vendor_verification Vendor Verification.
+ * @property Modules\ProductQA\Module $product_qa Product Qa Module.
+ */
 class Module {
 
     use ChainableContainer;
@@ -66,12 +72,17 @@ class Module {
      *
      * @return void
      */
-    public function load_active_modules( $newly_activated_modules = [] ) {
+    public function load_active_modules( $newly_activated_modules = [], $force = false ) {
         if ( self::$modules_activated ) {
             return;
         }
 
-        $active_modules    = $this->get_active_modules();
+        // check license here, if invalid return
+        if ( ! $force && ! dokan_pro()->license->is_valid() ) {
+            return;
+        }
+
+        $active_modules    = $this->get_active_modules( $force );
         $dokan_pro_modules = $this->get_all_modules();
         $activated_modules = [];
 
@@ -81,6 +92,11 @@ class Module {
             }
 
             $module = $dokan_pro_modules[ $module_id ];
+
+            // check if module is under purchased package, if not continue
+            if ( ! $this->is_module_available_under_package( $module ) ) {
+                continue;
+            }
 
             // store this module as activated modules
             if ( file_exists( $module['module_file'] ) ) {
@@ -135,8 +151,8 @@ class Module {
                         'module_class'   => 'WeDevs\DokanPro\Modules\Booking\Module',
                         'plan'           => [ 'business', 'enterprise' ],
                         'doc_id'         => 93500,
-                        'doc_link'       => 'https://wedevs.com/docs/dokan/modules/dokan-bookings/',
-                        'mod_link'       => 'https://wedevs.com/dokan/extensions/woocommerce-booking-integration/',
+                        'doc_link'       => 'https://dokan.co/docs/wordpress/modules/dokan-bookings/',
+                        'mod_link'       => 'https://dokan.co/wordpress/modules/woocommerce-booking-integration/',
                         'pre_requisites' => 'Requirements: WooCommerce Bookings plugin',
                         'categories'     => [ 'Product Management', 'Integration' ],
                         'video_id'       => 'F5oofXmuUqo',
@@ -150,8 +166,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\ColorSchemeCustomizer\Module',
                         'plan'         => [ 'starter', 'liquidweb', 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 102550,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/color-scheme/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/color-scheme-customizer/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/color-scheme/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/color-scheme-customizer/',
                         'categories'   => [ 'UI & UX' ],
                         'video_id'     => 'EXaJGzeKWHg',
                     ],
@@ -164,8 +180,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\DeliveryTime\Module',
                         'plan'         => [ 'starter', 'liquidweb', 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 157825,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/dokan-delivery-time/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/delivery-time',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/dokan-delivery-time/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/delivery-time',
                         'categories'   => [ 'Shipping' ],
                     ],
                     'elementor' => [
@@ -177,8 +193,8 @@ class Module {
                         'module_class'   => 'WeDevs\DokanPro\Modules\Elementor\Module',
                         'plan'           => [ 'professional', 'business', 'enterprise' ],
                         'doc_id'         => 181872,
-                        'doc_link'       => 'https://wedevs.com/docs/dokan/modules/elementor-dokan/',
-                        'mod_link'       => 'https://wedevs.com/dokan/modules/elementor/',
+                        'doc_link'       => 'https://dokan.co/docs/wordpress/modules/elementor-dokan/',
+                        'mod_link'       => 'https://dokan.co/wordpress/modules/elementor/',
                         'pre_requisites' => 'Requirements: Elementor Free and Elementor Pro',
                         'categories'     => [ 'UI & UX', 'Integration' ],
                     ],
@@ -191,8 +207,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\ExIm\Module',
                         'plan'         => [ 'business', 'enterprise' ],
                         'doc_id'       => 93320,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/how-to-install-and-use-dokan-exportimport-add/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/export-import/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/how-to-install-and-use-dokan-exportimport-add/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/export-import/',
                         'categories'   => [ 'Product Management' ],
                     ],
                     'follow_store' => [
@@ -204,8 +220,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\FollowStore\Module',
                         'plan'         => [ 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 152781,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/follow-store/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/follow-store/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/follow-store/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/follow-store/',
                         'video_id'     => 'v76PnEN5ceQ',
                         'categories'   => [ 'Store Management' ],
                     ],
@@ -218,8 +234,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\Geolocation\Module',
                         'plan'         => [ 'business', 'enterprise' ],
                         'doc_id'       => 138048,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/dokan-geolocation/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/geolocation/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/dokan-geolocation/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/geolocation/',
                         'categories'   => [ 'Store Management', 'Product Management' ],
                     ],
                     'germanized' => [
@@ -231,8 +247,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\Germanized\Module',
                         'plan'         => [ 'starter', 'liquidweb', 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 138048,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/eu-compliance-fields/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/eu-compliance-fields',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/eu-compliance-fields/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/eu-compliance-fields',
                         'categories'   => [ 'Store Management' ],
                     ],
                     'live_chat' => [
@@ -244,8 +260,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\LiveChat\Module',
                         'plan'         => [ 'business', 'enterprise' ],
                         'doc_id'       => 126767,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/dokan-live-chat/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/live-chat/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/dokan-live-chat/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/live-chat/',
                         'video_id'     => 'BHuTLjY78cY',
                         'categories'   => [ 'Store Management' ],
                     ],
@@ -258,8 +274,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\LiveSearch\Module',
                         'plan'         => [ 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 93303,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/how-to-install-configure-use-dokan-live-search/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/ajax-live-search/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/how-to-install-configure-use-dokan-live-search/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/ajax-live-search/',
                         'video_id'     => 'lvuR-QCJDIo',
                         'categories'   => [ 'Product Management' ],
                     ],
@@ -272,18 +288,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\Moip\Module',
                         'plan'         => [ 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 138385,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/dokan-moip-connect/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/moip/',
-                        'categories'   => [ 'Payment' ],
-                    ],
-                    'dokan_paypal_ap' => [
-                        'id'           => 'dokan_paypal_ap',
-                        'name'         => __( 'PayPal Adaptive Payment', 'dokan' ),
-                        'description'  => __( 'Allows to send split payments to vendor via PayPal Adaptive Payment gateway.', 'dokan' ),
-                        'thumbnail'    => $thumbnail_dir . '/paypal-adaptive.svg',
-                        'module_file'  => DOKAN_PRO_MODULE_DIR . '/paypal-adaptive-payments/module.php',
-                        'module_class' => 'WeDevs\DokanPro\Modules\PayPalAP\Module',
-                        'plan'         => [ 'professional', 'business', 'enterprise' ],
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/dokan-moip-connect/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/moip/',
                         'categories'   => [ 'Payment' ],
                     ],
                     'paypal_marketplace' => [
@@ -294,8 +300,8 @@ class Module {
                         'module_file'  => DOKAN_PRO_MODULE_DIR . '/paypal-marketplace/module.php',
                         'module_class' => 'WeDevs\DokanPro\Modules\PayPalMarketplace\Module',
                         'plan'         => [ 'business', 'enterprise' ],
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/paypal-marketplace/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/dokan-paypal-marketplace',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/paypal-marketplace/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/dokan-paypal-marketplace',
                         'categories'   => [ 'Payment' ],
                     ],
                     'product_addon' => [
@@ -307,8 +313,8 @@ class Module {
                         'module_class'   => 'WeDevs\DokanPro\Modules\ProductAddon\Module',
                         'plan'           => [ 'professional', 'business', 'enterprise' ],
                         'doc_id'         => 247645,
-                        'doc_link'       => 'https://wedevs.com/docs/dokan/modules/product-addon/',
-                        'mod_link'       => 'https://wedevs.com/dokan/modules/product-addons/',
+                        'doc_link'       => 'https://dokan.co/docs/wordpress/modules/product-addon/',
+                        'mod_link'       => 'https://dokan.co/wordpress/modules/product-addons/',
                         'pre_requisites' => 'Requirements: WooCommerce Product Addon extension',
                         'video_id'       => 'goKBE5L-3cg',
                         'categories'     => [ 'Product Management', 'Integration' ],
@@ -322,9 +328,22 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\ProductEnquiry\Module',
                         'plan'         => [ 'business', 'enterprise' ],
                         'doc_id'       => 93453,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/how-to-install-configure-use-dokan-product-enquiry/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/product-enquiry/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/how-to-install-configure-use-dokan-product-enquiry/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/product-enquiry/',
                         'video_id'     => 'edRLlpmOf-E',
+                        'categories'   => [ 'Product Management' ],
+                    ],
+                    'product_qa' => [
+                        'id'           => 'product_qa',
+                        'name'         => __( 'Product Q&A', 'dokan' ),
+                        'description'  => __( 'Enquiry for a specific product to a seller by asking question publicly.', 'dokan' ),
+                        'thumbnail'    => $thumbnail_dir . '/product-qa.svg',
+                        'module_file'  => DOKAN_PRO_MODULE_DIR . '/product-qa/Module.php',
+                        'module_class' => 'WeDevs\DokanPro\Modules\ProductQA\Module',
+                        'plan'         => [ 'business', 'enterprise' ],
+                        'doc_id'       => 481431,
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/product-qa/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/product-qa/',
                         'categories'   => [ 'Product Management' ],
                     ],
                     'report_abuse' => [
@@ -336,7 +355,7 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\ReportAbuse\Module',
                         'plan'         => [ 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 176173,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/dokan-report-abuse/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/dokan-report-abuse/',
                         'categories'   => [ 'Store Management' ],
                     ],
                     'rma' => [
@@ -348,8 +367,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\RMA\Module',
                         'plan'         => [ 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 157608,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/vendor-rma/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/rma/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/vendor-rma/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/rma/',
                         'video_id'     => 'j0s8d8u6qYs',
                         'categories'   => [ 'Order Management' ],
                     ],
@@ -362,8 +381,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\SellerVacation\Module',
                         'plan'         => [ 'business', 'enterprise' ],
                         'doc_id'       => 2880,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/dokan-vendor-vacation/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/vendor-vacation/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/dokan-vendor-vacation/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/vendor-vacation/',
                         'video_id'     => '6pd7_3ZPKH4',
                         'categories'   => [ 'Store Management' ],
                     ],
@@ -376,8 +395,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\ShipStation\Module',
                         'plan'         => [ 'business', 'enterprise' ],
                         'doc_id'       => 152770,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/shipstation-dokan-wedevs/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/shipstation/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/shipstation-dokan-wedevs/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/shipstation/',
                         'categories'   => [ 'Shipping' ],
 
                     ],
@@ -390,8 +409,8 @@ class Module {
                         'module_class'   => 'WeDevs\DokanPro\Modules\Auction\Module',
                         'plan'           => [ 'business', 'enterprise' ],
                         'doc_id'         => 93366,
-                        'doc_link'       => 'https://wedevs.com/docs/dokan/modules/woocommerce-auctions-frontend-multivendor-marketplace/',
-                        'mod_link'       => 'https://wedevs.com/dokan/modules/dokan-simple-auctions/',
+                        'doc_link'       => 'https://dokan.co/docs/wordpress/modules/woocommerce-auctions-frontend-multivendor-marketplace/',
+                        'mod_link'       => 'https://dokan.co/wordpress/modules/dokan-simple-auctions/',
                         'pre_requisites' => 'Requirements: WooCommerce Simple Auctions',
                         'video_id'       => 'TvwSvMSu8Rg',
                         'categories'     => [ 'Product Management', 'Integration' ],
@@ -405,8 +424,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\SPMV\Module',
                         'plan'         => [ 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 106646,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/single-product-multiple-vendor/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/single-product-multivendor/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/single-product-multiple-vendor/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/single-product-multivendor/',
                         'video_id'     => 'ByiWWObvF0c',
                         'categories'   => [ 'Product Management' ],
                     ],
@@ -419,8 +438,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\StoreReviews\Module',
                         'plan'         => [ 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 93511,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/vendor-review/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/dokan-vendor-review/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/vendor-review/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/dokan-vendor-review/',
                         'video_id'     => 'rX7ZTGa3GzI',
                         'categories'   => [ 'Store Management' ],
                     ],
@@ -433,8 +452,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\StoreSupport\Module',
                         'plan'         => [ 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 93425,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/how-to-install-and-use-store-support/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/store-support/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/how-to-install-and-use-store-support/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/store-support/',
                         'video_id'     => 'YWnRWIhFlLM',
                         'categories'   => [ 'Store Management' ],
                     ],
@@ -447,8 +466,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\Stripe\Module',
                         'plan'         => [ 'liquidweb', 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 93416,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/how-to-install-and-configure-dokan-stripe-connect/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/stripe-connect/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/how-to-install-and-configure-dokan-stripe-connect/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/stripe-connect/',
                         'video_id'     => 'SVpRMSXMXtA',
                         'categories'   => [ 'Payment' ],
                     ],
@@ -461,8 +480,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\ProductAdvertisement\Module',
                         'plan'         => [ 'business', 'enterprise' ],
                         'doc_id'       => 93321,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/product-advertising/',
-                        'mod_link'     => 'https://wedevs.com//dokan/modules/product-advertising',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/product-advertising/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/product-advertising',
                     ],
                     'product_subscription' => [
                         'id'           => 'product_subscription',
@@ -473,8 +492,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\ProductSubscription\Module',
                         'plan'         => [ 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 93321,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/how-to-install-use-dokan-subscription/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/subscription/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/how-to-install-use-dokan-subscription/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/subscription/',
                         'categories'   => [ 'Store Management' ],
                     ],
                     'vendor_analytics' => [
@@ -485,8 +504,8 @@ class Module {
                         'module_file'  => DOKAN_PRO_MODULE_DIR . '/vendor-analytics/module.php',
                         'module_class' => 'WeDevs\DokanPro\Modules\VendorAnalytics\Module',
                         'plan'         => [ 'business', 'enterprise' ],
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/dokan-vendor-analytics/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/vendor-analytics',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/dokan-vendor-analytics/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/vendor-analytics',
                         'video_id'     => 'IegbUHYA8R4',
                     ],
                     'vendor_staff' => [
@@ -498,8 +517,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\VendorStaff\Module',
                         'plan'         => [ 'business', 'enterprise' ],
                         'doc_id'       => 111397,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/dokan-vendor-staff-manager/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/vendor-staff-manager/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/dokan-vendor-staff-manager/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/vendor-staff-manager/',
                         'video_id'     => 'z4yinwCxabI',
                         'categories'   => [ 'Store Management' ],
                     ],
@@ -512,8 +531,8 @@ class Module {
                         'module_class'   => 'WeDevs\DokanPro\Modules\VSP\Module',
                         'plan'           => [ 'business', 'enterprise' ],
                         'doc_id'         => 294770,
-                        'doc_link'       => 'https://wedevs.com/docs/dokan/modules/dokan-vendor-subscription-product/',
-                        'mod_link'       => 'https://wedevs.com/dokan/modules/vendor-subscription-product/',
+                        'doc_link'       => 'https://dokan.co/docs/wordpress/modules/dokan-vendor-subscription-product/',
+                        'mod_link'       => 'https://dokan.co/wordpress/modules/vendor-subscription-product/',
                         'pre_requisites' => 'Requirements: WooCommerce Subscription Module',
                         'categories'     => [ 'Product Management', 'Integration' ],
                     ],
@@ -526,8 +545,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\VendorVerification\Module',
                         'plan'         => [ 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 93421,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/dokan-seller-verification-admin-settings/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/seller-verification/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/dokan-seller-verification-admin-settings/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/seller-verification/',
                     ],
                     'wholesale' => [
                         'id'           => 'wholesale',
@@ -538,8 +557,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\Wholesale\Module',
                         'plan'         => [ 'business', 'enterprise' ],
                         'doc_id'       => 157825,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/dokan-wholesale/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/wholesale/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/dokan-wholesale/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/wholesale/',
                         'categories'   => [ 'Product Management' ],
                     ],
                     'rank_math' => [
@@ -550,8 +569,8 @@ class Module {
                         'module_file'    => DOKAN_PRO_MODULE_DIR . '/rank-math/module.php',
                         'module_class'   => 'WeDevs\DokanPro\Modules\RankMath\Module',
                         'plan'           => [ 'professional', 'business', 'enterprise' ],
-                        'doc_link'       => 'https://wedevs.com/docs/dokan/modules/rank-math-seo/',
-                        'mod_link'       => 'https://wedevs.com/dokan/modules/rank-math-seo/',
+                        'doc_link'       => 'https://dokan.co/docs/wordpress/modules/rank-math-seo/',
+                        'mod_link'       => 'https://dokan.co/wordpress/modules/rank-math-seo/',
                         'pre_requisites' => 'Requirements: Rank Math SEO (v1.0.80 or Later)',
                         'video_id'       => 'V7UcyAe7QAs',
                         'categories'     => [ 'Product Management', 'Integration' ],
@@ -565,8 +584,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\TableRateShipping\Module',
                         'plan'         => [ 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 1527799,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/dokan-table-rate-shipping/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/table-rate-shipping/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/dokan-table-rate-shipping/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/table-rate-shipping/',
                         'categories'   => [ 'Shipping' ],
                     ],
                     'mangopay' => [
@@ -578,8 +597,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\MangoPay\Module',
                         'plan'         => [ 'professional', 'business', 'enterprise' ],
                         'doc_id'       => '',
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/dokan-mangopay/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/dokan-mangopay/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/dokan-mangopay/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/dokan-mangopay/',
                         'categories'   => [ 'Payment' ],
                     ],
                     'order_min_max' => [
@@ -591,8 +610,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\OrderMinMax\Module',
                         'plan'         => [ 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 1527799,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/how-to-enable-minimum-maximum-order-amount-for-dokan/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/minimum-maximum-order',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/how-to-enable-minimum-maximum-order-amount-for-dokan/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/minimum-maximum-order',
                         'categories'     => [ 'Product Management', 'Order Management' ],
                     ],
                     'razorpay' => [
@@ -604,8 +623,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\Razorpay\Module',
                         'plan'         => [ 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 399718,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/dokan-razorpay/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/dokan-razorpay/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/dokan-razorpay/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/dokan-razorpay/',
                         'categories'   => [ 'Payment' ],
                     ],
                     'seller_badge' => [
@@ -617,8 +636,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\SellerBadge\Module',
                         'plan'         => [ 'professional', 'business', 'enterprise' ],
                         'doc_id'       => 15277999,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/seller-badge/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/seller-badge/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/seller-badge/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/seller-badge/',
                         'categories'   => [ 'Vendor Management' ],
                     ],
 					'stripe_express' => [
@@ -630,8 +649,8 @@ class Module {
 						'module_class' => 'WeDevs\DokanPro\Modules\StripeExpress\Module',
 						'plan'         => [ 'professional', 'business', 'enterprise' ],
 						'doc_id'       => '',
-						'doc_link'     => 'https://wedevs.com/docs/dokan/modules/dokan-stripe-express-module/',
-						'mod_link'     => 'https://wedevs.com/dokan/modules/stripe-express/',
+						'doc_link'     => 'https://dokan.co/docs/wordpress/modules/dokan-stripe-express-module/',
+						'mod_link'     => 'https://dokan.co/wordpress/modules/stripe-express/',
 						'categories'   => [ 'Payment' ],
 					],
                     'request_for_quotation' => [
@@ -643,8 +662,8 @@ class Module {
                         'module_class' => 'WeDevs\DokanPro\Modules\RequestForQuotation\Module',
                         'plan'         => [ 'business', 'enterprise' ],
                         'doc_id'       => 1527799,
-                        'doc_link'     => 'https://wedevs.com/docs/dokan/modules/dokan-request-for-quotation-module/',
-                        'mod_link'     => 'https://wedevs.com/dokan/modules/dokan-request-for-quotation-module/',
+                        'doc_link'     => 'https://dokan.co/docs/wordpress/modules/dokan-request-for-quotation-module/',
+                        'mod_link'     => 'https://dokan.co/wordpress/modules/dokan-request-for-quotation-module/',
                         'categories'   => [ 'Product Management' ],
                     ],
                 ]
@@ -692,7 +711,11 @@ class Module {
      *
      * @return array
      */
-    public function get_active_modules() {
+    public function get_active_modules( $force = false ) {
+        if ( ! $force && ! dokan_pro()->license->is_valid() ) {
+            return [];
+        }
+
         if ( $this->active_modules ) {
             return $this->active_modules;
         }
@@ -734,6 +757,10 @@ class Module {
         $available_modules = [];
 
         foreach ( $modules as $module_id => $module ) {
+            if ( ! $this->is_module_available_under_package( $module ) ) {
+                continue;
+            }
+
             if ( file_exists( $module['module_file'] ) ) {
                 $available_modules[] = $module['id'];
             }
@@ -760,7 +787,6 @@ class Module {
             'live-chat/live-chat.php'                                           => 'live_chat',
             'live-search/live-search.php'                                       => 'live_search',
             'moip/moip.php'                                                     => 'moip',
-            'paypal-adaptive-payments/dokan-paypal-ap.php'                      => 'dokan_paypal_ap',
             'product-enquiry/enquiry.php'                                       => 'product_enquiry',
             'report-abuse/report-abuse.php'                                     => 'report_abuse',
             'rma/rma.php'                                                       => 'rma',
@@ -788,7 +814,7 @@ class Module {
      *
      * @return array
      */
-    public function activate_modules( $modules ) {
+    public function activate_modules( $modules, $force = false ) {
         $active_modules = $this->get_active_modules();
 
         $this->active_modules = array_unique( array_merge( $active_modules, $modules ) );
@@ -797,7 +823,7 @@ class Module {
 
         self::$modules_activated = false;
 
-        $this->load_active_modules( $modules );
+        $this->load_active_modules( $modules, $force );
 
         return $this->active_modules;
     }
@@ -859,5 +885,36 @@ class Module {
         }
 
         return false;
+    }
+
+    /**
+     * Check if a module is available or not
+     *
+     * @since 3.8.0
+     *
+     * @param string $module_id
+     *
+     * @return bool
+     */
+    public function is_available( $module_id ) {
+        $available_modules = $this->get_available_modules();
+
+        return in_array( $module_id, $available_modules, true );
+    }
+
+    /**
+     * Check if the module is in the package.
+     *
+     * @since 3.10.0
+     *
+     * @param $module
+     *
+     * @return bool
+     */
+    public function is_module_available_under_package( $module ) {
+        $license_plan = dokan_pro()->license->get_plan();
+        $module_plan_scope = $module['plan'];
+
+        return in_array( $license_plan, $module_plan_scope );
     }
 }

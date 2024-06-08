@@ -120,8 +120,8 @@ class Session implements StorageInterface {
         }
 
         // Validate hash.
-        $to_hash = $customer_id . '|' . $session_expiration;
-        $hash    = hash_hmac( 'md5', $to_hash, wp_hash( $to_hash ) );
+        $to_hash = $customer_id . '|' . $session_expiration . '|' . $data;
+        $hash    = hash_hmac( 'sha256', $to_hash, wp_hash( $to_hash ) );
 
         if ( empty( $cookie_hash ) || ! hash_equals( $hash, $cookie_hash ) ) {
             return false;
@@ -145,8 +145,8 @@ class Session implements StorageInterface {
      */
     public function set_customer_session_cookie( $set ) {
         if ( $set ) {
-            $to_hash           = $this->customer_id . '|' . $this->session_expiration;
-            $cookie_hash       = hash_hmac( 'md5', $to_hash, wp_hash( $to_hash ) );
+            $to_hash           = $this->customer_id . '|' . $this->session_expiration . '|' . maybe_serialize( $this->data );
+            $cookie_hash       = hash_hmac( 'sha256', $to_hash, wp_hash( $to_hash ) );
             $cookie_value      = $this->customer_id . '||' .
                                     $this->session_expiration . '||' .
                                     $cookie_hash . '||' .

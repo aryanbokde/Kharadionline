@@ -21,22 +21,11 @@ class Module {
         $this->includes();
         $this->instances();
 
-        add_action( 'init', array( $this, 'custom_post_status_vacation' ) );
-
-        add_filter( 'dokan_product_listing_query', array( $this, 'modified_product_listing_query' ) );
-        add_filter( 'dokan_get_post_status', array( $this, 'show_vacation_status_listing' ), 12 );
-        add_filter( 'dokan_get_post_status_label_class', array( $this, 'show_vacation_status_listing_label' ), 12 );
-        add_filter( 'dokan_product_listing_post_statuses', array( $this, 'add_vacation_product_listing_statuses_filter' ), 12, 1 );
-
-        add_action( 'dokan_product_listing_status_filter', array( $this, 'add_vacation_product_listing_filter' ), 10, 2 );
-        add_action( 'dokan_store_profile_frame_after', array( $this, 'show_vacation_message' ), 10, 2 );
+        add_action( 'dokan_store_profile_frame_after', array( $this, 'show_vacation_message' ), 5, 2 );
+        add_action( 'woocommerce_before_single_product_summary', array( $this, 'show_vacation_message_on_product_page' ), 5 );
         add_action( 'template_redirect', array( $this, 'remove_product_from_cart_for_closed_store' ) );
-        add_action( 'dokan_new_product_added', array( $this, 'product_status_modified_on_vacation' ), 12 );
-        add_action( 'dokan_product_updated', array( $this, 'product_status_modified_on_vacation' ), 12 );
-        add_action( 'dokan_product_duplicate_after_save', array( $this, 'set_vacation_duplicate_product_save' ), 35 );
-        add_filter( 'dokan_bulk_product_statuses', array( $this, 'set_vacation_bulk_edit_product_statuses' ), 35 );
-
-        add_action( 'plugins_loaded', [ $this, 'load_bg_class' ] );
+        add_filter( 'woocommerce_is_purchasable', [ $this, 'hide_add_to_cart_button' ], 10, 2 );
+        add_filter( 'dokan_request_a_quote_apply_rules', [ $this, 'apply_quote_rules' ], 10, 2 );
     }
 
     /**
@@ -64,23 +53,9 @@ class Module {
      */
     private function includes() {
         require_once DOKAN_SELLER_VACATION_INCLUDES . '/functions.php';
-        require_once DOKAN_SELLER_VACATION_INCLUDES . '/class-dokan-seller-vacation-install.php';
         require_once DOKAN_SELLER_VACATION_INCLUDES . '/class-dokan-seller-vacation-store-settings.php';
         require_once DOKAN_SELLER_VACATION_INCLUDES . '/class-dokan-seller-vacation-ajax.php';
-        require_once DOKAN_SELLER_VACATION_INCLUDES . '/class-dokan-seller-vacation-cron.php';
         require_once DOKAN_SELLER_VACATION_INCLUDES . '/SettingsApi/Store.php';
-    }
-
-    /**
-     * Load background process file on plugins_loaded hook
-     *
-     * @since 3.2.4
-     * @return void
-     */
-    public function load_bg_class() {
-        require_once DOKAN_SELLER_VACATION_INCLUDES . '/class-dokan-seller-vacation-update-seller-product-status.php';
-        global $dokan_pro_sv_update_seller_product_status;
-        $dokan_pro_sv_update_seller_product_status = new \Dokan_Seller_Vacation_Update_Seller_Product_Status();
     }
 
     /**
@@ -91,33 +66,28 @@ class Module {
      * @return void
      */
     private function instances() {
-        new \Dokan_Seller_Vacation_Install();
         new \Dokan_Seller_Vacation_Store_Settings();
         new \Dokan_Seller_Vacation_Ajax();
-        new \Dokan_Seller_Vacation_Cron();
         new Store();
     }
 
     /**
-     * Register custom post status "vacation"
+     * Show vacation message on product single page.
+     *
+     * @since 3.9.3
+     *
      * @return void
      */
-    public function custom_post_status_vacation() {
-        register_post_status(
-            'vacation', array(
-				'label'                     => __( 'Vacation', 'dokan' ),
-				'public'                    => false,
-				'show_in_admin_all_list'    => true,
-				'show_in_admin_status_list' => true,
-                /* Translators: %s: number of vacation */
-				'label_count'               => _n_noop( 'Vacation <span class="count">(%s)</span>', 'Vacation <span class="count">(%s)</span>', 'dokan' ),
-            )
-        );
+    public function show_vacation_message_on_product_page() {
+        global $product;
+
+        $vendor = dokan_get_vendor_by_product( $product );
+        $this->show_vacation_message( $vendor->data , $vendor->get_shop_info() );
     }
 
     /**
      * Show Vacation message in store page
-     * @param  array $store_user
+     * @param  \WP_User $store_user
      * @param  array $store_info
      * @return void
      */
@@ -159,85 +129,6 @@ class Module {
     }
 
     /**
-     * Add vacation link in product listing filter
-     * @param string $status_class
-     * @param object $post_counts
-     */
-    public function add_vacation_product_listing_filter( $status_class, $post_counts ) {
-        ?>
-        <li<?php echo $status_class === 'vacation' ? ' class="active"' : ''; ?>>
-            <a href="<?php echo add_query_arg( array( 'post_status' => 'vacation' ), get_permalink() ); ?>">
-                <?php
-                /* Translators: %d: number of vacation; */
-                printf( __( 'Vacation (%d)', 'dokan' ), $post_counts->vacation );
-                ?>
-            </a>
-        </li>
-        <?php
-    }
-
-    /**
-     * Show Vacation status with product in product listing
-     *
-     * @param  string $status
-     *
-     * @return string
-     */
-    public function show_vacation_status_listing( $status ) {
-        $status['vacation'] = __( 'In vacation', 'dokan' );
-        return $status;
-    }
-
-    /**
-     * Get vacation status label
-     *
-     * @since 1.2
-     *
-     * @return void
-     */
-    public function show_vacation_status_listing_label( $labels ) {
-        $labels['vacation'] = 'dokan-label-info';
-        return $labels;
-    }
-
-    /**
-     * Add vacation status on product listing query
-     *
-     * @since 3.1.2
-     *
-     * @param array $post_status
-     *
-     * @return array
-     */
-    public function add_vacation_product_listing_statuses_filter( $post_status ) {
-        if ( is_array( $post_status ) ) {
-            $post_status[] = 'vacation';
-        }
-
-        return $post_status;
-    }
-
-    /**
-     * Modified Porduct query
-     * @param  array $args
-     * @return array
-     */
-    public function modified_product_listing_query( $args ) {
-        $get = wp_unslash( $_GET ); // phpcs:ignore CSRF ok.
-
-        if ( isset( $get['post_status'] ) && $get['post_status'] === 'vacation' ) {
-            $args['post_status'] = $get['post_status'];
-            return $args;
-        }
-
-        if ( is_array( $args['post_status'] ) ) {
-            $args['post_status'][] = 'vacation';
-            return $args;
-        }
-        return $args;
-    }
-
-    /**
      * Remove product from cart for closed store
      * @param  null
      * @return void
@@ -266,62 +157,44 @@ class Module {
     }
 
     /**
-     * Duplicate product status modified on vacation enable
+     * Hide Add to Cart Button.
      *
-     * @since DOKAN_PRO_SINCH
+     * @since 3.9.0
      *
-     * @param array $clone_product
-     *
-     * @return void
-     */
-    public function set_vacation_duplicate_product_save( $clone_product ) {
-        if ( ! isset( $clone_product ) ) {
-            return;
-        }
-
-        $seller_id = get_post_field( 'post_author', $clone_product->get_id() );
-
-        if ( dokan_seller_vacation_is_seller_on_vacation( $seller_id ) ) {
-            $product = wc_get_product( $clone_product->get_id() );
-            $product->set_status( 'vacation' );
-            $product->save();
-        }
-    }
-
-    /**
-     * Product status modified on vacation enable
-     *
-     * @since DOKAN_PRO_SINCH
-     *
-     * @param int $product_id
+     * @param bool        $purchasable Is Purchasable
+     * @param \WC_Product $product     Product object
      *
      * @return void
      */
-    public function product_status_modified_on_vacation( $product_id ) {
-        $seller_id = get_post_field( 'post_author', $product_id );
+    public function hide_add_to_cart_button( $purchasable, $product ) {
+        $vendor_id = dokan_get_vendor_by_product( $product, true );
 
-        if ( dokan_seller_vacation_is_seller_on_vacation( $seller_id ) ) {
-            $product = wc_get_product( $product_id );
-            $product->set_status( 'vacation' );
-            $product->save();
+        // If seller vacation enabled by the vendor.
+        if ( dokan_seller_vacation_is_seller_on_vacation( $vendor_id ) ) {
+            $purchasable = false;
         }
+
+        return $purchasable;
     }
 
     /**
-     * Bulk edit status modified on vacation enable
+     * Apply Quote Rules.
      *
-     * @since DOKAN_PRO_SINCH
+     * @since 3.9.0
      *
-     * @param array $status
+     * @param bool        $applicable Is Applicable
+     * @param \WC_Product $product    Product Object
      *
-     * @return array $status
+     * @return bool
      */
-    public function set_vacation_bulk_edit_product_statuses( $status ) {
-        $vendor_id = dokan_get_current_user_id();
-        if ( isset( $status['publish'] ) && dokan_seller_vacation_is_seller_on_vacation( $vendor_id ) ) {
-            unset( $status['publish'] );
+    public function apply_quote_rules( $applicable, $product ) {
+        $vendor_id = dokan_get_vendor_by_product( $product, true );
+
+        // If seller vacation enabled by the vendor.
+        if ( dokan_seller_vacation_is_seller_on_vacation( $vendor_id ) ) {
+            $applicable = false;
         }
 
-        return $status;
+        return $applicable;
     }
 }

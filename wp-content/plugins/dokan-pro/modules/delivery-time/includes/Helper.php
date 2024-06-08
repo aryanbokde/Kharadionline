@@ -5,6 +5,7 @@ namespace WeDevs\DokanPro\Modules\DeliveryTime;
 use DateInterval;
 use DatePeriod;
 use Exception;
+use WC_Order;
 use WeDevs\DokanPro\Modules\DeliveryTime\StorePickup\Helper as StorePickupHelper;
 
 /**
@@ -170,11 +171,12 @@ class Helper {
      * @since 3.3.0
      *
      * @param array $data
+     * @param WC_Order|null $order
      *
      * @return void
      */
-    public static function save_delivery_time_date_slot( $data ) {
-        $order                  = $data['order'];
+    public static function save_delivery_time_date_slot( $data, $order = null ) {
+        $order                  = $order ? $order : $data['order'];
         $vendor_id              = $data['vendor_id'];
         $delivery_date          = $data['delivery_date'];
         $delivery_time_slot     = $data['delivery_time_slot'];
@@ -222,8 +224,6 @@ class Helper {
         $order->update_meta_data( 'dokan_delivery_time_date', $delivery_date );
 
         do_action( 'dokan_delivery_time_before_meta_save', $order, $data );
-
-        $order->save_meta_data();
     }
 
     /**
@@ -391,6 +391,23 @@ class Helper {
     }
 
     /**
+     * Checks if delivery date and time is updated
+     *
+     * @since 3.9.4
+     *
+     * @param int|string $vendor_id
+     * @param int|string $order_id
+     * @param array $new_data
+     *
+     * @return bool
+     */
+    public static function is_delivery_data_updated( $vendor_id, $order_id, $new_data ) {
+        return ( ! empty( $new_data['delivery_date'] )
+            || ! empty( $new_data['delivery_time_slot'] )
+            || ! empty( $new_data['store_pickup_location'] ) );
+    }
+
+    /**
      * Updates the delivery time date slot
      *
      * @since 3.3.0
@@ -439,7 +456,7 @@ class Helper {
             $data['store_pickup_location'] = $store_pickup_location;
         }
 
-        self::save_delivery_time_date_slot( $data );
+        self::save_delivery_time_date_slot( $data, $order );
 
         $user_info       = get_userdata( dokan_get_current_user_id() );
         $updated_by      = $user_info->user_nicename;
@@ -449,8 +466,13 @@ class Helper {
         $store_location  = $prev_store_location === $store_pickup_location ? " : $store_pickup_location" :
             " : & also store pickup location updated from $prev_store_location to $store_pickup_location";
         $pickup_location = 'store-pickup' === $delivery_type ? $store_location : '';
-        $policy_note     = $prev_delivery_info->delivery_type === $delivery_type ? "$delivery_type time changed from" :
-            "policy changed from $prev_delivery_info->delivery_type to $delivery_type & time";
+
+        if ( $prev_delivery_info ) {
+            $policy_note     = $prev_delivery_info->delivery_type === $delivery_type ? "$delivery_type time changed from" :
+                "policy changed from $prev_delivery_info->delivery_type to $delivery_type & time";
+        } else {
+            $policy_note = '';
+        }
 
         // Saving order note
         $note = sprintf(
@@ -473,7 +495,12 @@ class Helper {
             $order->update_meta_data( 'dokan_store_pickup_location', $store_pickup_location );
         }
 
-        $order->save_meta_data();
+        if ( is_admin() ) {
+            remove_action( 'save_post_shop_order', [ dokan_pro()->module->delivery_time->dt_admin, 'save_admin_delivery_time_meta_box' ], 10, 1 );
+            $order->save();
+        } else {
+            $order->save();
+        }
     }
 
     /**

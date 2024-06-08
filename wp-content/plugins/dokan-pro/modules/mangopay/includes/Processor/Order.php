@@ -136,7 +136,7 @@ class Order extends Processor {
             Meta::update_transfer_id( $sub_order, $transfer_result->Id );
             Meta::update_commision_status( $sub_order, 'paid' );
             Meta::update_commision( $sub_order, $transfer['fees'] );
-            $sub_order->save_meta_data();
+            $sub_order->save();
 
             // Process vendor balance and withdraw
             self::process_vendor_withdraw( $transfer['withdraw'] );
@@ -178,7 +178,7 @@ class Order extends Processor {
             Meta::update_payout_attempts( $sub_order, isset( $transfer['total_attempt'] ) ? (int) $transfer['total_attempt'] + 1 : 1 );
             Meta::remove_failed_payout( $transfer );
             Meta::update_payouts( $sub_order, $transfer );
-            $sub_order->save_meta_data();
+            $sub_order->save();
         }
 
         if ( ! empty( $withdraws ) ) {
@@ -189,7 +189,7 @@ class Order extends Processor {
             Meta::update_transfers( $order, $mp_transfers );
         }
 
-        $order->save_meta_data();
+        $order->save();
     }
 
     /**
@@ -207,16 +207,7 @@ class Order extends Processor {
         $all_orders   = array();
 
         if ( $has_suborder ) {
-            $sub_orders = get_children(
-                array(
-                    'post_parent' => $order->get_id(),
-                    'post_type'   => 'shop_order'
-                )
-             );
-
-            foreach ( $sub_orders as $sub_order ) {
-                $all_orders[] = wc_get_order( $sub_order->ID );
-            }
+            $all_orders = dokan()->order->get_child_orders( $order->get_id() );
         } else {
             $all_orders[] = $order;
         }
@@ -547,8 +538,9 @@ class Order extends Processor {
             Meta::update_refund_ids( $order->get_parent_id(), $mangopay_refund->Id );
         } else {
             Meta::update_refund_ids( $order, $mangopay_refund->Id );
-            $order->save_meta_data();
         }
+
+        $order->save();
 
         return true;
     }
@@ -574,6 +566,7 @@ class Order extends Processor {
         }
 
         Meta::update_all_transaction_ids( $order, $transaction_ids );
+        $order->save();
     }
 
     /**
@@ -596,6 +589,7 @@ class Order extends Processor {
         Meta::update_transaction_id( $order, $transaction->Id );
         Meta::update_succeeded_transaction_id( $order, $transaction->Id );
         self::save_transaction_history( $order, $transaction->Id );
+        $order->save();
 
         /* translators: %1$s: Gateway title, %2$s: Transaction id */
         $order->add_order_note( sprintf( __( '%1$s: Transaction ID: %2$s', 'dokan' ), Helper::get_gateway_title(), $transaction->Id ) );
@@ -615,15 +609,10 @@ class Order extends Processor {
         $order->add_order_note( sprintf( __( '%1$s: Order paid via %2$s', 'dokan' ), Helper::get_gateway_title(), $payment_method ) );
 
         if ( $order->get_meta( 'has_sub_order' ) ) {
-            $sub_orders = get_children(
-                array(
-                    'post_parent' => $order->get_id(),
-                    'post_type'   => 'shop_order'
-                )
-             );
+            $sub_orders = dokan()->order->get_child_orders( $order->get_id() );
 
             foreach ( $sub_orders as $sub_order ) {
-                $order = wc_get_order( $sub_order->ID );
+                $order = wc_get_order( $sub_order->get_id() );
                 /* translators: %1$s: Gateway title, %2$s: Transaction id */
                 $order->add_order_note( sprintf( __( '%1$s: Transaction ID: %2$s', 'dokan' ), Helper::get_gateway_title(), $transaction->Id ) );
                 /* translators: %1$s: Gateway title, %2$s: Payment method */

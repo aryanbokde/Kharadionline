@@ -283,8 +283,8 @@ function dokan_follow_store_get_vendor_followers( $vendor_id ) {
             $customers = $query->get_results();
         }
 
-        $followers[ 'followers' ] = (array) $dokan_followers;
-        $followers[ 'customers' ] = (array) $customers;
+        $followers[ 'followers' ] = $dokan_followers;
+        $followers[ 'customers' ] = $customers;
 
         Cache::set( $cache_key, $followers, $cache_group );
     }

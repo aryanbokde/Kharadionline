@@ -133,7 +133,7 @@ class Admin {
             $submenu[ $slug ][] = array( __( 'Reports', 'dokan' ), $capability, 'admin.php?page=' . $slug . '#/reports' );
         }
 
-        add_submenu_page( null, __( 'Whats New', 'dokan' ), __( 'Whats New', 'dokan' ), $capability, 'whats-new-dokan', array( $this, 'whats_new_page' ) );
+        add_submenu_page( '', __( 'Whats New', 'dokan' ), __( 'Whats New', 'dokan' ), $capability, 'whats-new-dokan', array( $this, 'whats_new_page' ) );
 
         // Load tools ad modules menu
         if ( current_user_can( $capability ) ) {
@@ -169,6 +169,8 @@ class Admin {
             'desc'    => __( 'Enable the terms & conditions checkbox on vendor registration form.', 'dokan' ),
             'type'    => 'switcher',
             'default' => 'on',
+            'tooltip' => __( 'Prompt terms and condition check for vendors when creating store on your site', 'dokan' ),
+            'is_lite' => false,
         ];
         $settings_fields['enable_single_seller_mode'] = [
             'name'    => 'enable_single_seller_mode',
@@ -177,6 +179,7 @@ class Admin {
             'type'    => 'switcher',
             'default' => 'off',
             'tooltip' => __( 'Restrict customers from buying from multiple vendors at a time.', 'dokan' ),
+            'is_lite' => false,
         ];
 
         return $settings_fields;
@@ -194,15 +197,16 @@ class Admin {
     public function add_settings_selling_option_vendor_capability( $settings_fields ) {
         $settings_fields['product_status'] = [
             'name'    => 'product_status',
-            'label'   => __( 'New Product Status', 'dokan' ),
-            'desc'    => __( 'Product status when a vendor creates a product', 'dokan' ),
+            'label'   => __( 'Product Status', 'dokan' ),
+            'desc'    => __( 'The status of a product when a vendor creates or updates it.', 'dokan' ),
             'type'    => 'radio',
             'default' => 'pending',
-            'tooltip' => __( 'Default product status for newly added products by vendor.', 'dokan' ),
+            'tooltip' => __( 'The status of a product when a vendor creates or updates it.', 'dokan' ),
             'options' => [
                 'publish' => __( 'Published', 'dokan' ),
                 'pending' => __( 'Pending Review', 'dokan' ),
             ],
+            'is_lite' => false,
         ];
 
         $settings_fields['vendor_duplicate_product'] = array(
@@ -211,23 +215,7 @@ class Admin {
             'desc'    => __( 'Allow vendor to duplicate their product', 'dokan' ),
             'type'    => 'switcher',
             'default' => 'on',
-        );
-
-        $settings_fields['edited_product_status'] = array(
-            'name'    => 'edited_product_status',
-            'label'   => __( 'Edited Product Status', 'dokan' ),
-            'desc'    => __( 'Set product status as pending review when a vendor edits or updates a product', 'dokan' ),
-            'type'    => 'switcher',
-            'default' => 'off',
-            'tooltip' => __( 'If checked admin will review, edited or updated products by vendor before publishing.', 'dokan' ),
-        );
-
-        $settings_fields['product_add_mail'] = array(
-            'name'    => 'product_add_mail',
-            'label'   => __( 'Product Mail Notification', 'dokan' ),
-            'desc'    => __( 'Email notification on new product submission', 'dokan' ),
-            'type'    => 'switcher',
-            'default' => 'on',
+            'is_lite' => false,
         );
 
         $settings_fields['product_category_style'] = array(
@@ -240,6 +228,7 @@ class Admin {
                 'single'   => __( 'Single', 'dokan' ),
                 'multiple' => __( 'Multiple', 'dokan' ),
             ],
+            'is_lite' => false,
         );
 
         $settings_fields['product_vendors_can_create_tags'] = array(
@@ -248,6 +237,7 @@ class Admin {
             'desc'    => __( 'Allow vendors to create new product tags from vendor dashboard.', 'dokan' ),
             'type'    => 'switcher',
             'default' => 'off',
+            'is_lite' => false,
         );
 
         $settings_fields['add_new_attribute'] = array(
@@ -256,21 +246,7 @@ class Admin {
             'desc'    => __( 'Allow vendors to add new values to predefined attribute', 'dokan' ),
             'type'    => 'switcher',
             'default' => 'off',
-        );
-
-        $settings_fields['discount_edit'] = array(
-            'name'    => 'discount_edit',
-            'label'   => __( 'Discount Editing', 'dokan' ),
-            'desc'    => __( 'Vendor can add order and product discount', 'dokan' ),
-            'type'    => 'multicheck',
-            'default' => [
-                'order-discount'   => __( 'Order Discount', 'dokan' ),
-                'product-discount' => __( 'Product Discount', 'dokan' ),
-            ],
-            'options' => [
-                'order-discount'   => __( 'Order Discount', 'dokan' ),
-                'product-discount' => __( 'Product Discount', 'dokan' ),
-            ],
+            'is_lite' => false,
         );
 
         $settings_fields['hide_customer_info'] = [
@@ -280,6 +256,7 @@ class Admin {
             'type'    => 'switcher',
             'default' => 'off',
             'tooltip' => __( 'It will hide customer information from the "General Details" section of the single order details page.', 'dokan' ),
+            'is_lite' => false,
         ];
 
         $settings_fields['seller_review_manage'] = array(
@@ -288,6 +265,7 @@ class Admin {
             'desc'    => __( 'Vendor can change product review status from vendor dashboard', 'dokan' ),
             'type'    => 'switcher',
             'default' => 'on',
+            'is_lite' => false,
         );
 
         return $settings_fields;

@@ -82,12 +82,25 @@
                     echo wp_kses_post(
                         sprintf(
                             /* translators: 1) gateway title, 2) line break <br> tag, 3) merchant id */
-                            __( 'The user has an existig account but is disconnected from %1$s.%2$sAccount ID: %3$s.', 'dokan' ),
+                            __( 'The user has an existing account but is disconnected from %1$s.%2$sAccount ID: %3$s.', 'dokan' ),
                             $gateway_title,
                             '<br>',
                             "<strong>{$stripe_account->get_trashed_account_id()}</strong>"
                         )
                     );
+                ?>
+            </div>
+            <div class="alert-notice alert-info">
+                <?php
+                echo wp_kses_post(
+                    sprintf(
+                    /* translators: 1) line break <br> tag 2) <strong> opening tag 3) </strong> closing tag */
+                        __( 'Accounts created using test-mode keys can be deleted at any time.%1$s%2$sStripe Express%3$s accounts created using live-mode keys can only be deleted once all balances are zero.', 'dokan' ),
+                        '<br>',
+                        '<strong>',
+                        '</strong>'
+                    )
+                );
                 ?>
             </div>
 

@@ -34,8 +34,8 @@
                         <!-- All the comments of vendor, admin and customer after created ticket. -->
                         <ChatBox
                             v-for="comment in comments" :key="comment.comment_ID"
-                            :image="comment.comment_user_type.type === 'admin' ? site_image_url : comment.avatar_url"
-                            :user="comment.comment_user_type.type === 'admin' ? site_title :comment.comment_author"
+                            :image="( comment.comment_user_type.type === 'admin' && site_image_url ) ? site_image_url : comment.avatar_url"
+                            :user="( comment.comment_user_type.type === 'admin' && site_title ) ? site_title : comment.comment_author"
                             :comment="undefined !== comment.comment_content ? comment.comment_content : ''"
                             :date="undefined !== comment.comment_date_formated ? comment.comment_date_formated : ''"
 
@@ -198,7 +198,7 @@ export default {
                     this.site_title = response.site_title;
                     this.updateUnreadTicketCounter( response.unread_topics_count ? response.unread_topics_count : 0 );
 
-                    this.adminEmailNotification = response.dokan_admin_email_notification_global && 'on' === response.dokan_admin_email_notification_global ? true : false;
+                    this.adminEmailNotification = response.dokan_admin_email_notification_global && true === response.dokan_admin_email_notification_global ? true : false;
                     this.emailNotification = response.dokan_admin_email_notification && 'on' === response.dokan_admin_email_notification ? true : false;
 
                     this.loading = false;

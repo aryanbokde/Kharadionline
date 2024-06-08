@@ -137,7 +137,7 @@ class Withdraw {
      *
      * @param array $withdraw
      *
-     * @return true|\WP_Error
+     * @return void|\WP_Error
      */
     public static function process_vendor_withdraw_balance( $withdraw ) {
         if ( empty( $withdraw ) ) {

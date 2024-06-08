@@ -8,6 +8,15 @@
 class Dokan_Geolocation_Widget_Product_Location extends WP_Widget {
 
     /**
+     * Instance key to keep track of the widget inside widget container in dokan-lite
+     *
+     * @since 3.10.2
+     *
+     * @var string
+     */
+    const INSTANCE_KEY = 'geolocation__Dokan_Geolocation_Widget_Product_Location'; // Naming Structure: {module_slug}__{ClassName}
+
+    /**
      * Class constructor
      *
      * @since 1.0.0

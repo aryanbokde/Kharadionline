@@ -339,8 +339,8 @@ class Webhook extends Processor {
             return false;
         }
 
-        // Check that RessourceID is empty or present and numeric in payload
-        if ( empty( $payload['RessourceId'] ) || ! is_numeric( $payload['RessourceId'] ) ) {
+        // Check that RessourceID is empty or present and string in payload
+        if ( empty( $payload['RessourceId'] ) || ! is_string( $payload['RessourceId'] ) ) {
             Helper::log( 'Resource ID is empty or invalid' );
             return false;
         }

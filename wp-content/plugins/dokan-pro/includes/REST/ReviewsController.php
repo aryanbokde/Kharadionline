@@ -3,6 +3,7 @@
 namespace WeDevs\DokanPro\REST;
 
 use DSR_View;
+use WeDevs\DokanPro\Modules\StoreReviews\Manager;
 use WP_Error;
 use WP_REST_Server;
 use WeDevs\Dokan\Abstracts\DokanRESTController;
@@ -262,8 +263,10 @@ class ReviewsController extends DokanRESTController {
      * @return \WP_Error|\WP_REST_Response
      */
     public function create_item( $request ) {
-        $post_id = dsr_save_store_review(
-            $request['id'], [
+        $manager = new Manager();
+        $post_id = $manager->save_store_review(
+            $request['id'],
+            [
                 'title'       => $request['title'],
                 'content'     => $request['content'],
                 'reviewer_id' => get_current_user_id(),

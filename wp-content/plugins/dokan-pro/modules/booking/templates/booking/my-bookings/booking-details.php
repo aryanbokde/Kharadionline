@@ -19,8 +19,8 @@ if ( $order_id ) {
 
     if ( $sub_orders ) {
         foreach ( $sub_orders as $sub_order ) {
-            if ( $user_id === (int) dokan_get_seller_id_by_order( $sub_order->ID ) ) {
-                $order_id = $sub_order->ID;
+            if ( $user_id === (int) dokan_get_seller_id_by_order( $sub_order ) ) {
+                $order_id = $sub_order;
                 break;
             }
         }

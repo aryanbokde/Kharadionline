@@ -9,13 +9,25 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
 }
-
-$new_product_url = add_query_arg(
+$one_step_product_create = 'on' === dokan_get_option( 'one_step_product_create', 'dokan_selling', 'on' );
+$disable_product_popup   = $one_step_product_create || 'on' === dokan_get_option( 'disable_product_popup', 'dokan_selling', 'off' );
+$new_product_url         = $one_step_product_create ? dokan_edit_product_url( 0, true ) : add_query_arg(
     [
         '_dokan_add_product_nonce' => wp_create_nonce( 'dokan_add_product_nonce' ),
     ],
     dokan_get_navigation_url( 'new-product' )
 );
+
+$new_auction_product_url = dokan_get_navigation_url( 'new-auction-product' );
+if ( $one_step_product_create ) {
+    $new_auction_product_url = add_query_arg(
+        [
+            'product_id' => 0,
+            'action' => 'edit',
+        ],
+        dokan_get_navigation_url( 'auction' )
+    );
+}
 ?>
 
 <div class="dokan-spmv-add-new-product-search-box-area dokan-w13">
@@ -37,9 +49,9 @@ $new_product_url = add_query_arg(
         <?php if ( 'booking' === $type ) : ?>
             <a href="<?php echo esc_url( dokan_get_navigation_url( 'booking/new-product' ) ); ?>"><?php esc_html_e( 'Create New Booking Product', 'dokan' ); ?></a>
         <?php elseif ( 'auction' === $type ) : ?>
-            <a href="<?php echo esc_url( dokan_get_navigation_url( 'new-auction-product' ) ); ?>"><?php esc_html_e( 'Create New Auction Product', 'dokan' ); ?></a>
+            <a href="<?php echo esc_url( $new_auction_product_url ); ?>"><?php esc_html_e( 'Create New Auction Product', 'dokan' ); ?></a>
         <?php else : ?>
-            <a class="<?php echo ( 'on' === dokan_get_option( 'disable_product_popup', 'dokan_selling', 'off' ) ) ? '' : 'dokan-add-new-product'; ?>" href="<?php echo esc_url( $new_product_url ); ?>"><?php esc_html_e( 'Create New', 'dokan' ); ?></a>
+            <a class="<?php echo esc_attr( $disable_product_popup ? '' : 'dokan-add-new-product' ); ?>" href="<?php echo esc_url( $new_product_url ); ?>"><?php esc_html_e( 'Create New', 'dokan' ); ?></a>
         <?php endif; ?>
 
     </div>

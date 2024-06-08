@@ -18,12 +18,12 @@ and open the template in the editor.
   position: absolute;
   width: 20px;
   height: 20px;
-  background: url(../js/../images/spinner-2x.gif) center center no-repeat;
+  background: url(../js/images/spinner-2x.a51f7b34.gif) center center no-repeat;
   z-index: 99;
   background-size: 20px;
 }
 .dokan-variation-loader {
-  background: url(../js/../images/ajax-loader@2x.gif) no-repeat;
+  background: url(../js/images/ajax-loader@2x.6d21a3b8.gif) no-repeat;
   position: absolute;
   height: 35px;
   width: 35px;
@@ -39,14 +39,6 @@ li.dokan-share-btn-wrap .dokan-share-btn {
   max-width: 350px;
   padding: 5px;
 }
-@-webkit-keyframes progress-bar-stripes {
-  from {
-    background-position: 40px 0;
-  }
-  to {
-    background-position: 0 0;
-  }
-}
 @keyframes progress-bar-stripes {
   from {
     background-position: 40px 0;
@@ -61,7 +53,6 @@ li.dokan-share-btn-wrap .dokan-share-btn {
   margin-bottom: 20px;
   background-color: #f5f5f5;
   border-radius: 5px;
-  -webkit-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 .dokan-progress-bar {
@@ -73,48 +64,40 @@ li.dokan-share-btn-wrap .dokan-share-btn {
   color: #fff;
   text-align: center;
   background-color: #337ab7;
-  -webkit-box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.15);
-  -webkit-transition: width 0.6s ease;
   transition: width 0.6s ease;
 }
 .dokan-progress-striped .dokan-progress-bar,
 .dokan-progress-bar-striped {
-  background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
   background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
   background-size: 40px 40px;
 }
 .dokan-progress.active .dokan-progress-bar,
 .dokan-progress-bar.active {
-  -webkit-animation: progress-bar-stripes 2s linear infinite;
   animation: progress-bar-stripes 2s linear infinite;
 }
 .dokan-progress-bar-success {
   background-color: #5cb85c;
 }
 .progress-striped .dokan-progress-bar-success {
-  background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
   background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
 }
 .dokan-progress-bar-info {
   background-color: #5bc0de;
 }
 .progress-striped .dokan-progress-bar-info {
-  background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
   background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
 }
 .dokan-progress-bar-warning {
   background-color: #f0ad4e;
 }
 .progress-striped .dokan-progress-bar-warning {
-  background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
   background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
 }
 .dokan-progress-bar-danger {
   background-color: #d9534f;
 }
 .progress-striped .dokan-progress-bar-danger {
-  background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
   background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
 }
 #dokan-profile-progressbar-closer {
@@ -129,6 +112,25 @@ and open the template in the editor.
     Created on : Feb 6, 2017, 10:57:42 AM
     Author     : rafsun
 */
+.dokan-izimodal-wraper {
+  position: relative;
+}
+.dokan-izimodal-wraper .dokan-izimodal-close-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+.dokan-izimodal-wraper .dokan-izimodal-close-btn button {
+  background: white;
+  padding: 0.2em 0.5em 0 0;
+}
+.dokan-izimodal-wraper .dokan-izimodal-close-btn button:focus {
+  outline: none;
+}
+.dokan-dashboard-content article.dokan-notice-listing-area .dokan-announcement-wrapper .dokan-announcement-wrapper-item .announcement-action a.remove_announcement {
+  display: inline-block;
+  padding-top: 2px;
+}
 .dokan-dashboard-content article.dashboard-content-area .dokan-announcement-widget {
   min-height: 310px;
 }
@@ -162,7 +164,7 @@ and open the template in the editor.
   border-bottom: 1px solid #e8e8e8;
 }
 .dokan-dashboard-content article.dashboard-content-area .dokan-announcement-widget ul li .dokan-dashboard-announce-content {
-  width: 80%;
+  width: 75%;
   font-size: 13px;
   color: #656565;
   padding-left: 4px;
@@ -175,7 +177,7 @@ and open the template in the editor.
   color: #6f6f6f;
 }
 .dokan-dashboard-content article.dashboard-content-area .dokan-announcement-widget ul li .dokan-dashboard-announce-date {
-  width: 20%;
+  width: 25%;
   height: 77px;
   text-align: center;
   line-height: 20px;
@@ -184,10 +186,13 @@ and open the template in the editor.
 .dokan-dashboard-content article.dashboard-content-area .dokan-announcement-widget ul li .dokan-dashboard-announce-date .announce-day {
   padding-top: 5px;
   font-size: 15px;
-  font-weight: bold;
 }
 .dokan-dashboard-content article.dashboard-content-area .dokan-announcement-widget ul li .dokan-dashboard-announce-date .announce-year {
   font-size: 15px;
+}
+.dokan-dashboard-content article.dashboard-content-area .dokan-announcement-widget ul li .dokan-dashboard-announce-date .announce-day,
+.dokan-dashboard-content article.dashboard-content-area .dokan-announcement-widget ul li .dokan-dashboard-announce-date .announce-year {
+  font-weight: bold;
 }
 .dokan-dashboard-content article.dashboard-content-area .dokan-announcement-widget ul li .dokan-dashboard-announce-read {
   background-color: #f3f3f3;
@@ -285,154 +290,6 @@ and open the template in the editor.
 }
 .select2-search__field {
   min-width: 220px !important;
-}
-@-webkit-keyframes ring {
-  0% {
-    transform: rotate(0);
-  }
-  1% {
-    transform: rotate(30deg);
-  }
-  3% {
-    transform: rotate(-28deg);
-  }
-  5% {
-    transform: rotate(34deg);
-  }
-  7% {
-    transform: rotate(-32deg);
-  }
-  9% {
-    transform: rotate(30deg);
-  }
-  11% {
-    transform: rotate(-28deg);
-  }
-  13% {
-    transform: rotate(26deg);
-  }
-  15% {
-    transform: rotate(-24deg);
-  }
-  17% {
-    transform: rotate(22deg);
-  }
-  19% {
-    transform: rotate(-20deg);
-  }
-  21% {
-    transform: rotate(18deg);
-  }
-  23% {
-    transform: rotate(-16deg);
-  }
-  25% {
-    transform: rotate(14deg);
-  }
-  27% {
-    transform: rotate(-12deg);
-  }
-  29% {
-    transform: rotate(10deg);
-  }
-  31% {
-    transform: rotate(-8deg);
-  }
-  33% {
-    transform: rotate(6deg);
-  }
-  35% {
-    transform: rotate(-4deg);
-  }
-  37% {
-    transform: rotate(2deg);
-  }
-  39% {
-    transform: rotate(-1deg);
-  }
-  41% {
-    transform: rotate(1deg);
-  }
-  43% {
-    transform: rotate(0);
-  }
-  100% {
-    transform: rotate(0);
-  }
-}
-@-moz-keyframes ring {
-  0% {
-    transform: rotate(0);
-  }
-  1% {
-    transform: rotate(30deg);
-  }
-  3% {
-    transform: rotate(-28deg);
-  }
-  5% {
-    transform: rotate(34deg);
-  }
-  7% {
-    transform: rotate(-32deg);
-  }
-  9% {
-    transform: rotate(30deg);
-  }
-  11% {
-    transform: rotate(-28deg);
-  }
-  13% {
-    transform: rotate(26deg);
-  }
-  15% {
-    transform: rotate(-24deg);
-  }
-  17% {
-    transform: rotate(22deg);
-  }
-  19% {
-    transform: rotate(-20deg);
-  }
-  21% {
-    transform: rotate(18deg);
-  }
-  23% {
-    transform: rotate(-16deg);
-  }
-  25% {
-    transform: rotate(14deg);
-  }
-  27% {
-    transform: rotate(-12deg);
-  }
-  29% {
-    transform: rotate(10deg);
-  }
-  31% {
-    transform: rotate(-8deg);
-  }
-  33% {
-    transform: rotate(6deg);
-  }
-  35% {
-    transform: rotate(-4deg);
-  }
-  37% {
-    transform: rotate(2deg);
-  }
-  39% {
-    transform: rotate(-1deg);
-  }
-  41% {
-    transform: rotate(1deg);
-  }
-  43% {
-    transform: rotate(0);
-  }
-  100% {
-    transform: rotate(0);
-  }
 }
 /*
 To change this license header, choose License Headers in Project Properties.
@@ -719,12 +576,7 @@ ol.dokan-order-shipment-notes-updates {
   width: 8px;
   height: 4px;
   background: #f7f7f7;
-  -webkit-border-radius: 2px;
-  -moz-border-radius: 2px;
-  -o-border-radius: 2px;
   border-radius: 2px;
-  -moz-box-shadow: 0 2px 0 0 rgba(255, 255, 255, 0.3), inset 0 2px 0 0 rgba(0, 0, 0, 0.1);
-  -webkit-box-shadow: 0 2px 0 0 rgba(255, 255, 255, 0.3), inset 0 2px 0 0 rgba(0, 0, 0, 0.1);
   box-shadow: 0 2px 0 0 rgba(255, 255, 255, 0.3), inset 0 2px 0 0 rgba(0, 0, 0, 0.1);
 }
 .dokan-coupon-content .code {
@@ -738,8 +590,6 @@ ol.dokan-order-shipment-notes-updates {
   position: relative;
   float: left;
   line-height: 1em;
-  -moz-box-shadow: 0 2px 0 0 #dddddd;
-  -webkit-box-shadow: 0 2px 0 0 #dddddd;
   box-shadow: 0 2px 0 0 #dddddd;
   font-weight: bold;
 }
@@ -776,9 +626,6 @@ ol.dokan-order-shipment-notes-updates {
 .dokan-coupon-content .code span span {
   border: 1px dashed #ccc;
   padding: 0.5em 6px;
-  -webkit-border-radius: 2px;
-  -moz-border-radius: 2px;
-  -o-border-radius: 2px;
   border-radius: 2px;
 }
 .dokan-coupon-content .code a span:before,
@@ -938,6 +785,10 @@ ol.dokan-order-shipment-notes-updates {
   padding: 5px;
   border: 1px solid #EDEDED;
 }
+.dokan-reviews-content .dokan-reviews-area .dokan-comments-wrap #dokan-comments-table {
+  display: table;
+  table-layout: fixed;
+}
 .dokan-reviews-content .dokan-reviews-area .dokan-comments-wrap #dokan-comments-table th.col-check {
   width: 5%;
   padding: 0 0 0 10px;
@@ -945,7 +796,7 @@ ol.dokan-order-shipment-notes-updates {
 }
 .dokan-reviews-content .dokan-reviews-area .dokan-comments-wrap #dokan-comments-table td.col-author,
 .dokan-reviews-content .dokan-reviews-area .dokan-comments-wrap #dokan-comments-table th.col-author {
-  width: 25%;
+  width: 35%;
 }
 .dokan-reviews-content .dokan-reviews-area .dokan-comments-wrap #dokan-comments-table td.col-author .dokan-author-img,
 .dokan-reviews-content .dokan-reviews-area .dokan-comments-wrap #dokan-comments-table th.col-author .dokan-author-img {
@@ -955,6 +806,7 @@ ol.dokan-order-shipment-notes-updates {
 .dokan-reviews-content .dokan-reviews-area .dokan-comments-wrap #dokan-comments-table td.col-author .dokan-author-meta,
 .dokan-reviews-content .dokan-reviews-area .dokan-comments-wrap #dokan-comments-table th.col-author .dokan-author-meta {
   float: left;
+  max-width: 100%;
 }
 .dokan-reviews-content .dokan-reviews-area .dokan-comments-wrap #dokan-comments-table td.col-content,
 .dokan-reviews-content .dokan-reviews-area .dokan-comments-wrap #dokan-comments-table th.col-content {
@@ -1141,12 +993,7 @@ and open the template in the editor.
   width: 8px;
   height: 4px;
   background: #f7f7f7;
-  -webkit-border-radius: 2px;
-  -moz-border-radius: 2px;
-  -o-border-radius: 2px;
   border-radius: 2px;
-  -moz-box-shadow: 0 2px 0 0 rgba(255, 255, 255, 0.3), inset 0 2px 0 0 rgba(0, 0, 0, 0.1);
-  -webkit-box-shadow: 0 2px 0 0 rgba(255, 255, 255, 0.3), inset 0 2px 0 0 rgba(0, 0, 0, 0.1);
   box-shadow: 0 2px 0 0 rgba(255, 255, 255, 0.3), inset 0 2px 0 0 rgba(0, 0, 0, 0.1);
 }
 .dokan-single-store .store-coupon-wrap .code {
@@ -1160,8 +1007,6 @@ and open the template in the editor.
   position: relative;
   float: left;
   line-height: 1em;
-  -moz-box-shadow: 0 2px 0 0 #dddddd;
-  -webkit-box-shadow: 0 2px 0 0 #dddddd;
   box-shadow: 0 2px 0 0 #dddddd;
   font-weight: bold;
   max-width: 250px;
@@ -1195,9 +1040,6 @@ and open the template in the editor.
 .dokan-single-store .store-coupon-wrap .code span.outside span.inside {
   border: 1px dashed #ccc;
   padding: 15px 10px;
-  -webkit-border-radius: 2px;
-  -moz-border-radius: 2px;
-  -o-border-radius: 2px;
   border-radius: 2px;
   float: left;
   text-align: center;
@@ -1291,9 +1133,6 @@ and open the template in the editor.
   line-height: 0 !important;
 }
 #dokan-store-listing-filter-form-wrap .store-lists-other-filter-wrap .store-lists-category .category-box ul {
-  display: -webkit-box;
-  display: -moz-box;
-  display: -ms-flexbox;
   display: -moz-flex;
   display: -webkit-flex;
   list-style: none;
@@ -1324,7 +1163,8 @@ and open the template in the editor.
   width: 50px;
   height: 22px;
   -webkit-appearance: none;
-  appearance: none;
+  -moz-appearance: none;
+       appearance: none;
   outline: none;
   border-radius: 30px;
   background-color: #cccccc;

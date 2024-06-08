@@ -198,7 +198,7 @@ class SellerBadgeController extends DokanRESTController {
         $count = $manager->get_badge_count( $query_params );
 
         if ( is_wp_error( $count ) ) {
-            rest_ensure_request( $count );
+            return rest_ensure_response( $count );
         }
 
         // only run query if count value is greater than 0

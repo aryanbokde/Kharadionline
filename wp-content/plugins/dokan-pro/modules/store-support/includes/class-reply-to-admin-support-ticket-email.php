@@ -71,14 +71,11 @@ if ( ! class_exists( 'DokanReplyToAdminSupportTicket' ) ) :
          * @param WC_Order|false $order Order object.
          */
         public function trigger( $store_id, $email_data ) {
-            // Getting global settings from admin panel store support.
-            $admin_global_settings = dokan_get_option( 'dokan_admin_email_notification', 'dokan_store_support_setting', 'off' );
-
             // Getting vendor settings from specific store settings.
             $topic_specific_settings = get_post_meta( $email_data['ticket_id'], 'dokan_admin_email_notification', true );
 
             // Return if global admin settings is off or global is on and topic specific settings is off.
-            if ( 'off' === $admin_global_settings || ( 'on' === $admin_global_settings && 'off' === $topic_specific_settings ) ) {
+            if ( ! $this->is_enabled() || 'off' === $topic_specific_settings ) {
                 return;
             }
 
@@ -132,6 +129,12 @@ if ( ! class_exists( 'DokanReplyToAdminSupportTicket' ) ) :
          */
         public function init_form_fields() {
             $this->form_fields = array(
+                'enabled'    => array(
+                    'title'   => __( 'Enable/Disable', 'dokan' ),
+                    'type'    => 'checkbox',
+                    'label'   => __( 'Enable this email notification', 'dokan' ),
+                    'default' => 'yes',
+                ),
                 'subject'    => array(
                     'title'       => __( 'Subject', 'dokan' ),
                     'type'        => 'text',

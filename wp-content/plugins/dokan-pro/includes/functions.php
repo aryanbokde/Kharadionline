@@ -6,9 +6,9 @@ use WeDevs\DokanPro\Dashboard\ProfileProgress;
 /**
  *  General Functions for Dokan Pro features
  *
- *  @since 2.4
+ * @since   2.4
  *
- *  @package dokan
+ * @package dokan
  */
 
 /**
@@ -16,7 +16,7 @@ use WeDevs\DokanPro\Dashboard\ProfileProgress;
  *
  * @since 2.1
  *
- * @return output
+ * @return string
  */
 if ( ! function_exists( 'dokan_get_profile_progressbar' ) ) {
     function dokan_get_profile_progressbar() {
@@ -29,15 +29,16 @@ if ( ! function_exists( 'dokan_get_profile_progressbar' ) ) {
 
         ob_start();
         dokan_get_template_part(
-            'global/profile-progressbar', '', array(
+            'global/profile-progressbar', '', [
                 'pro'       => true,
                 'progress'  => $progress_data['progress'],
                 'next_todo' => $progress_data['next_todo'],
                 'value'     => $progress_data['progress_vals'],
                 'next_url'  => $progress_data['next_todo_slug'],
                 'next_text' => $progress_data['next_progress_text'],
-            )
+            ]
         );
+
         return ob_get_clean();
     }
 }
@@ -45,9 +46,9 @@ if ( ! function_exists( 'dokan_get_profile_progressbar' ) ) {
 /**
  * Dokan progressbar translated string
  *
- * @param  string $string
- * @param  int $value
- * @param  int $progress
+ * @param string $string
+ * @param int    $value
+ * @param int    $progress
  *
  * @return string
  */
@@ -122,40 +123,26 @@ function dokan_progressbar_translated_string( $string = '', $value = 15, $progre
 }
 
 /**
- * Get refund counts, used in admin area
- *
- *  @since 2.4.11
- *  @since 3.0.0 Move the logic to Refund manager class
- *
- * @global WPDB $wpdb
- * @return array
- */
-function dokan_get_refund_count( $seller_id = null ) {
-    return dokan_pro()->refund->get_status_counts( $seller_id );
-}
-
-
-/**
  * Get get seller coupon
  *
- *  @since 2.4.12
+ * @since 2.4.12
  *
  * @param int $seller_id
  *
  * @return array
  */
 function dokan_get_seller_coupon( $seller_id, $show_on_store = false ) {
-    $args = array(
+    $args = [
         'post_type'   => 'shop_coupon',
         'post_status' => 'publish',
         'author'      => $seller_id,
-    );
+    ];
 
     if ( $show_on_store ) {
-        $args['meta_query'][] = array(
+        $args['meta_query'][] = [
             'key'   => 'show_on_store',
             'value' => 'yes',
-        );
+        ];
     }
 
     $coupons = get_posts( $args );
@@ -174,20 +161,20 @@ function dokan_get_seller_coupon( $seller_id, $show_on_store = false ) {
  * @return array
  */
 function dokan_get_marketplace_seller_coupon( $seller_id, $show_on_store = false ) {
-    $args = array(
+    $args = [
         'post_type'   => 'shop_coupon',
         'post_status' => 'publish',
-    );
+    ];
 
     if ( $show_on_store ) {
-        $args['meta_query'][] = array(
+        $args['meta_query'][] = [
             'key'   => 'admin_coupons_show_on_stores',
             'value' => 'yes',
-        );
+        ];
     }
 
     $coupons     = get_posts( $args );
-    $get_coupons = array();
+    $get_coupons = [];
 
     if ( empty( $coupons ) ) {
         return $get_coupons;
@@ -214,37 +201,10 @@ function dokan_get_marketplace_seller_coupon( $seller_id, $show_on_store = false
 }
 
 /**
-* Get refund localize data
-*
-* @since 2.6
-*
-* @return void
-**/
-function dokan_get_refund_localize_data() {
-    return array(
-        'mon_decimal_point'             => wc_get_price_decimal_separator(),
-        'remove_item_notice'            => __( 'Are you sure you want to remove the selected items? If you have previously reduced this item\'s stock, or this order was submitted by a customer, you will need to manually restore the item\'s stock.', 'dokan' ),
-        'i18n_select_items'             => __( 'Please select some items.', 'dokan' ),
-        'i18n_do_refund'                => __( 'Are you sure you wish to process this refund request? This action cannot be undone.', 'dokan' ),
-        'i18n_delete_refund'            => __( 'Are you sure you wish to delete this refund? This action cannot be undone.', 'dokan' ),
-        'remove_item_meta'              => __( 'Remove this item meta?', 'dokan' ),
-        'ajax_url'                      => admin_url( 'admin-ajax.php' ),
-        'order_item_nonce'              => wp_create_nonce( 'order-item' ),
-        'post_id'                       => isset( $_GET['order_id'] ) ? absint( wp_unslash( $_GET['order_id'] ) ) : '',
-        'currency_format_num_decimals'  => wc_get_price_decimals(),
-        'currency_format_symbol'        => get_woocommerce_currency_symbol(),
-        'currency_format_decimal_sep'   => esc_attr( wc_get_price_decimal_separator() ),
-        'currency_format_thousand_sep'  => esc_attr( wc_get_price_thousand_separator() ),
-        'currency_format'               => esc_attr( str_replace( array( '%1$s', '%2$s' ), array( '%s', '%v' ), get_woocommerce_price_format() ) ), // For accounting JS
-        'round_at_subtotal'             => get_option( 'woocommerce_tax_round_at_subtotal', 'no' ),
-        'rounding_precision'            => wc_get_rounding_precision(),
-    );
-}
-
-/**
  * Get review page url of a seller
  *
  * @param int $user_id
+ *
  * @return string
  */
 function dokan_get_review_url( $user_id ) {
@@ -258,29 +218,14 @@ function dokan_get_review_url( $user_id ) {
 }
 
 /**
- *
- */
-function dokan_render_order_table_items( $order_id ) {
-    $data  = get_post_meta( $order_id );
-    $order = new WC_Order( $order_id );
-
-    dokan_get_template_part(
-        'orders/views/html-order-items', '', array(
-            'pro'   => true,
-            'data'  => $data,
-            'order' => $order,
-        )
-    );
-}
-
-/**
  * Get best sellers list
  *
- * @param  int $limit
+ * @param int $limit
+ *
  * @return array
  */
 function dokan_get_best_sellers( $limit = 5 ) {
-    global  $wpdb;
+    global $wpdb;
 
     $cache_key = 'best_seller_' . $limit;
     $seller    = Cache::get( $cache_key, 'widget' );
@@ -340,15 +285,17 @@ function dokan_get_feature_sellers( $count = 5 ) {
  */
 function dokan_set_store_categories( $store_id, $categories = null ) {
     if ( ! is_array( $categories ) ) {
-        $categories = array( $categories );
+        $categories = [ $categories ];
     }
 
     $categories = array_map( 'absint', $categories );
     $categories = array_filter( $categories );
 
     if ( empty( $categories ) ) {
-        $categories = array( dokan_get_default_store_category_id() );
+        $categories = [ dokan_get_default_store_category_id() ];
     }
+
+    $categories = apply_filters( 'dokan_set_store_categories', $categories );
 
     return wp_set_object_terms( $store_id, $categories, 'store_category' );
 }
@@ -373,8 +320,9 @@ function dokan_is_store_categories_feature_on() {
  */
 function dokan_get_default_store_category_id() {
     $default_category = get_option( 'default_store_category', null );
+    $term             = $default_category ? get_term( $default_category ) : null;
 
-    if ( ! $default_category ) {
+    if ( ! $term instanceof WP_Term ) {
         $uncategorized_id = term_exists( 'Uncategorized', 'store_category' );
 
         if ( ! $uncategorized_id ) {
@@ -402,36 +350,13 @@ function dokan_get_default_store_category_id() {
  * @return bool
  */
 function dokan_set_default_store_category_id( $category_id ) {
-    $general_settings = get_option( 'dokan_general', array() );
+    $general_settings                           = get_option( 'dokan_general', [] );
     $general_settings['store_category_default'] = $category_id;
 
     $updated_settings = update_option( 'dokan_general', $general_settings );
-    $updated_default = update_option( 'default_store_category', $category_id, false );
+    $updated_default  = update_option( 'default_store_category', $category_id, false );
 
     return $updated_settings && $updated_default;
-}
-
-/**
- * Check if the refund request is allowed to be approved
- *
- * @param int $order_id
- *
- * @return boolean
- */
-function dokan_is_refund_allowed_to_approve( $order_id ) {
-    if ( ! $order_id ) {
-        return false;
-    }
-
-    $order                       = wc_get_order( $order_id );
-    $order_status                = 'wc-' . $order->get_status();
-    $active_order_status         = dokan_withdraw_get_active_order_status();
-
-    if ( in_array( $order_status, $active_order_status ) ) {
-        return true;
-    }
-
-    return false;
 }
 
 /**
@@ -439,7 +364,7 @@ function dokan_is_refund_allowed_to_approve( $order_id ) {
  *
  * @since  2.9.14
  *
- * @param  string $code
+ * @param string $code
  *
  * @return string
  */
@@ -468,16 +393,19 @@ function dokan_pro_get_template( $name, $args = [] ) {
 /**
  * Dokan register deactivation hook description
  *
- * @param string $file     full file path
- * @param array|string $function callback function
+ * @param string       $file   full file path
+ * @param array|string $method callback function
+ *
+ * @deprecated 3.8.0 will be removed in a future version of Dokan Pro
  *
  * @return void
  */
-function dokan_register_deactivation_hook( $file, $function ) {
+function dokan_register_deactivation_hook( $file, $method ) {
+    wc_deprecated_function( 'dokan_register_deactivation_hook', '3.8.0' );
     if ( file_exists( $file ) ) {
         require_once $file;
         $base_name = plugin_basename( $file );
-        add_action( "dokan_deactivate_{$base_name}", $function );
+        add_action( "dokan_deactivate_{$base_name}", $method );
     }
 }
 
@@ -503,84 +431,84 @@ function dokan_is_single_seller_mode_enable() {
  * @return array
  */
 function dokan_shipping_status_tracking_providers_list() {
-    $providers = array(
-        'sp-australia-post' => array(
+    $providers = [
+        'sp-australia-post'            => [
             'label' => __( 'Australia Post', 'dokan' ),
             'url'   => 'https://auspost.com.au/mypost/track/#/search?tracking={tracking_number}',
-        ),
-        'sp-canada-post' => array(
+        ],
+        'sp-canada-post'               => [
             'label' => __( 'Canada Post', 'dokan' ),
             'url'   => 'https://www.canadapost.ca/track-reperage/en#/home/?tracking={tracking_number}',
-        ),
-        'sp-city-link' => array(
+        ],
+        'sp-city-link'                 => [
             'label' => __( 'City Link', 'dokan' ),
             'url'   => 'https://www.citylinkexpress.com/tracking-result/?track0={tracking_number}',
-        ),
-        'sp-dhl' => array(
+        ],
+        'sp-dhl'                       => [
             'label' => __( 'DHL', 'dokan' ),
             'url'   => 'https://www.dhl.com/en/express/tracking.html?AWB={tracking_number}&brand=DHL',
-        ),
-        'sp-dpd' => array(
+        ],
+        'sp-dpd'                       => [
             'label' => __( 'DPD', 'dokan' ),
             'url'   => 'https://tracking.dpd.de/status/en_NL/parcel/{tracking_number}',
-        ),
-        'sp-fastway-south-africa' => array(
+        ],
+        'sp-fastway-south-africa'      => [
             'label' => __( 'Fastway South Africa', 'dokan' ),
             'url'   => 'https://www.fastway.co.za/our-services/track-your-parcel/?track={tracking_number}',
-        ),
-        'sp-fedex' => array(
+        ],
+        'sp-fedex'                     => [
             'label' => __( 'Fedex', 'dokan' ),
             'url'   => 'https://www.fedex.com/fedextrack/no-results-found?trknbr={tracking_number}',
-        ),
-        'sp-ontrac' => array(
+        ],
+        'sp-ontrac'                    => [
             'label' => __( 'OnTrac', 'dokan' ),
             'url'   => 'https://www.ontrac.com/trackingdetail.asp/?track={tracking_number}',
-        ),
-        'sp-parcelforce' => array(
+        ],
+        'sp-parcelforce'               => [
             'label' => __( 'ParcelForce', 'dokan' ),
             'url'   => 'https://www.parcelforce.com/track-trace/?trackNumber={tracking_number}',
-        ),
-        'sp-polish-shipping-providers' => array(
+        ],
+        'sp-polish-shipping-providers' => [
             'label' => __( 'Polish shipping providers', 'dokan' ),
             'url'   => 'https://www.parcelmonitor.com/track-poland/track-it-online/?pParcelIds={tracking_number}',
-        ),
-        'sp-royal-mail' => array(
+        ],
+        'sp-royal-mail'                => [
             'label' => __( 'Royal Mail', 'dokan' ),
             'url'   => 'https://www.royalmail.com/track-your-item#/?track={tracking_number}',
-        ),
-        'sp-sapo' => array(
+        ],
+        'sp-sapo'                      => [
             'label' => __( 'SAPO', 'dokan' ),
             'url'   => 'https://tracking.postoffice.co.za/TrackNTrace/TrackNTrace.aspx?id={tracking_number}',
-        ),
-        'sp-tnt-express-consignment' => array(
+        ],
+        'sp-tnt-express-consignment'   => [
             'label' => __( 'TNT Express (consignment)', 'dokan' ),
             'url'   => 'https://www.tnt.com/express/site/tracking.html/?track={tracking_number}',
-        ),
-        'sp-tnt-express-reference' => array(
+        ],
+        'sp-tnt-express-reference'     => [
             'label' => __( 'TNT Express (reference)', 'dokan' ),
             'url'   => 'https://www.tnt.com/express/site/tracking.html/?track={tracking_number}',
-        ),
-        'sp-fedex-sameday' => array(
+        ],
+        'sp-fedex-sameday'             => [
             'label' => __( 'FedEx Sameday', 'dokan' ),
             'url'   => 'https://www.fedex.com/fedextrack/?action=track&tracknumbers={tracking_number}',
-        ),
-        'sp-ups' => array(
+        ],
+        'sp-ups'                       => [
             'label' => __( 'UPS', 'dokan' ),
             'url'   => 'https://www.ups.com/track/?trackingNumber={tracking_number}',
-        ),
-        'sp-usps' => array(
+        ],
+        'sp-usps'                      => [
             'label' => __( 'USPS', 'dokan' ),
             'url'   => 'https://tools.usps.com/go/TrackConfirmAction?tRef=fullpage&tLabels={tracking_number}',
-        ),
-        'sp-dhl-us' => array(
+        ],
+        'sp-dhl-us'                    => [
             'label' => __( 'DHL US', 'dokan' ),
             'url'   => 'https://www.dhl.com/us-en/home/tracking/tracking-global-forwarding.html?submit=1&tracking-id={tracking_number}',
-        ),
-        'sp-other' => array(
+        ],
+        'sp-other'                     => [
             'label' => __( 'Other', 'dokan' ),
             'url'   => '',
-        ),
-    );
+        ],
+    ];
 
     return apply_filters( 'dokan_shipping_status_tracking_providers_list', $providers );
 }
@@ -612,7 +540,7 @@ function dokan_get_shipping_tracking_providers_list() {
  * @return array
  */
 function dokan_get_shipping_tracking_default_providers_list() {
-    $providers = array(
+    $providers = [
         'sp-dhl'                       => 'sp-dhl',
         'sp-dpd'                       => 'sp-dpd',
         'sp-fedex'                     => 'sp-fedex',
@@ -620,7 +548,7 @@ function dokan_get_shipping_tracking_default_providers_list() {
         'sp-ups'                       => 'sp-ups',
         'sp-usps'                      => 'sp-usps',
         'sp-other'                     => 'sp-other',
-    );
+    ];
 
     return apply_filters( 'dokan_shipping_status_default_providers', $providers );
 }
@@ -661,7 +589,7 @@ function dokan_get_shipping_tracking_status_by_key( $key_data ) {
  */
 function dokan_get_shipping_tracking_provider_by_key( $key_data, $return_type = 'label', $tracking_number = '' ) {
     if ( empty( $key_data ) ) {
-        return;
+        return '';
     }
 
     $providers_list = dokan_shipping_status_tracking_providers_list();
@@ -684,14 +612,14 @@ function dokan_get_shipping_tracking_provider_by_key( $key_data, $return_type = 
  *
  * @since 3.2.4
  *
- * @param id $order_id
- * @param id $need_label
+ * @param int $order_id
+ * @param int $need_label
  *
  * @return string
  */
 function dokan_shipping_tracking_status_by_orderid( $order_id, $need_label = 0 ) {
     if ( empty( $order_id ) ) {
-        return;
+        return '';
     }
 
     $order = dokan()->order->get( $order_id );
@@ -710,13 +638,13 @@ function dokan_shipping_tracking_status_by_orderid( $order_id, $need_label = 0 )
  *
  * @since 3.2.4
  *
- * @param id $order_id
+ * @param int $order_id
  *
  * @return string
  */
 function dokan_shipping_tracking_provider_by_orderid( $order_id ) {
     if ( empty( $order_id ) ) {
-        return;
+        return '';
     }
 
     $order = dokan()->order->get( $order_id );
@@ -735,13 +663,14 @@ function dokan_shipping_tracking_provider_by_orderid( $order_id ) {
  *
  * @since 3.2.4
  *
- * @param int $order_id
+ * @param int  $order_id
+ * @param bool $get_only_status
  *
- * @param mix
+ * @return string|bool
  */
 function dokan_get_order_shipment_current_status( $order_id, $get_only_status = false ) {
     if ( empty( $order_id ) ) {
-        return;
+        return '';
     }
 
     $cache_group = "seller_shipment_tracking_data_{$order_id}";
@@ -753,6 +682,7 @@ function dokan_get_order_shipment_current_status( $order_id, $get_only_status = 
         if ( $get_only_status ) {
             return $get_status;
         }
+
         return dokan_get_order_shipment_status_html( $get_status );
     }
 
@@ -766,6 +696,7 @@ function dokan_get_order_shipment_current_status( $order_id, $get_only_status = 
         if ( $get_only_status ) {
             return $get_status;
         }
+
         return dokan_get_order_shipment_status_html( $get_status );
     }
 
@@ -782,9 +713,9 @@ function dokan_get_order_shipment_current_status( $order_id, $get_only_status = 
     // count total order items
     $line_item_count = $shipment_tracking_data['line_item_count'];
     foreach ( $order->get_items() as $item_id => $item ) {
-        // count remaining item
-        $shipped_item   = isset( $line_item_count[ $item_id ] ) ? intval( $line_item_count[ $item_id ] ) : 0;
-        $remaining_item = intval( $item['qty'] ) - $shipped_item;
+        // count the remaining item
+        $shipped_item             = isset( $line_item_count[ $item_id ] ) ? intval( $line_item_count[ $item_id ] ) : 0;
+        $remaining_item           = intval( $item['qty'] ) - $shipped_item;
         $shipment_remaining_count += $remaining_item;
 
         // order line item total count
@@ -815,11 +746,11 @@ function dokan_get_order_shipment_current_status( $order_id, $get_only_status = 
  *
  * @param int $order_id
  *
- * @param mix
+ * @return string
  */
 function dokan_get_main_order_shipment_current_status( $order_id ) {
     if ( empty( $order_id ) ) {
-        return;
+        return '';
     }
 
     $user_id     = dokan_get_current_user_id();
@@ -828,12 +759,7 @@ function dokan_get_main_order_shipment_current_status( $order_id ) {
     $get_status  = Cache::get( $cache_key, $cache_group );
 
     if ( false === $get_status ) {
-        $sub_orders = get_children(
-            array(
-                'post_parent' => $order_id,
-                'post_type'   => 'shop_order',
-            )
-        );
+        $sub_orders = dokan()->order->get_child_orders( $order_id );
 
         $shipped       = 0;
         $partially     = 0;
@@ -841,22 +767,22 @@ function dokan_get_main_order_shipment_current_status( $order_id ) {
         $count_total   = 0;
 
         if ( $sub_orders ) {
-            foreach ( $sub_orders as $order_post ) {
-                $get_status = dokan_get_order_shipment_current_status( $order_post->ID, true );
+            foreach ( $sub_orders as $order ) {
+                $get_status = dokan_get_order_shipment_current_status( $order->get_id(), true );
 
                 if ( 'shipped' === $get_status ) {
-                    $shipped++;
+                    ++$shipped;
                 }
 
                 if ( 'partially' === $get_status ) {
-                    $partially++;
+                    ++$partially;
                 }
 
                 if ( 'shipped' === $get_status || 'partially' === $get_status || 'not_shipped' === $get_status ) {
-                    $others_status++;
+                    ++$others_status;
                 }
 
-                $count_total++;
+                ++$count_total;
             }
         }
 
@@ -887,11 +813,11 @@ function dokan_get_main_order_shipment_current_status( $order_id ) {
  */
 function dokan_get_order_shipment_status_html( $get_status ) {
     if ( 'shipped' === $get_status ) {
-        return sprintf( '<span class="dokan-label dokan-label-success">%s</span>', apply_filters( 'dokan_shipment_status_label_shipped', __( 'Shipped', 'dokan' ) ) );
+        return sprintf( '<span class="dokan-label dokan-label-success">%s</span>', apply_filters( 'dokan_shipment_status_label_shipped', __( 'Delivered', 'dokan' ) ) );
     } elseif ( 'partially' === $get_status ) {
-        return sprintf( '<span class="dokan-label dokan-label-info">%s</span>', apply_filters( 'dokan_shipment_status_label_partially_shipped', __( 'Partially', 'dokan' ) ) );
+        return sprintf( '<span class="dokan-label dokan-label-info">%s</span>', apply_filters( 'dokan_shipment_status_label_partially_shipped', __( 'Partially Delivered', 'dokan' ) ) );
     } elseif ( 'not_shipped' === $get_status ) {
-        return sprintf( '<span class="dokan-label dokan-label-default">%s</span>', apply_filters( 'dokan_shipment_status_label_not_shipped', __( 'Not-Shipped', 'dokan' ) ) );
+        return sprintf( '<span class="dokan-label dokan-label-default">%s</span>', apply_filters( 'dokan_shipment_status_label_not_shipped', __( 'Not-Delivered', 'dokan' ) ) );
     } else {
         return apply_filters( 'dokan_shipment_status_label_null', '--' );
     }
@@ -907,9 +833,9 @@ function dokan_get_order_shipment_status_html( $get_status ) {
  * @return void
  */
 function dokan_shipment_cache_clear_group( $order_id ) {
-    $group                    = 'seller_shipment_tracking_data_' . $order_id;
-    $tracking_data_key        = 'shipping_tracking_data_' . $order_id;
-    $tracking_status_key      = 'order_shipment_tracking_status_' . $order_id;
+    $group               = 'seller_shipment_tracking_data_' . $order_id;
+    $tracking_data_key   = 'shipping_tracking_data_' . $order_id;
+    $tracking_status_key = 'order_shipment_tracking_status_' . $order_id;
 
     Cache::delete( $tracking_data_key, $group );
     Cache::delete( $tracking_status_key, $group );
@@ -929,7 +855,7 @@ function dokan_get_random_string( $length = 8 ) {
     }
     // make length as even number
     if ( $length % 2 !== 0 ) {
-        $length++;
+        ++$length;
     }
     // get random bytes via available methods
     $random_bytes = '';
@@ -952,6 +878,7 @@ function dokan_get_random_string( $length = 8 ) {
     if ( ! empty( $random_bytes ) ) {
         return bin2hex( $random_bytes );
     }
+
     // builtin method failed, try manual method
     return substr( str_shuffle( str_repeat( '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', wp_rand( 1, 10 ) ) ), 1, $length );
 }
@@ -968,4 +895,93 @@ function dokan_get_script_suffix_and_version() {
     $script_version = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? time() : DOKAN_PRO_PLUGIN_VERSION;
 
     return [ $suffix, $script_version ];
+}
+
+if ( ! function_exists( 'dokan_get_available_post_status' ) ) {
+    /**
+     * Get product available statuses
+     *
+     * @since 3.8.3
+     *
+     * @args  int|object $product_id
+     *
+     * @return array
+     */
+    function dokan_get_available_post_status( $product_id = 0 ) {
+        return apply_filters(
+            'dokan_post_status',
+            [
+                'publish' => dokan_get_post_status( 'publish' ),
+                'draft'   => dokan_get_post_status( 'draft' ),
+                'pending' => dokan_get_post_status( 'pending' ),
+            ],
+            $product_id
+        );
+    }
+}
+
+if ( ! function_exists( 'dokan_pro_is_hpos_enabled' ) ) :
+    /**
+     * Check if HPOS is enabled
+     *
+     * @since 3.8.0
+     */
+    function dokan_pro_is_hpos_enabled(): bool {
+        if ( class_exists( '\WeDevs\Dokan\Utilities\OrderUtil' ) ) {
+            return \WeDevs\Dokan\Utilities\OrderUtil::is_hpos_enabled();
+        }
+
+        return false;
+    }
+endif;
+
+if ( ! function_exists( 'dokan_pro_is_order' ) ) {
+    /**
+     * Check if the given id is an order
+     *
+     * @since 3.8.0
+     *
+     * @param int   $order_id
+     * @param array $types
+     *
+     * @return bool
+     */
+    function dokan_pro_is_order( $order_id, $types = [] ): bool {
+        $types = empty( $types ) ? wc_get_order_types() : $types;
+        if ( dokan_pro_is_hpos_enabled() ) {
+            return \WeDevs\Dokan\Utilities\OrderUtil::is_order( $order_id, $types );
+        }
+
+        return in_array( get_post_type( $order_id ), $types, true );
+    }
+}
+
+/**
+ * Trigger product create email
+ *
+ * @since 3.8.3
+ *
+ * @param WC_Product|int $product
+ *
+ * @return void
+ */
+function dokan_trigger_product_create_email( $product ) {
+    if ( is_numeric( $product ) ) {
+        $product = wc_get_product( $product );
+    }
+
+    if ( ! $product ) {
+        return;
+    }
+
+    $email = null;
+    if ( 'publish' === $product->get_status() ) {
+        $email = WC()->mailer()->get_emails()['Dokan_Email_New_Product'];
+    } elseif ( 'pending' === $product->get_status() ) {
+        $email = WC()->mailer()->get_emails()['Dokan_Email_New_Product_Pending'];
+    }
+
+    if ( is_object( $email ) && is_callable( [ $email, 'trigger' ] ) ) {
+        $email->trigger( $product->get_id() );
+    }
 }

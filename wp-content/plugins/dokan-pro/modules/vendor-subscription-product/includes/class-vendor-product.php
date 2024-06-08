@@ -33,20 +33,10 @@ class Dokan_VSP_Product {
      * @since 1.0.0
      */
     public function __construct() {
-        // $this->templates = array(
-        //     'products/new-product-single.php',
-        // );
-
-        // $this->templates_parts = array(
-        //     'products/download-virtual',
-        //     'products/product-variation',
-        //     'products/edit/html-product-attribute',
-        //     'products/edit/html-product-variation'
-        // );
-
         add_filter( 'dokan_product_types', [ $this, 'add_subscription_product_type' ], 20 );
         add_action( 'dokan_product_edit_after_pricing', [ $this, 'load_subscription_fields' ], 20, 2 );
         add_action( 'dokan_regular_price_html_on_single_variation', [ $this, 'load_variation_subscription_fields' ], 10, 3 );
+        add_action( 'dokan_new_product_added', [ $this, 'handle_subscription_metadata' ], 10, 1 );
         add_action( 'dokan_product_updated', [ $this, 'handle_subscription_metadata' ], 10, 1 );
         add_action( 'woocommerce_save_product_variation', [ $this, 'save_variation_metadata' ], 10, 2 );
         add_filter( 'woocommerce_checkout_update_order_meta', [ $this, 'sync_parent_order_with_dokan' ], 30 );
@@ -60,7 +50,7 @@ class Dokan_VSP_Product {
     }
 
     /**
-     * Add subscription product type
+     * Add a subscription product type
      *
      * @since 1.0.0
      *
@@ -304,45 +294,45 @@ class Dokan_VSP_Product {
     * @return void
     */
     public function sync_parent_order_with_dokan( $order_id ){
-        if( get_post_type( $order_id ) == 'shop_order' ){
-            if ( ! add_post_meta( $order_id, 'subscription_order_type', 'Parent', true ) ) {
-                update_post_meta ( $order_id, 'subscription_order_type', 'Parent' );
-            }
+        if( dokan_pro_is_order( $order_id ) ) {
+            $order = wc_get_order( $order_id );
+            $order->update_meta_data( 'subscription_order_type', 'Parent' );
+            $order->save();
         }
     }
 
     /**
     * Sync new order with dokan
     *
-    * @param Object $new_order
-    * @param Object $subscription
+    * @param WC_Order $new_order
+    * @param WC_Subscription $subscription
     * @param String $type
     *
-    * @return Object
+    * @return Object|void
     */
     public function sync_renewal_order_with_dokan( $new_order, $subscription, $type ) {
         global $wpdb;
 
         $order_id = $new_order->get_id();
 
-        if ( dokan_is_order_already_exists( $order_id ) ) {
+        if ( dokan()->order->is_order_already_synced( $order_id ) ) {
             return;
         }
 
-        if ( get_post_meta( $order_id, 'has_sub_order', true ) == '1' ) {
+        if ( $new_order->get_meta( 'has_sub_order', true ) ) {
             return;
         }
 
         $order              = $new_order;
         $seller_id          = dokan_get_seller_id_by_order( $order_id );
         $order_total        = $order->get_total();
-        $order_status       = dokan_get_prop( $order, 'status' );
+        $order_status       = $order->get_status();
         $admin_commission   = dokan()->commission->get_earning_by_order( $order, 'admin' );
         $net_amount         = $order_total - $admin_commission;
         $net_amount         = apply_filters( 'dokan_order_net_amount', $net_amount, $order );
         $threshold_day      = dokan_get_withdraw_threshold( $seller_id );
 
-        dokan_delete_sync_duplicate_order( $order_id, $seller_id );
+        dokan()->order->delete_seller_order( $order_id, $seller_id );
 
         // make sure order status contains "wc-" prefix
         if ( stripos( $order_status, 'wc-' ) === false ) {
@@ -391,11 +381,9 @@ class Dokan_VSP_Product {
             )
         );
 
-        if ( get_post_type( $order_id ) == 'shop_order' ) {
-            if ( ! add_post_meta( $order_id, 'subscription_order_type', 'Renewal', true ) ) {
-                update_post_meta ( $order_id, 'subscription_order_type', 'Renewal' );
-            }
-        }
+        $order->update_meta_data( 'subscription_order_type', 'Renewal' );
+        $order->update_meta_data( '_dokan_vendor_id', $seller_id );
+        $order->save();
 
         return $new_order;
     }

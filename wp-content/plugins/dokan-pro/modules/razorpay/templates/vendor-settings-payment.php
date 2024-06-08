@@ -54,6 +54,13 @@ use WeDevs\DokanPro\Modules\Razorpay\Helper;
     ;(function($, document) {
         const dokan_razorpay_connect = {
             clicked: false,
+            modal: $( '.dokan-razorpay-modals' ).iziModal( {
+                width: 600,
+                closeButton: true,
+                appendTo: 'body',
+                title: '',
+                headerColor: window.dokan.modal_header_color
+            } ),
 
             /**
              * Show razorpay linked account register popup.
@@ -62,12 +69,8 @@ use WeDevs\DokanPro\Modules\Razorpay\Helper;
                 const self                 = this,
                 razorpayVendorRegisterForm = $("#tmpl-dokan-razorpay-vendor-account-register");
 
-                $.magnificPopup.open({
-                    items: {
-                        src: razorpayVendorRegisterForm.html(),
-                        type: 'inline'
-                    }
-                });
+                self.modal.iziModal( 'setContent', razorpayVendorRegisterForm.html() );
+                self.modal.iziModal( 'open' );
             },
 
             /**
@@ -87,7 +90,7 @@ use WeDevs\DokanPro\Modules\Razorpay\Helper;
 
                     if ( resp.success ) {
                         self.removeAttr( 'disabled' );
-                        $.magnificPopup.close();
+                        dokan_razorpay_connect.modal.iziModal( 'close' );
                         dokan_sweetalert( resp.data.message, { icon: 'success', } );
                         window.location.href = resp.data.url;
                     } else {

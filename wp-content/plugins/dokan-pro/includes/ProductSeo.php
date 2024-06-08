@@ -37,6 +37,7 @@ class ProductSeo {
         }
 
         add_action( 'dokan_product_edit_after_inventory_variants', array( $this, 'load_product_seo_content' ), 5, 2 );
+        add_action( 'dokan_new_product_added', array( $this, 'save_product_seo_data' ), 15 );
         add_action( 'dokan_product_updated', array( $this, 'save_product_seo_data' ), 15 );
     }
 

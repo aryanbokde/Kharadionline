@@ -72,23 +72,27 @@ class Payment {
             return;
         }
 
-        $disburse_mode = Settings::get_disbursement_mode();
-
-        // check if both order status and disburse mode is completed
-        if ( 'completed' === $new_status && 'ON_ORDER_COMPLETED' !== $disburse_mode ) {
-            return;
-        }
-
-        // check if both order status and disburse mode is processing
-        if ( 'processing' === $new_status && 'ON_ORDER_PROCESSING' !== $disburse_mode ) {
-            return;
-        }
-
         // get order
         $order = wc_get_order( $order_id );
 
         // check if order is a valid WC_Order instance
         if ( ! $order ) {
+            return;
+        }
+
+        $disburse_mode = Settings::get_disbursement_mode();
+
+        // digital products: disburse on order completed
+        // physical products: disburse on order processing or completed.
+        $needs_processing = $order->needs_processing();
+
+        // Check if both order status and disburse mode is completed.
+        if ( $needs_processing && 'completed' === $new_status && 'ON_ORDER_COMPLETED' !== $disburse_mode ) {
+            return;
+        }
+
+        // Check if both order status and disburse mode is processing.
+        if ( 'processing' === $new_status && 'ON_ORDER_PROCESSING' !== $disburse_mode ) {
             return;
         }
 
@@ -98,7 +102,7 @@ class Payment {
          * @since 3.7.17
          *
          * @param bool $disburse_payment
-         * @param WC_Order $order
+         * @param \WC_Order $order
          */
         if ( ! apply_filters( 'dokan_mangopay_disburse_payment', true, $order ) ) {
             return;

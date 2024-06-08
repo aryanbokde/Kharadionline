@@ -56,10 +56,7 @@ class RestTransport implements TransportInterface
         startServerStreamingCall as protected unsupportedServerStreamingCall;
     }
 
-    /**
-     * @var RequestBuilder
-     */
-    private $requestBuilder;
+    private RequestBuilder $requestBuilder;
 
     /**
      * @param RequestBuilder $requestBuilder A builder responsible for creating
@@ -163,7 +160,7 @@ class RestTransport implements TransportInterface
 
                 return $return;
             },
-            function (\Exception $ex) {
+            function (\Throwable $ex) {
                 if ($ex instanceof RequestException && $ex->hasResponse()) {
                     throw ApiException::createFromRequestException($ex);
                 }
@@ -253,9 +250,7 @@ class RestTransport implements TransportInterface
      */
     private function getCallOptions(array $options)
     {
-        $callOptions = isset($options['transportOptions']['restOptions'])
-            ? $options['transportOptions']['restOptions']
-            : [];
+        $callOptions = $options['transportOptions']['restOptions'] ?? [];
 
         if (isset($options['timeoutMillis'])) {
             $callOptions['timeout'] = $options['timeoutMillis'] / 1000;

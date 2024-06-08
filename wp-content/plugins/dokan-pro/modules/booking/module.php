@@ -4,6 +4,7 @@ namespace WeDevs\DokanPro\Modules\Booking;
 
 use WeDevs\Dokan\Cache;
 use WeDevs\Dokan\ProductCategory\Helper;
+use WeDevs\DokanPro\Brands\FormFields;
 use WeDevs\DokanPro\Modules\Booking\BookingCache;
 
 /**
@@ -102,6 +103,7 @@ class Module {
 
         //remove product type filter for booking product list
         add_filter( 'dokan_product_listing_filter_args', [ $this, 'remove_product_type_filter' ] );
+        add_action( 'dokan_product_edit_after_main', [ $this, 'load_linked_product_content' ], 15, 2 );
     }
 
     /**
@@ -200,7 +202,7 @@ class Module {
      * @uses wp_enqueue_style
      */
     public function enqueue_scripts() {
-        global $wp;
+        global $wp, $post;
 
         if ( ! is_admin() && isset( $wp->query_vars['booking'] ) ) {
             /**
@@ -218,10 +220,9 @@ class Module {
             $this->enqueue_accommodation_scripts();
 
             wp_enqueue_script( 'jquery-ui-datepicker' );
-            wp_enqueue_script( 'wc_bookings_writepanel_js' );
             wp_enqueue_script( 'jquery-tiptip' );
 
-            wp_enqueue_style( 'wc_bookings_admin_styles' );
+            wp_enqueue_style( 'dokan_wc_bookings_admin_styles' );
             wp_enqueue_style( 'woocommerce_admin_styles' );
 
             wp_enqueue_style( 'jquery-ui-style' );
@@ -229,6 +230,38 @@ class Module {
             add_filter( 'dokan_dashboard_nav_active', array( $this, 'set_booking_menu_as_active' ) );
 
             wp_enqueue_script( 'wc-enhanced-select' );
+
+            $post_id = isset( $post->ID ) ? $post->ID : '';
+
+            if ( dokan_is_seller_dashboard() ) {
+                // @codingStandardsIgnoreLine
+                if ( isset( $_GET['product_id'] ) ) {
+                    // @codingStandardsIgnoreLine
+                    $post_id = absint( wp_unslash( $_GET['product_id'] ) );
+                } else {
+                    $post_id = '';
+                }
+            }
+
+            $params = array(
+                'i18n_remove_person'     => esc_js( __( 'Are you sure you want to remove this person type?', 'dokan' ) ),
+                'nonce_delete_person'    => wp_create_nonce( 'delete-bookable-person' ),
+                'nonce_add_person'       => wp_create_nonce( 'add-bookable-person' ),
+                'nonce_unlink_person'    => wp_create_nonce( 'unlink-bookable-person' ),
+                'i18n_remove_resource'   => esc_js( __( 'Are you sure you want to remove this resource?', 'dokan' ) ),
+                'nonce_delete_resource'  => wp_create_nonce( 'delete-bookable-resource' ),
+                'nonce_add_resource'     => wp_create_nonce( 'add-bookable-resource' ),
+                'i18n_minutes'           => esc_js( __( 'minutes', 'dokan' ) ),
+                'i18n_days'              => esc_js( __( 'days', 'dokan' ) ),
+                'i18n_new_resource_name' => esc_js( __( 'Enter a name for the new resource', 'dokan' ) ),
+                'post'                   => $post_id,
+                'plugin_url'             => WC()->plugin_url(),
+                'ajax_url'               => admin_url( 'admin-ajax.php' ),
+                'calendar_image'         => WC()->plugin_url() . '/assets/images/calendar.png',
+            );
+
+            wp_localize_script( 'wc_bookings_writepanel_js', 'wc_bookings_writepanel_js_params', $params );
+            wp_enqueue_script( 'wc_bookings_writepanel_js' );
         }
 
         // Multi-step category box ui.
@@ -258,38 +291,7 @@ class Module {
         wp_register_script( 'wc_bookings_settings_js', WC_BOOKINGS_PLUGIN_URL . '/assets/js/settings' . $suffix . '.js', array( 'jquery' ), WC_BOOKINGS_VERSION, true );
         wp_register_script( 'jquery-tiptip', WC()->plugin_url() . '/assets/js/jquery-tiptip/jquery.tipTip' . $suffix . '.js', array( 'jquery' ), WC_VERSION, true );
 
-        $post_id = isset( $post->ID ) ? $post->ID : '';
-
-        if ( dokan_is_seller_dashboard() ) {
-            // @codingStandardsIgnoreLine
-            if ( isset( $_GET['product_id'] ) ) {
-                // @codingStandardsIgnoreLine
-                $post_id = absint( wp_unslash( $_GET['product_id'] ) );
-            } else {
-                $post_id = '';
-            }
-        }
-
-        $params = array(
-            'i18n_remove_person'     => esc_js( __( 'Are you sure you want to remove this person type?', 'dokan' ) ),
-            'nonce_delete_person'    => wp_create_nonce( 'delete-bookable-person' ),
-            'nonce_add_person'       => wp_create_nonce( 'add-bookable-person' ),
-            'nonce_unlink_person'    => wp_create_nonce( 'unlink-bookable-person' ),
-            'i18n_remove_resource'   => esc_js( __( 'Are you sure you want to remove this resource?', 'dokan' ) ),
-            'nonce_delete_resource'  => wp_create_nonce( 'delete-bookable-resource' ),
-            'nonce_add_resource'     => wp_create_nonce( 'add-bookable-resource' ),
-            'i18n_minutes'           => esc_js( __( 'minutes', 'dokan' ) ),
-            'i18n_days'              => esc_js( __( 'days', 'dokan' ) ),
-            'i18n_new_resource_name' => esc_js( __( 'Enter a name for the new resource', 'dokan' ) ),
-            'post'                   => $post_id,
-            'plugin_url'             => WC()->plugin_url(),
-            'ajax_url'               => admin_url( 'admin-ajax.php' ),
-            'calendar_image'         => WC()->plugin_url() . '/assets/images/calendar.png',
-        );
-
-        wp_localize_script( 'wc_bookings_writepanel_js', 'wc_bookings_writepanel_js_params', $params );
-
-        wp_register_style( 'wc_bookings_admin_styles', DOKAN_WC_BOOKING_PLUGIN_ASSET . '/css/admin.css', null, DOKAN_WC_BOOKING_PLUGIN_VERSION );
+        wp_register_style( 'dokan_wc_bookings_admin_styles', DOKAN_WC_BOOKING_PLUGIN_ASSET . '/css/admin.css', null, DOKAN_WC_BOOKING_PLUGIN_VERSION );
         wp_register_style( 'woocommerce_admin_styles', WC()->plugin_url() . '/assets/css/admin.css', null, WC_VERSION );
         // @codingStandardsIgnoreLine
 
@@ -323,7 +325,7 @@ class Module {
      * @return void
      */
     public function init_hooks() {
-        add_filter( 'dokan_get_dashboard_nav', array( $this, 'add_booking_page' ), 11, 1 );
+        add_filter( 'dokan_get_dashboard_nav', array( $this, 'add_booking_page' ), 11 );
         add_action( 'dokan_load_custom_template', array( $this, 'load_template_from_plugin' ) );
         add_filter( 'dokan_query_var_filter', array( $this, 'register_booking_queryvar' ) );
         add_filter( 'dokan_add_new_product_redirect', array( $this, 'set_redirect_url' ), 10, 2 );
@@ -432,16 +434,18 @@ class Module {
      * @return array $urls
      */
     public function add_booking_page( $urls ) {
-        if ( ! current_user_can( 'dokan_view_booking_menu' ) ) {
-            return $urls;
-        }
-
-        $urls['booking'] = array(
+        $menu = [
             'title' => __( 'Booking', 'dokan' ),
             'icon'  => '<i class="far fa-calendar-alt"></i>',
             'url'   => dokan_get_navigation_url( 'booking' ),
             'pos'   => 180,
-        );
+        ];
+
+        if ( ! current_user_can( 'dokan_view_booking_menu' ) ) {
+            return $urls;
+        }
+
+        $urls['booking'] = $menu;
 
         return $urls;
     }
@@ -732,6 +736,18 @@ class Module {
             }
         }
         update_post_meta( $post_id, '_wc_booking_availability', $availability );
+
+        // Clear resource transients.
+        if (
+            class_exists( 'WC_Product_Booking_Resource' )
+            && class_exists( 'WC_Product_Booking_Resource_Data_Store_CPT' )
+        ) {
+            $resource   = new \WC_Product_Booking_Resource( $post_id );
+            $data_store = new \WC_Product_Booking_Resource_Data_Store_CPT();
+
+            $resource->apply_changes();
+            $data_store->flush_resource_transients( $resource );
+        }
 
         $redirect_url = dokan_get_navigation_url( 'booking' ) . 'resources/edit/?id=' . $post_id;
         wp_safe_redirect( add_query_arg( array( 'message' => 'success' ), $redirect_url ) );
@@ -1418,7 +1434,44 @@ class Module {
      * @return array
      */
     public function remove_product_type_filter( $args ) {
-        $args['product_types'] = '';
+        global $wp;
+
+        if ( dokan_is_seller_dashboard() && isset( $wp->query_vars['booking'] ) ) {
+            $args['product_types'] = '';
+        }
+
         return $args;
     }
+
+    /**
+     * Render linked product content.
+     *
+     * @since 3.9.4
+     *
+     * @return void
+     */
+    public function load_linked_product_content( $post, $post_id ) {
+        global $wp;
+
+        if ( ! ( ( isset( $wp->query_vars['booking'] ) && $wp->query_vars['booking'] === 'new-product' ) || ( isset( $wp->query_vars['booking'] ) && $wp->query_vars['booking'] === 'edit' ) ) ) {
+            return;
+        }
+
+        $upsells_ids    = get_post_meta( $post_id, '_upsell_ids', true );
+        $crosssells_ids = get_post_meta( $post_id, '_crosssell_ids', true );
+
+        dokan_get_template_part(
+            'booking/linked-product-content',
+            '',
+            array(
+                'pro'            => true,
+                'is_booking'     => true,
+                'post'           => $post,
+                'post_id'        => $post_id,
+                'upsells_ids'    => $upsells_ids,
+                'crosssells_ids' => $crosssells_ids,
+            )
+        );
+    }
+
 }

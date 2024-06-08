@@ -99,6 +99,6 @@ class ContentAi extends Content_AI {
      * @return boolean
      */
     public function should_render_content_ai() {
-        return in_array( WordPress::get_post_type(), (array) Helper::get_settings( 'general.content_ai_post_types' ), true );
+        return Helper::is_site_connected() && in_array( WordPress::get_post_type(), (array) Helper::get_settings( 'general.content_ai_post_types' ), true );
     }
 }

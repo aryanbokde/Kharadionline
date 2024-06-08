@@ -2,6 +2,7 @@
 
 namespace WeDevs\DokanPro\Modules\RMA;
 
+use WeDevs\DokanPro\Modules\RMA\emails\ConversationNotification;
 use WeDevs\DokanPro\Modules\RMA\RmaCache;
 use WeDevs\DokanPro\Modules\RMA\BlockData;
 
@@ -122,7 +123,7 @@ class Module {
      * @return void
      */
     public function load_emails() {
-        add_filter( 'woocommerce_email_classes', [ $this, 'load_rma_email_classes' ], 99 );
+        add_filter( 'dokan_email_classes', [ $this, 'load_rma_email_classes' ], 99 );
         add_filter( 'dokan_email_actions', [ $this, 'register_rma_email_actions' ] );
     }
 
@@ -134,8 +135,13 @@ class Module {
      * @return void
      */
     public function load_rma_email_classes( $wc_emails ) {
-        $wc_emails['Dokan_Send_Coupon_Email']         = include DOKAN_RMA_INC_DIR . '/emails/class-dokan-rma-send-coupin-email.php';
-        $wc_emails['Dokan_Rma_Send_Warranty_Request'] = include DOKAN_RMA_INC_DIR . '/emails/class-dokan-rma-send-warranty-request.php';
+        include DOKAN_RMA_INC_DIR . '/emails/class-dokan-rma-send-coupin-email.php';
+        include DOKAN_RMA_INC_DIR . '/emails/class-dokan-rma-send-warranty-request.php';
+        include DOKAN_RMA_INC_DIR . '/emails/ConversationNotification.php';
+
+        $wc_emails['Dokan_Send_Coupon_Email']             = new \Dokan_Send_Coupon_Email();
+        $wc_emails['Dokan_Rma_Send_Warranty_Request']     = new \Dokan_Rma_Send_Warranty_Request();
+        $wc_emails['Dokan_RMA_Conversation_Notification'] = new ConversationNotification();
 
         return $wc_emails;
     }
@@ -150,6 +156,7 @@ class Module {
     public function register_rma_email_actions( $actions ) {
         $actions[] = 'dokan_send_coupon_to_customer';
         $actions[] = 'dokan_rma_send_warranty_request';
+        $actions[] = 'dokan_pro_rma_conversion_created';
 
         return $actions;
     }
@@ -174,20 +181,18 @@ class Module {
      * @return void
     */
     public function load_scripts() {
-        global $wp, $post;
+        global $wp;
 
-        $post_id = 0;
-
-        if ( isset( $post->ID ) && $post->ID && 'product' == $post->post_type ) {
-            $post_id = $post->ID;
-        }
-
-        if ( isset( $_GET['product_id'] ) ) {
-            $post_id = intval( $_GET['product_id'] );
-        }
-
-        if ( ( isset( $wp->query_vars['settings'] ) && 'rma' === (string) $wp->query_vars['settings'] )
-            || ( isset( $_GET['action'] ) && $_GET['action'] == 'edit' && ! empty( $_GET['product_id'] ) ) ) { //phpcs:ignore
+        if (
+            (
+                isset( $wp->query_vars['settings'] )
+                && 'rma' === (string) $wp->query_vars['settings']
+            ) || (
+                isset( $_GET['action'] )
+                && sanitize_text_field( wp_unslash( $_GET['action'] ) ) === 'edit'
+                && isset( $_GET['product_id'] )
+            )
+        ) {
             wp_enqueue_script( 'dokan-rma-script' );
             wp_enqueue_style( 'dokan-rma-style' );
         }
@@ -206,9 +211,6 @@ class Module {
                     'nonce'   => wp_create_nonce( 'dokan_rma_nonce' ),
                 ]
             );
-
-            wp_enqueue_style( 'dokan-magnific-popup' );
-            wp_enqueue_script( 'dokan-magnific-popup' );
         }
 
         if ( is_account_page() ) {
@@ -275,7 +277,7 @@ class Module {
      * @return array
      */
     public function set_email_template_directory( $template_array ) {
-        array_push( $template_array, 'send-coupon.php', 'send-warranty-request.php' );
+        array_push( $template_array, 'send-coupon.php', 'send-warranty-request.php', 'send-conversation-notification.php' );
         return $template_array;
     }
 

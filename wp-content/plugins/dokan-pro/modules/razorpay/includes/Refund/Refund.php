@@ -88,9 +88,13 @@ class Refund {
 
         // Get parent order id, because charge id is stored on parent order id
         $parent_order_id = $order->get_parent_id() ? $order->get_parent_id() : $order->get_id();
+        $parent_order = wc_get_order( $parent_order_id );
+        if ( ! $parent_order ) {
+            return;
+        }
 
         // get intent id of the parent order
-        $payment_intent_id = get_post_meta( $parent_order_id, '_dokan_razorpay_payment_capture_id', true );
+        $payment_intent_id = $parent_order->get_meta( '_dokan_razorpay_payment_capture_id', true );
         if ( empty( $payment_intent_id ) ) {
             return;
         }
@@ -177,10 +181,13 @@ class Refund {
             $refund_ids[] = $razorpay_refund->id;
         }
 
-        update_post_meta( $order->get_id(), '_dokan_razorpay_refund_id', $refund_ids );
+        $order->update_meta_data( '_dokan_razorpay_refund_id', $refund_ids );
 
         // store last refund debug id
-        update_post_meta( $order->get_id(), '_dokan_razorpay_refund_debug_id', $razorpay_refund->id );
+        $order->update_meta_data( '_dokan_razorpay_refund_debug_id', $razorpay_refund->id );
+
+        // save order meta
+        $order->save();
 
         // Step 3: Try to approve the refund.
         $refund = $refund->approve( $args );
@@ -229,7 +236,7 @@ class Refund {
         }
 
         $order->update_meta_data( 'dokan_gateway_fee', $gateway_fee );
-        $order->save_meta_data();
+        $order->save();
     }
 
     /**

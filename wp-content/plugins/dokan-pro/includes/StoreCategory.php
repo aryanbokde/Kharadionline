@@ -36,6 +36,7 @@ class StoreCategory {
             add_filter( 'dokan_rest_get_stores_args', array( $this, 'add_store_category_query_arg' ), 10, 2 );
             add_action( 'pre_user_query', array( $this, 'add_store_category_query' ) );
             add_action( 'deleted_user', [ $this, 'remove_store_categories_by_user_id' ] );
+            add_filter( 'dokan_rest_api_store_collection_params', [ $this, 'add_store_category_rest_collection_param' ] );
         }
     }
 
@@ -92,6 +93,7 @@ class StoreCategory {
             ],
             'default' => 'none',
             'tooltip' => __( 'Only admin can create store categories from Dashboard -> Vendors -> Store Categories to assign categories from vendor listing page. If you select single, vendor will only have one category available during store setup or when navigating to vendor Dashboard -> Store -> Store categories. If you select multiple, multiple categories will be available. Select none if you don\'t want either.', 'dokan' ),
+            'is_lite' => false,
         ];
 
         return $dokan_settings_fields;
@@ -242,9 +244,11 @@ class StoreCategory {
         $get_postdata = wp_unslash( $_POST ); // phpcs:ignore
         $store_categories = ! empty( $get_postdata['dokan_store_categories'] ) ? $get_postdata['dokan_store_categories'] : null;
         if ( is_array( $store_categories ) ) {
-            array_walk( $store_categories, function ( &$value ) {
-                $value = intval( $value );
-            } );
+            array_walk(
+                $store_categories, function ( &$value ) {
+					$value = intval( $value );
+				}
+            );
         }
         dokan_set_store_categories( $wizard->store_id, $store_categories );
     }
@@ -283,7 +287,7 @@ class StoreCategory {
             }
         }
 
-        $shop_info['categories'] = $store_categories;
+        $shop_info['categories'] = apply_filters( 'dokan_get_store_categories_in_vendor', $store_categories );
 
         return $shop_info;
     }
@@ -420,9 +424,10 @@ class StoreCategory {
      * @return void
      */
     public function rest_stores_update_store_category( $store, $request ) {
-        $store_categories = ! empty( $request->get_param( 'categories' ) ) ? $request->get_param( 'categories' ) : null;
+        $store_categories = ! empty( $request->get_param( 'categories' ) ) ? $request->get_param( 'categories' ) : [];
+        $is_valid = isset( current( $store_categories )['id'] ); // Checking if data format is valid
 
-        if ( is_array( $store_categories ) ) {
+        if ( $is_valid ) {
             $store_categories = array_map(
                 function ( $category ) {
                     return $category['id'];
@@ -494,5 +499,24 @@ class StoreCategory {
             $wp_user_query->query_from   .= $clauses['join'];
             $wp_user_query->query_where  .= $clauses['where'];
         }
+    }
+
+    /**
+     * Add store category query parameters.
+     *
+     * @since 3.7.30
+     *
+     * @param array $params Query params.
+     *
+     * @return mixed
+     */
+    public function add_store_category_rest_collection_param( $params ) {
+        $params['store_categories'] = array(
+            'description'       => __( 'Store categories', 'dokan' ),
+            'type'              => array( 'string', 'array' ),
+            'sanitize_callback' => 'sanitize_text_field',
+            'validate_callback' => 'rest_validate_request_arg',
+        );
+        return $params;
     }
 }

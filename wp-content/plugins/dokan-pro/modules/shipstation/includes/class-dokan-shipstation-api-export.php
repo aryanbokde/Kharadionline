@@ -75,24 +75,23 @@ class Dokan_ShipStation_Api_Export extends Dokan_ShipStation_Api_Request {
             $end_date   = gmdate( 'Y-m-d H:i:s', strtotime( $raw_end_date ) );
         }
 
-        $args = array(
-            'start_date' => $start_date,
-            'end_date'   => $end_date,
-            'status'     => $export_statuses,
-            'page'       => $page,
-            'fields'     => array( 'p.ID' ),
-        );
+        $args = [
+            'seller_id' => $this->seller->ID,
+            'status'    => $export_statuses,
+            'date'                => [
+                'from' => $start_date,
+                'to'   => $end_date,
+            ],
+            'paged'     => $page,
+            'return'    => 'ids',
+            'limit'     => DOKAN_SHIPSTATION_EXPORT_LIMIT,
+        ];
 
-        $orders = dokan_shipstation_get_orders( $this->seller->ID, $args );
-        $order_ids = wp_list_pluck( $orders, 'ID' );
-
-        $count_args = array_merge( $args, array(
-            'count' => true,
-        ) );
-
-        $count = dokan_shipstation_get_orders( $this->seller->ID, $count_args );
-        $count = array_pop( $count );
-        $max_results = $count->count;
+        // get order ids
+        $order_ids = dokan()->order->all( $args );
+        // get max results
+        $args['return'] = 'count';
+        $max_results = dokan()->order->all( $args );
 
         $orders_xml = $xml->createElement( 'Orders' );
 
@@ -333,7 +332,7 @@ class Dokan_ShipStation_Api_Export extends Dokan_ShipStation_Api_Request {
      */
     private function get_order_notes( $order ) {
         $args = array(
-            'post_id' => version_compare( WC_VERSION, '3.0.0', '>=' ) ? $order->get_id() : $order->id,
+            'post_id' => $order->get_id(),
             'approve' => 'approve',
             'type'    => 'order_note',
         );

@@ -20,7 +20,7 @@ class Refund extends Processor {
 	 *
 	 * @param int|string $refund_id
 	 *
-	 * @return object|false
+	 * @return \MangoPay\Refund|false
 	 */
 	public static function get( $refund_id ) {
 		try {

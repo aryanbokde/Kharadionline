@@ -34,7 +34,7 @@ class Dokan_Geolocation_Admin_Settings {
             'title'                => __( 'Geolocation', 'dokan' ),
             'icon_url'             => DOKAN_GEOLOCATION_ASSETS . '/images/geolocation.svg',
             'description'          => __( 'Store Location Setup', 'dokan' ),
-            'document_link'        => 'https://wedevs.com/docs/dokan/modules/dokan-geolocation/',
+            'document_link'        => 'https://dokan.co/docs/wordpress/modules/dokan-geolocation/',
             'settings_title'       => __( 'Geolocation Settings', 'dokan' ),
             'settings_description' => __( 'You can configure your store location settings and access configuration for vendor store from this settings menu.', 'dokan' ),
         ];

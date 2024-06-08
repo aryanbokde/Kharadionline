@@ -94,4 +94,11 @@
 
 </div><!-- .dokan-dashboard-wrap -->
 
+<script>
+    (function($) {
+        // Sanitize phone input characters.
+        $( 'form.vendor-staff.register input#phone' ).on( 'keydown', dokan_sanitize_phone_number );
+    })(jQuery);
+</script>
+
 <?php do_action( 'dokan_dashboard_wrap_end' ); ?>

@@ -35,8 +35,12 @@ class AdminSingleProduct {
     public static function register_scripts() {
         list( $suffix, $version ) = dokan_get_script_suffix_and_version();
 
-        wp_register_style( 'dokan-report-abuse-admin-single-product', DOKAN_REPORT_ABUSE_ASSETS . '/css/dokan-report-abuse-admin-single-product' . $suffix . '.css', [ 'dokan-fontawesome' ], $version );
+        wp_register_style( 'dokan-report-abuse-admin-single-product', DOKAN_REPORT_ABUSE_ASSETS . '/css/dokan-report-abuse-admin-single-product' . $suffix . '.css', [], $version );
         wp_register_script( 'dokan-report-abuse-admin-single-product', DOKAN_REPORT_ABUSE_ASSETS . '/js/dokan-report-abuse-admin-single-product' . $suffix . '.js', [ 'jquery' ], $version, true );
+
+        if ( 'off' === dokan_get_option( 'disable_dokan_fontawesome', 'dokan_appearance', 'off' ) ) {
+            wp_enqueue_style( 'dokan-fontawesome' );
+        }
     }
 
     /**

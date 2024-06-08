@@ -8,10 +8,6 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
 }
-
-// WC 3.0+ compatibility
-$order_post = get_post( $order->get_id() );
-
 ?>
 <tr>
 	<td>
@@ -34,14 +30,14 @@ $order_post = get_post( $order->get_id() );
 		$timestamp_gmt = $order->get_date_created()->getTimestamp();
 		if ( $timestamp_gmt > 0 ) {
 			// translators: php date format
-			$t_time          = get_the_time( _x( 'Y/m/d g:i:s A', 'post date', 'dokan' ), $order_post );
+			$t_time          = dokan_format_datetime( $timestamp_gmt );
 			$date_to_display = human_time_diff( $timestamp_gmt, time() );
 		} else {
 			$t_time = $date_to_display = __( 'Unpublished', 'dokan' ); //phpcs:ignore
 		}
         ?>
 		<abbr title="<?php echo esc_attr( $t_time ); ?>">
-			<?php echo esc_html( apply_filters( 'post_date_column_time', $date_to_display, $order_post ) ); ?>
+			<?php echo esc_html( $date_to_display ); ?>
 		</abbr>
 	</td>
 	<td>

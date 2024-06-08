@@ -464,6 +464,10 @@ class Helper {
      * @return bool|string
      */
     public static function get_product_type( $country_code ) {
+        // fixing country code if given country code is cn, because paypal api only accept C2 for china, but wooCommerce use CN
+        if ( 'CN' === strtoupper( $country_code ) ) {
+            $country_code = 'C2';
+        }
         $ucc_supported_countries        = static::get_advanced_credit_card_debit_card_supported_countries();
         $branded_supported_countries    = static::get_branded_payment_supported_countries();
 
@@ -1088,7 +1092,7 @@ class Helper {
         //store plan id for later use
         if ( $order ) {
             $order->update_meta_data( '_dokan_paypal_marketplace_subscription_plan_id', $created_plan['id'] );
-            $order->save_meta_data();
+            $order->save();
         }
 
         return $created_plan['id'];

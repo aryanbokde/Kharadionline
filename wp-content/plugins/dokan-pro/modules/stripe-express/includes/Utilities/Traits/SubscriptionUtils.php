@@ -236,11 +236,12 @@ trait SubscriptionUtils {
 
         OrderMeta::update_stripe_subscription_id( $order, $subscription_id );
         UserMeta::update_stripe_debug_subscription_id( $order->get_customer_id(), $subscription_id );
+        UserMeta::delete_stripe_temp_subscription_id( $order->get_customer_id() );
         OrderMeta::save( $order );
 
         $payment_needed = Helper::is_payment_needed( $order_id );
         if ( $payment_needed ) {
-            $this->validate_minimum_order_amount( $order_id );
+            $this->validate_minimum_order_amount( $order );
         }
 
         // Synchronise the user/customer with Stripe.

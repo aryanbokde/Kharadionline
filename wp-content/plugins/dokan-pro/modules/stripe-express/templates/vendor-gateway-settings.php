@@ -95,8 +95,9 @@
 
         <div id="dokan-stripe-express-account-connect"
             data-user="<?php echo esc_attr( $user_id ); ?>">
-            <img src="<?php echo esc_url_raw( DOKAN_STRIPE_EXPRESS_ASSETS . 'images/connect-button-slate.svg' ); ?>"
-                alt="<?php esc_attr_e( 'Connect with Stripe', 'dokan' ); ?>">
+            <a href='#' class='stripe-connect slate' title="<?php esc_attr_e( 'Connect with Stripe', 'dokan' ); ?>">
+                <span><?php esc_html_e( 'Connect with', 'dokan' ); ?></span>
+            </a>
         </div>
     <?php endif; ?>
 </div>

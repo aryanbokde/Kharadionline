@@ -97,7 +97,7 @@ class Dokan_ShipStation_Settings {
             'title'      => __( 'ShipStation', 'dokan' ),
             'icon'       => '<i class="fas fa-cog"></i>',
             'url'        => dokan_get_navigation_url( 'settings/shipstation' ),
-            'pos'        => 71,
+            'pos'        => 72,
             'permission' => 'dokan_view_store_shipping_menu'
         );
 

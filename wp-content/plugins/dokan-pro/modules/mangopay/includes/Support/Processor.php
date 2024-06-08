@@ -21,7 +21,7 @@ class Processor {
      *
      * @since 3.5.0
      *
-     * @return object
+     * @return Config|null
      */
     protected static function config() {
         return Config::get_instance();
@@ -132,7 +132,7 @@ class Processor {
         Meta::update_payment_type( $order, $payment_method );
         Meta::update_transaction_id( $order, $transaction_id );
         Order::save_transaction_history( $order, $transaction_id );
-        $order->save_meta_data();
+        $order->save();
 
         return true;
     }

@@ -50,7 +50,7 @@ $order_url = esc_url(
     $before = '<a class="link" href="' . esc_url( $order_url ) . '">';
     $after  = '</a>';
     /* translators: %s: Order ID. */
-    echo wp_kses_post( $before . sprintf( __( '[Order #%s]', 'dokan' ) . $after . ' (<time datetime="%s">%s</time>)', $order->get_order_number(), $order->get_date_created()->format( 'c' ), wc_format_datetime( $order->get_date_created() ) ) );
+    echo wp_kses_post( $before . sprintf( __( '[Order #%s]', 'dokan' ) . $after . ' (<time datetime="%s">%s</time>)', $order->get_order_number(), $order->get_date_created()->format( 'c' ), dokan_format_datetime( $order->get_date_created() ) ) );
     ?>
 </h2>
 

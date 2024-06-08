@@ -11,7 +11,6 @@ use WeDevs\DokanPro\Modules\ProductAdvertisement\Frontend\Order;
 use WeDevs\DokanPro\Modules\ProductAdvertisement\Frontend\Product;
 use WeDevs\DokanPro\Modules\ProductAdvertisement\Frontend\Shortcode;
 use WeDevs\DokanPro\Modules\ProductAdvertisement\Frontend\ProductWidget;
-use WeDevs\DokanPro\Modules\ProductAdvertisement\BlockData;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
@@ -126,18 +125,22 @@ final class Module {
         add_action( 'init', [ $this, 'register_scripts' ], 10 );
 
         // register widgets
-        add_action( 'widgets_init', [ $this, 'register_product_advertisement_widget' ] );
+        add_action( 'dokan_widgets', [ $this, 'register_product_advertisement_widget' ] );
     }
 
     /**
      * Register Product Advertisement Widget
      *
      * @since 3.5.0
+     * @since 3.10.2 Updated to comply with `dokan-lite` widget registration process
      *
-     * @return void
+     * @param array $widgets List of widgets to be registered
+     *
+     * @return array
      */
-    public function register_product_advertisement_widget() {
-        register_widget( ProductWidget::class );
+    public function register_product_advertisement_widget( array $widgets ): array {
+        $widgets[ ProductWidget::INSTANCE_KEY ] = ProductWidget::class;
+        return $widgets;
     }
 
     /**

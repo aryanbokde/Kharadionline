@@ -27,6 +27,46 @@ defined( 'ABSPATH' ) || exit;
 class Gateway extends WC_Payment_Gateway {
 
     /**
+     * @var string $sandbox_mode
+     */
+    public $sandbox_mode;
+
+    /**
+     * @var string $client_id
+     */
+    public $client_id;
+
+    /**
+     * @var string $api_key
+     */
+    public $api_key;
+
+    /**
+     * @var string $sandbox_client_id
+     */
+    public $sandbox_client_id;
+
+    /**
+     * @var string $sandbox_api_key
+     */
+    public $sandbox_api_key;
+
+    /**
+     * @var string $debug
+     */
+    public $debug;
+
+    /**
+     * @var array $supported_locales
+     */
+    public $supported_locales;
+
+    /**
+     * @var string $saved_cards
+     */
+    public $saved_cards;
+
+    /**
      * Class constructor
      *
      * @since 3.5.0
@@ -141,9 +181,9 @@ class Gateway extends WC_Payment_Gateway {
 
         /**
          * Filter to manipulate cart validation necessity.
-         * 
+         *
          * @since 3.7.17
-         * 
+         *
          * @param bool $needs_validation
          */
         if ( ! apply_filters( 'dokan_mangopay_needs_cart_validation', true ) ) {
@@ -406,7 +446,7 @@ class Gateway extends WC_Payment_Gateway {
 
         // Save metadata for card payment
         Card::save_metadata( $order, $payment );
-        $order->save_meta_data();
+        $order->save();
 
         return array(
             'result'   => 'success',

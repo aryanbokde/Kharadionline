@@ -4,6 +4,11 @@ namespace WeDevs\DokanPro\Modules\VSP;
 
 use \WeDevs\DokanPro\Products;
 
+/**
+ * Dokan Vendor Subscription Product Module
+ *
+ * @since 3.8.0 HPOS support added
+ */
 class Module {
 
     /**
@@ -113,7 +118,7 @@ class Module {
      * Tell WC that we don't need any processing
      *
      * @param  bool $needs_processing
-     * @param  array $product
+     * @param  \WC_Product $product
      * @return bool
      */
     public function order_needs_processing( $needs_processing, $product ) {
@@ -151,7 +156,7 @@ class Module {
         global $wp;
 
         // Vendor product edit page.
-        if ( isset( $wp->query_vars['products'] ) && ! empty( $_GET['product_id'] ) && ! empty( $_GET['action'] ) && 'edit' === sanitize_text_field( wp_unslash( $_GET['action'] ) ) ) { // phpcs:ignore
+        if ( isset( $wp->query_vars['products'] ) && isset( $_GET['product_id'] ) && ! empty( $_GET['action'] ) && 'edit' === sanitize_text_field( wp_unslash( $_GET['action'] ) ) ) { // phpcs:ignore
             $this->enqueue_scripts();
         }
 
@@ -175,7 +180,7 @@ class Module {
      * @since 3.7.4
      */
     public function register_scripts() {
-        list( $suffix, $script_version ) = dokan_get_script_suffix_and_version();
+        [ $suffix, $script_version ] = dokan_get_script_suffix_and_version();
 
         wp_register_style( 'dokan-vsp-style', DOKAN_VSP_DIR_ASSETS_DIR . '/css/style.css', false, $script_version, 'all' );
         wp_register_style( 'dokan-vsp-subscription-list-style', DOKAN_VSP_DIR_ASSETS_DIR . '/css/order-list.css', false, $script_version, 'all' );

@@ -88,7 +88,7 @@ class Hooks {
             return false;
         }
 
-        return dokan_pro()->coupon->is_admin_coupon_valid( $coupon, $available_vendors, $available_products );
+        return dokan_pro()->coupon->is_admin_coupon_valid( $coupon, $available_vendors, $available_products,[], $valid );
     }
 
     /**

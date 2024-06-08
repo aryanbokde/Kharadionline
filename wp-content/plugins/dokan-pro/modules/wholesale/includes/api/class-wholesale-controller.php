@@ -134,7 +134,7 @@ class Dokan_REST_Wholesale_Controller extends DokanRESTController {
         $params    = $request->get_params();
         $customers = array();
         $defaults  = array(
-            'role__in'   => array( 'seller', 'customer', 'administrator', 'vendor_staff' ),
+            'role__in'   => array( 'seller', 'customer', 'administrator', 'vendor_staff', 'subscriber' ),
             'number'     => 10,
             'offset'     => 0,
             'orderby'    => 'registered',
@@ -224,7 +224,8 @@ class Dokan_REST_Wholesale_Controller extends DokanRESTController {
             return new WP_Error( 'no-user', __( 'No user found', 'dokan' ), [ 'status' => 401 ] );
         }
 
-        if ( ! ( $user->has_cap( 'dokandar' ) || in_array( 'customer', $user->roles, true ) ) ) {
+        $customer_roles = ['customer', 'subscriber'];
+        if ( ! ( $user->has_cap( 'dokandar' ) || array_intersect( $customer_roles, $user->roles ) ) ) {
             return new WP_Error( 'no-valid-role', __( 'Not a valid user for wholesale', 'dokan' ), [ 'status' => 401 ] );
         }
 
@@ -322,6 +323,11 @@ class Dokan_REST_Wholesale_Controller extends DokanRESTController {
                     case 'activate':
                         foreach ( $value as $customer_id ) {
                             $user = get_user_by( 'id', $customer_id );
+
+                            if ( ! $user ) {
+                                continue;
+                            }
+
                             update_user_meta( $user->ID, '_is_dokan_wholesale_customer', 'yes' );
                             update_user_meta( $user->ID, '_dokan_wholesale_customer_status', 'active' );
                             $user->add_cap( 'dokan_wholesale_customer' );
@@ -333,6 +339,11 @@ class Dokan_REST_Wholesale_Controller extends DokanRESTController {
                     case 'deactivate':
                         foreach ( $value as $customer_id ) {
                             $user = get_user_by( 'id', $customer_id );
+
+                            if ( ! $user ) {
+                                continue;
+                            }
+
                             update_user_meta( $user->ID, '_is_dokan_wholesale_customer', 'no' );
                             update_user_meta( $user->ID, '_dokan_wholesale_customer_status', 'deactive' );
                             $user->remove_cap( 'dokan_wholesale_customer' );
@@ -343,6 +354,11 @@ class Dokan_REST_Wholesale_Controller extends DokanRESTController {
                     case 'delete':
                         foreach ( $value as $customer_id ) {
                             $user = get_user_by( 'id', $customer_id );
+
+                            if ( ! $user ) {
+                                continue;
+                            }
+
                             delete_user_meta( $user->ID, '_is_dokan_wholesale_customer' );
                             delete_user_meta( $user->ID, '_dokan_wholesale_customer_status' );
                             $user->remove_cap( 'dokan_wholesale_customer' );

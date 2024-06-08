@@ -16,7 +16,7 @@
             <small>
                 <?php esc_html_e( 'Setup Facebook Messenger Chat', 'dokan' ); ?>
                 <a
-                    href="<?php echo esc_url( 'https://wedevs.com/docs/dokan/modules/dokan-live-chat/' ); ?>"
+                    href="<?php echo esc_url( 'https://dokan.co/docs/wordpress/modules/dokan-live-chat/' ); ?>"
                     style="text-decoration: underline !important;font-weight: bold;color: gray;"
                     target="_blank"
                     class="get-fb-page-id">

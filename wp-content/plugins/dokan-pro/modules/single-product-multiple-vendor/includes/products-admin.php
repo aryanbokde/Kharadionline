@@ -16,6 +16,7 @@ class Dokan_SPMV_Products_Admin {
         add_action( 'wp_ajax_dokan_spmv_products_admin_assign_vendors', [ $this, 'assign_vendors' ] );
         add_action( 'wp_ajax_dokan_spmv_products_admin_delete_clone_product', [ $this, 'delete_clone_product' ] );
         add_action( 'init', [ $this, 'register_scripts' ] );
+        add_action( 'admin_init', [ $this, 'remove_request_interception_from_wc_booking' ], 5 );
     }
 
     /**
@@ -152,11 +153,27 @@ class Dokan_SPMV_Products_Admin {
                 'number'  => -1,
             ] );
 
+            if ( ! count( $results ) && ! empty( $s ) ) {
+                $results = dokan()->vendor->get_vendors( [
+                    'number'     => -1,
+                    'exclude'    => $exlcude_vendors,
+                    'status'     => [ 'all' ],
+                    'role__in'   => [ 'seller', 'administrator', 'shop_manager' ],
+                    'meta_query' => [ // phpcs:ignore
+                        [
+                            'key'     => 'dokan_store_name',
+                            'value'   => $s,
+                            'compare' => 'LIKE',
+                        ]
+                    ]
+                ] );
+            }
+
             if ( ! empty( $results ) ) {
                 foreach ( $results as $vendor ) {
                     $vendors[] = [
                         'id'     => $vendor->get_id(),
-                        'name'   => $vendor->get_name(),
+                        'name'   => ! empty( $vendor->get_shop_name() ) ? $vendor->get_shop_name() : $vendor->get_name(),
                         'avatar' => $vendor->get_avatar(),
                     ];
                 }
@@ -248,5 +265,28 @@ class Dokan_SPMV_Products_Admin {
         }
 
         wp_send_json_success( [ 'message' => esc_html__( 'Product deleted successfully.', 'dokan' ) ] );
+    }
+
+    /**
+     * Remove request interception from wc_booking
+     *
+     * @since 3.10.0
+     *
+     * @return void
+     */
+    public function remove_request_interception_from_wc_booking() {
+        $actions = [
+            'dokan_spmv_products_admin_search_vendors',
+            'dokan_spmv_products_admin_assign_vendors',
+            'dokan_spmv_products_admin_delete_clone_product',
+        ];
+
+        $action = sanitize_key( wp_unslash( filter_input( INPUT_GET, 'action' ) ) );
+
+        if  ( empty( $action ) || ! in_array( $action, $actions ) ) {
+            return;
+        }
+
+        dokan_remove_hook_for_anonymous_class( 'admin_init', 'WC_Bookings_Single_Export', 'catch_export_requests', 20 );
     }
 }

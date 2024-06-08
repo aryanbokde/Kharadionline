@@ -3,6 +3,8 @@
 namespace WeDevs\DokanPro\REST;
 
 use WP_REST_Controller;
+use WP_REST_Request;
+use WP_REST_Response;
 use WP_REST_Server;
 
 class ReportsController extends WP_REST_Controller {
@@ -27,50 +29,41 @@ class ReportsController extends WP_REST_Controller {
      * @return void
      */
     public function register_routes() {
-        register_rest_route( $this->namespace, '/' . $this->base . '/sales_overview', array(
-            array(
+        register_rest_route( $this->namespace, '/' . $this->base . '/sales_overview', [
+            [
                 'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array( $this, 'get_sales_overview' ),
-                'permission_callback' => array( $this, 'check_sales_overview_permission' ),
-                'args'                => $this->get_collection_params()
-            ),
-        ) );
+                'callback'            => [ $this, 'get_sales_overview' ],
+                'permission_callback' => [ $this, 'check_sales_overview_permission' ],
+                'args'                => $this->get_collection_params(),
+            ],
+        ] );
 
-        register_rest_route( $this->namespace, '/' . $this->base . '/top_selling', array(
-            array(
+        register_rest_route( $this->namespace, '/' . $this->base . '/top_selling', [
+            [
                 'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array( $this, 'get_top_selling' ),
-                'permission_callback' => array( $this, 'check_top_selling_permission' ),
-                'args'                => $this->get_collection_params()
-            ),
-        ) );
+                'callback'            => [ $this, 'get_top_selling' ],
+                'permission_callback' => [ $this, 'check_top_selling_permission' ],
+                'args'                => $this->get_collection_params(),
+            ],
+        ] );
 
-        register_rest_route( $this->namespace, '/' . $this->base . '/top_earners', array(
-            array(
+        register_rest_route( $this->namespace, '/' . $this->base . '/top_earners', [
+            [
                 'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array( $this, 'get_top_earners' ),
-                'permission_callback' => array( $this, 'check_top_earners_permission' ),
-                'args'                => $this->get_collection_params()
-            ),
-        ) );
+                'callback'            => [ $this, 'get_top_earners' ],
+                'permission_callback' => [ $this, 'check_top_earners_permission' ],
+                'args'                => $this->get_collection_params(),
+            ],
+        ] );
 
-        register_rest_route( $this->namespace, '/' . $this->base . '/top_earners', array(
-            array(
+        register_rest_route( $this->namespace, '/' . $this->base . '/summary', [
+            [
                 'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array( $this, 'get_top_earners' ),
-                'permission_callback' => array( $this, 'check_top_earners_permission' ),
-                'args'                => $this->get_collection_params()
-            ),
-        ) );
-
-        register_rest_route( $this->namespace, '/' . $this->base . '/summary', array(
-            array(
-                'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array( $this, 'get_report_summary' ),
-                'permission_callback' => array( $this, 'check_report_summary_permission' ),
-                'args'                => $this->get_collection_params()
-            ),
-        ) );
+                'callback'            => [ $this, 'get_report_summary' ],
+                'permission_callback' => [ $this, 'check_report_summary_permission' ],
+                'args'                => $this->get_collection_params(),
+            ],
+        ] );
     }
 
     /**
@@ -78,10 +71,24 @@ class ReportsController extends WP_REST_Controller {
      *
      * @since 2.8.0
      *
-     * @return void
+     * @param WP_REST_Request $request
+     *
+     * @return bool
      */
-    public function check_sales_overview_permission() {
-        return current_user_can( 'dokan_view_overview_report' );
+    public function check_sales_overview_permission( $request ) {
+        if ( current_user_can( 'manage_options' ) ) {
+            return true;
+        }
+
+        if ( ! current_user_can( 'dokan_view_overview_report' ) ) {
+            return false;
+        }
+
+        if ( isset( $request['vendor_id'] ) && dokan_get_current_user_id() !== (int) $request['id'] ) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -89,10 +96,22 @@ class ReportsController extends WP_REST_Controller {
      *
      * @since 2.8.0
      *
-     * @return void
+     * @return bool
      */
     public function check_top_selling_permission() {
-        return current_user_can( 'dokan_view_top_selling_report' );
+        if ( current_user_can( 'manage_options' ) ) {
+            return true;
+        }
+
+        if ( ! current_user_can( 'dokan_view_top_selling_report' ) ) {
+            return false;
+        }
+
+        if ( isset( $request['vendor_id'] ) && dokan_get_current_user_id() !== (int) $request['id'] ) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -100,10 +119,22 @@ class ReportsController extends WP_REST_Controller {
      *
      * @since 2.8.0
      *
-     * @return void
+     * @return bool
      */
     public function check_top_earners_permission() {
-        return current_user_can( 'dokan_view_top_earning_report' );
+        if ( current_user_can( 'manage_options' ) ) {
+            return true;
+        }
+
+        if ( ! current_user_can( 'dokan_view_top_earning_report' ) ) {
+            return false;
+        }
+
+        if ( isset( $request['vendor_id'] ) && dokan_get_current_user_id() !== (int) $request['id'] ) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -111,28 +142,42 @@ class ReportsController extends WP_REST_Controller {
      *
      * @since 2.8.0
      *
-     * @return void
+     * @return bool
      */
     public function check_report_summary_permission() {
-        return current_user_can( 'dokan_view_sales_overview' );
+        if ( current_user_can( 'manage_options' ) ) {
+            return true;
+        }
+
+        if ( ! current_user_can( 'dokan_view_sales_overview' ) ) {
+            return false;
+        }
+
+        if ( isset( $request['vendor_id'] ) && dokan_get_current_user_id() !== (int) $request['id'] ) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
-     * Get reports summary
+     * Get report summary
      *
      * @since 2.8.0
      *
-     * @return void
+     * @param WP_REST_Request $request
+     *
+     * @return WP_REST_Response
      */
     public function get_report_summary( $request ) {
-        $seller_id = dokan_get_current_user_id();
+        $seller_id = $request['vendor_id'] ? absint( $request['vendor_id'] ) : dokan_get_current_user_id();
 
-        $data = array(
+        $data = [
             'pageviews'      => (int) dokan_author_pageviews( $seller_id ),
             'orders_count'   => dokan_count_orders( $seller_id ),
             'sales'          => dokan_author_total_sales( $seller_id ),
-            'seller_balance' => dokan_get_seller_earnings( $seller_id )
-        );
+            'seller_balance' => dokan_get_seller_earnings( $seller_id ),
+        ];
 
         return rest_ensure_response( $data );
     }
@@ -140,148 +185,55 @@ class ReportsController extends WP_REST_Controller {
     /**
      * Get report data for Sales Overview
      *
-     * @param type $request
+     * @since 2.8.0
+     * @since 3.8.0 rewritten whole method
      *
-     * @return array
+     * @param WP_REST_Request $request
+     *
+     * @return WP_REST_Response
      */
     public function get_sales_overview( $request ) {
-        $seller_id  = dokan_get_current_user_id();
-        $start_date = $request['start_date'];
-        $end_date   = $request['end_date'];
+        $seller_id = $request['vendor_id'] ? absint( $request['vendor_id'] ) : dokan_get_current_user_id();
+        if ( isset( $request['vendor_id'] ) && ! current_user_can( 'manage_options' ) ) {
+            // prevent non-admins from viewing another seller's data
+            $seller_id = dokan_get_current_user_id();
+        }
 
-        $order_totals = dokan_get_order_report_data( array(
-            'data'         => array(
-                '_order_total'    => array(
-                    'type'     => 'meta',
-                    'function' => 'SUM',
-                    'name'     => 'total_sales'
-                ),
-                '_order_shipping' => array(
-                    'type'     => 'meta',
-                    'function' => 'SUM',
-                    'name'     => 'total_shipping'
-                ),
-                'ID'              => array(
-                    'type'     => 'post_data',
-                    'function' => 'COUNT',
-                    'name'     => 'total_orders'
-                )
-            ),
-            'filter_range' => true,
-        ), $start_date, $end_date, $seller_id );
+        $start_date = dokan_current_datetime()->modify( $request['start_date'] );
+        if ( ! $start_date ) {
+            $start_date = dokan_current_datetime()->modify( 'first day of this month' );
+        }
 
-        $total_items = absint( dokan_get_order_report_data( array(
-            'data'         => array(
-                '_qty' => array(
-                    'type'            => 'order_item_meta',
-                    'order_item_type' => 'line_item',
-                    'function'        => 'SUM',
-                    'name'            => 'order_item_qty'
-                )
-            ),
-            'query_type'   => 'get_var',
-            'filter_range' => true
-        ), $start_date, $end_date, $seller_id ) );
+        $end_date = dokan_current_datetime()->modify( $request['end_date'] );
+        if ( ! $end_date ) {
+            $end_date = dokan_current_datetime()->modify( 'midnight' )->getTimestamp();
+        }
 
-        // Get discount amounts in range
-        $total_coupons = dokan_get_order_report_data( array(
-            'data'         => array(
-                'discount_amount' => array(
-                    'type'            => 'order_item_meta',
-                    'order_item_type' => 'coupon',
-                    'function'        => 'SUM',
-                    'name'            => 'discount_amount'
-                )
-            ),
-            'where'        => array(
-                array(
-                    'key'      => 'order_item_type',
-                    'value'    => 'coupon',
-                    'operator' => '='
-                )
-            ),
-            'query_type'   => 'get_var',
-            'filter_range' => true
-        ), $start_date, $end_date, $seller_id );
+        $sales_by_date                = new \WeDevs\DokanPro\Reports\SalesByDate();
+        $sales_by_date->current_range = 'custom';
+        $sales_by_date->start_date    = $start_date->getTimestamp();
+        $sales_by_date->end_date      = $end_date->getTimestamp();
+        $data                         = $sales_by_date->get_report_data( $seller_id );
 
-        $average_sales = $order_totals->total_sales / ( 30 + 1 );
-
-        $data = array(
-            'total_sales'    => $order_totals->total_sales,
-            'total_shipping' => $order_totals->total_shipping,
-            'total_orders'   => absint( $order_totals->total_orders ),
-            'total_items'    => $total_items,
-            'total_coupons'  => $total_coupons,
-            'average_sales'  => $average_sales,
-        );
-
-        return $data;
+        return rest_ensure_response( $data );
     }
 
     /**
      * Get report data for Top Selling products
      *
-     * @param type $request
+     * @param WP_REST_Request $request
      *
-     * @return array
+     * @return WP_REST_Response
      */
     public function get_top_selling( $request ) {
-
-        global $wpdb;
-        $seller_id  = dokan_get_current_user_id();
-        $start_date = $request['start_date'];
-        $end_date   = $request['end_date'];
-
-        $start_date = strtotime( $start_date );
-        $end_date   = strtotime( $end_date );
-
-        // Get order ids and dates in range
-        $order_items = apply_filters( 'woocommerce_reports_top_sellers_order_items', $wpdb->get_results( "
-            SELECT order_item_meta_2.meta_value as product_id, SUM( order_item_meta.meta_value ) as item_quantity FROM {$wpdb->prefix}woocommerce_order_items as order_items
-
-            LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta as order_item_meta ON order_items.order_item_id = order_item_meta.order_item_id
-            LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta as order_item_meta_2 ON order_items.order_item_id = order_item_meta_2.order_item_id
-            LEFT JOIN {$wpdb->posts} AS posts ON order_items.order_id = posts.ID
-            LEFT JOIN {$wpdb->prefix}dokan_orders AS do ON posts.ID = do.order_id
-
-            WHERE   posts.post_type     = 'shop_order'
-            AND     posts.post_status   != 'trash'
-            AND     do.seller_id = {$seller_id}
-            AND     do.order_status IN ('" . implode( "','", apply_filters( 'woocommerce_reports_order_statuses', array( 'wc-completed', 'wc-processing', 'wc-on-hold' ) ) ) . "')
-            AND     post_date > '" . date( 'Y-m-d', $start_date ) . "'
-            AND     post_date < '" . date( 'Y-m-d', strtotime( '+1 day', $end_date ) ) . "'
-            AND     order_items.order_item_type = 'line_item'
-            AND     order_item_meta.meta_key = '_qty'
-            AND     order_item_meta_2.meta_key = '_product_id'
-            GROUP BY order_item_meta_2.meta_value
-        " ), $start_date, $end_date );
-
-        $found_products = array();
-
-        if ( $order_items ) {
-            foreach ( $order_items as $order_item ) {
-                $found_products[$order_item->product_id] = $order_item->item_quantity;
-            }
+        $seller_id = $request['vendor_id'] ? absint( $request['vendor_id'] ) : dokan_get_current_user_id();
+        if ( isset( $request['vendor_id'] ) && ! current_user_can( 'manage_options' ) ) {
+            // prevent non-admins from viewing another seller's data
+            $seller_id = dokan_get_current_user_id();
         }
 
-        asort( $found_products );
-        $found_products = array_reverse( $found_products, true );
-        $found_products = array_slice( $found_products, 0, 25, true );
-        reset( $found_products );
-
-        $data = array();
-
-        foreach ( $found_products as $product_id => $sales ) {
-            $product = wc_get_product( $product_id );
-
-            $data[] = array(
-                'id'       => $product ? $product->get_id() : 0,
-                'title'    => $product ? $product->get_title() : __( 'DELETED', 'dokan' ),
-                'url'      => $product ? $product->get_permalink() : '#',
-                'edit_url' => $product ? dokan_edit_product_url( $product_id ) : '#',
-                'sold_qty' => $sales,
-            );
-        }
+        $report_manager = new \WeDevs\DokanPro\Reports\Manager();
+        $data           = $report_manager->get_top_selling_data( $seller_id, $request['start_date'], $request['end_date'] );
 
         return rest_ensure_response( $data );
     }
@@ -289,69 +241,21 @@ class ReportsController extends WP_REST_Controller {
     /**
      * Get report data for Top Earning products
      *
-     * @param type $request
+     * @param WP_REST_Request $request
      *
-     * @return array
+     * @return WP_REST_Response
      */
     public function get_top_earners( $request ) {
-        global $wpdb;
+        $seller_id = $request['vendor_id'] ? absint( $request['vendor_id'] ) : dokan_get_current_user_id();
+        if ( isset( $request['vendor_id'] ) && ! current_user_can( 'manage_options' ) ) {
+            // prevent non-admins from viewing another seller's data
+            $seller_id = dokan_get_current_user_id();
+        }
 
-        $seller_id  = dokan_get_current_user_id();
-        $start_date = $request['start_date'];
-        $end_date   = $request['end_date'];
+        $report_manager = new \WeDevs\DokanPro\Reports\Manager();
+        $data           = $report_manager->get_top_earners_data( $seller_id, $request['start_date'], $request['end_date'] );
 
-        $start_date = strtotime( $start_date );
-        $end_date   = strtotime( $end_date );
-
-        // Get order ids and dates in range
-        $order_items = apply_filters( 'woocommerce_reports_top_earners_order_items', $wpdb->get_results( "
-            SELECT order_item_meta_2.meta_value as product_id, SUM( order_item_meta.meta_value ) as line_total,SUM( do.net_amount ) as total_earning FROM {$wpdb->prefix}woocommerce_order_items as order_items
-
-            LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta as order_item_meta ON order_items.order_item_id = order_item_meta.order_item_id
-            LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta as order_item_meta_2 ON order_items.order_item_id = order_item_meta_2.order_item_id
-            LEFT JOIN {$wpdb->posts} AS posts ON order_items.order_id = posts.ID
-            LEFT JOIN {$wpdb->prefix}dokan_orders AS do ON posts.ID = do.order_id
-
-            WHERE   posts.post_type     = 'shop_order'
-            AND     posts.post_status   != 'trash'
-            AND     do.seller_id = {$seller_id}
-            AND     do.order_status           IN ('" . implode( "','", apply_filters( 'woocommerce_reports_order_statuses', array( 'wc-completed', 'wc-processing', 'wc-on-hold' ) ) ) . "')
-            AND     post_date > '" . date( 'Y-m-d', $start_date ) . "'
-            AND     post_date < '" . date( 'Y-m-d', strtotime( '+1 day', $end_date ) ) . "'
-            AND     order_items.order_item_type = 'line_item'
-            AND     order_item_meta.meta_key = '_line_total'
-            AND     order_item_meta_2.meta_key = '_product_id'
-            GROUP BY order_item_meta_2.meta_value
-        " ), $start_date, $end_date );
-
-            $found_products = array();
-            $total_earnings = array();
-            if ( $order_items ) {
-                foreach ( $order_items as $order_item ) {
-                    $found_products[$order_item->product_id] = $order_item->line_total;
-                    $total_earnings[$order_item->product_id] = $order_item->total_earning;
-                }
-            }
-
-            asort( $found_products );
-            $found_products = array_reverse( $found_products, true );
-            $found_products = array_slice( $found_products, 0, 25, true );
-            reset( $found_products );
-
-            $data = array();
-            foreach ( $found_products as $product_id => $sales ) {
-                $product = wc_get_product( $product_id );
-
-                $data[] = array(
-                    'id'       => $product ? $product->get_id() : 0,
-                    'title'    => $product ? $product->get_title() : __( 'DELETED', 'dokan' ),
-                    'url'      => $product ? $product->get_permalink() : '#',
-                    'edit_url' => $product ? dokan_edit_product_url( $product_id ) : '#',
-                    'sales'    => $sales,
-                );
-            }
-
-            return $data;
+        return rest_ensure_response( $data );
     }
 
     /**
@@ -360,15 +264,27 @@ class ReportsController extends WP_REST_Controller {
      * @return array
      */
     public function get_collection_params() {
-        return array(
-            'start_date' => array(
-                'default'           => date( 'Y-m-01', current_time( 'timestamp' ) ),
+        return [
+            'vendor_id'  => [
+                'description'       => __( 'ID of the Store', 'dokan-lite' ),
+                'type'              => 'integer',
+                'context'           => [ 'view' ],
+                'default'           => dokan_get_current_user_id(),
+                'sanitize_callback' => 'absint',
+                'validate_callback' => 'dokan_rest_validate_store_id',
+            ],
+            'start_date' => [
+                'type'              => 'string',
+                'format'            => 'date-time',
+                'default'           => dokan_current_datetime()->format( 'Y-m-01' ),
                 'sanitize_callback' => 'sanitize_text_field',
-            ),
-            'end_date'   => array(
-                'default'           => date( 'Y-m-d', strtotime( 'midnight', current_time( 'timestamp' ) ) ),
+            ],
+            'end_date'   => [
+                'type'              => 'string',
+                'format'            => 'date-time',
+                'default'           => dokan_current_datetime()->modify( 'midnight' )->format( 'Y-m-d' ),
                 'sanitize_callback' => 'sanitize_text_field',
-            )
-        );
+            ],
+        ];
     }
 }

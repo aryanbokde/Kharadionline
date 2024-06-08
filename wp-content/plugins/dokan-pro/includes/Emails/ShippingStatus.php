@@ -57,7 +57,7 @@ class ShippingStatus extends WC_Email {
     }
 
     /**
-     * Trigger the this email.
+     * Trigger the email.
      */
     public function trigger( $order_id, $tracking_info, $ship_info, $seller_id, $new_shipment = false ) {
         if ( ! $this->is_enabled() ) {
@@ -78,10 +78,14 @@ class ShippingStatus extends WC_Email {
                 $this->ship_info     = $ship_info;
 
                 $this->find['site_name']         = '{site_name}';
+                $this->find['shipping_status']   = '{shipping_status}';
+                $this->find['message']           = '{message}';
                 $this->find['set_email_subject'] = '{set_email_subject}';
 
                 $this->replace['site_name']         = $this->get_from_name();
                 $this->replace['set_email_subject'] = $default_heading;
+                $this->replace['shipping_status']   = $tracking_info->status_label;
+                $this->replace['message']           = wp_strip_all_tags( $ship_info );
             }
         }
 
@@ -154,7 +158,7 @@ class ShippingStatus extends WC_Email {
                 'type'          => 'text',
                 'desc_tip'      => true,
                 /* translators: %s: list of placeholders */
-                'description'   => sprintf( __( 'Available placeholders: %s', 'dokan' ), '<code>{title}, {message}, {site_name}</code>' ),
+                'description'   => sprintf( __( 'Available placeholders: %s', 'dokan' ), '<code>{shipping_status}, {message}, {site_name}</code>' ),
                 'placeholder'   => $this->get_default_subject(),
                 'default'       => '',
             ),
@@ -163,13 +167,13 @@ class ShippingStatus extends WC_Email {
                 'type'          => 'text',
                 'desc_tip'      => true,
                 /* translators: %s: list of placeholders */
-                'description'   => sprintf( __( 'Available placeholders: %s', 'dokan' ), '<code>{title}, {message}, {site_name}</code>' ),
+                'description'   => sprintf( __( 'Available placeholders: %s', 'dokan' ), '<code>{shipping_status}, {message}, {site_name}</code>' ),
                 'placeholder'   => $this->get_default_heading(),
                 'default'       => '',
             ),
             'additional_content' => array(
                 'title'       => __( 'Additional content', 'dokan' ),
-                'description' => __( 'Text to appear below the main email content.', 'dokan' ) . ' <code>{title}, {message}, {site_name}</code>',
+                'description' => __( 'Text to appear below the main email content.', 'dokan' ) . ' <code>{shipping_status}, {message}, {site_name}</code>',
                 'css'         => 'width:400px; height: 75px;',
                 'placeholder' => __( 'N/A', 'dokan' ),
                 'type'        => 'textarea',

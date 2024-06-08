@@ -138,6 +138,10 @@ i.verification-icon {
     color: #5EA9DD;
 }
 
+#dokan-verification-list .fa-square-x-twitter{
+    color: #000000;
+}
+
 #dokan-verification-list .fa-linkedin-square{
     color : #1C87BD;
 }
@@ -170,12 +174,51 @@ i.verification-icon {
     margin-left: 20px;
 }
 
-.dokan-vendor-company-file-item{
+.dokan-vendor-company-file-item, .dokan-vendor-verification-file-item {
     display: flex;
     justify-content:space-between;
-    margin: 7px;
+    margin: 7px 7px 7px 0;
 }
 
 input[type="submit"].dokan-btn-theme, a.dokan-btn-theme, .dokan-btn-theme {
     min-height: 37px;
+}
+.dokan-vendor-verification-file-heading {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-weight: bold;
+    line-height: 1.2;
+}
+
+.dokan-label.pending {
+    background-color: #8B5CF6;
+}
+
+.dokan-label.approved {
+    background-color: #22C55E;
+}
+.dokan-label.rejected{
+    background-color: #B91C1C;
+}
+.dokan-label.cancelled{
+    background-color: #64748B;
+}
+.dokan-label.onhold{
+    background-color: #52525B;
+}
+.dokan-label.processing{
+    background-color: #FB923C;
+}
+.dokan-vendor-verification-file-item .disconnect {
+    color: #fff !important;
+}
+
+.wc-setup-content .dokan_vendor_verification_submit {
+    padding: 0 10px !important;
+    font-size: 13px !important;
+    min-height: 30px !important;
+}
+
+.dokan-vendor-verification-file-item a {
+    max-width: 90%;
 }

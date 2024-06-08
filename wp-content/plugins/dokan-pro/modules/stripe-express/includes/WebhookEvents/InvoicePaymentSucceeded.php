@@ -16,7 +16,7 @@ use WeDevs\DokanPro\Modules\StripeExpress\Utilities\Abstracts\WebhookEvent;
 /**
  * Class to handle `invoice.payment_succeeded` webhook.
  *
- * @since 3.7.8
+ * @since   3.7.8
  *
  * @package WeDevs\DokanPro\Modules\StripeExpress\WebhookEvents
  */
@@ -53,12 +53,14 @@ class InvoicePaymentSucceeded extends WebhookEvent {
         $order    = wc_get_order( $order_id );
         if ( ! $order ) {
             $this->log( sprintf( 'Invalid Order ID: %s', $order_id ) );
+
             return;
         }
 
         $subscription = new SubscriptionPack( $product_id, $vendor_id );
         if ( $subscription->has_active_cancelled_subscrption() && $subscription->reactivate_subscription() ) {
             $order->add_order_note( __( 'Subscription Reactivated.', 'dokan' ) );
+
             return;
         }
 
@@ -67,12 +69,24 @@ class InvoicePaymentSucceeded extends WebhookEvent {
             OrderMeta::save( $order );
         }
 
+        // get processing fee
+        $processing_fee = 0;
+        if ( $invoice->charge ) {
+            $processing_fee = Payment::get_gateway_fee_from_charge( $invoice->charge );
+        }
+
         switch ( $invoice->billing_reason ) {
             case 'subscription_create':
                 try {
                     $subscription->activate_subscription( $order );
 
                     $stripe_subscription = Subscription::get( $invoice->subscription );
+
+                    if ( ! empty( $processing_fee ) ) {
+                        OrderMeta::update_stripe_fee( $order, $processing_fee );
+                        OrderMeta::update_dokan_gateway_fee( $order, $processing_fee );
+                        $order->save();
+                    }
 
                     // If trial period exists, setup trial data and do not complete order yet.
                     if ( ! empty( $stripe_subscription->trial_end ) && $stripe_subscription->trial_end > time() ) {
@@ -95,13 +109,12 @@ class InvoicePaymentSucceeded extends WebhookEvent {
                 break;
 
             case 'subscription_cycle':
-                $processing_fee = Payment::get_gateway_fee_from_charge( $invoice->charge );
-                $order_total    = (float) $invoice->amount_paid / 100;
+                $order_total = (float) $invoice->amount_paid / 100;
 
                 // Check if transaction already recorded
                 add_filter( 'woocommerce_order_data_store_cpt_get_orders_query', [ $this, 'handle_custom_query_var' ], 10, 2 );
 
-                $query = new \WC_Order_Query(
+                $query  = new \WC_Order_Query(
                     [
                         'search_transaction' => $invoice->id,
                         'customer_id'        => $order->get_customer_id(),
@@ -119,6 +132,7 @@ class InvoicePaymentSucceeded extends WebhookEvent {
                 // Transaction is already recorded.
                 if ( ! empty( $orders ) ) {
                     $order->payment_complete( $invoice->id );
+
                     return;
                 }
 
@@ -126,13 +140,14 @@ class InvoicePaymentSucceeded extends WebhookEvent {
                 $renewal_order = SubscriptionHelper::create_renewal_order( $order, $order_total );
                 if ( is_wp_error( $renewal_order ) ) {
                     $this->log( 'Create Renewal Order Failed. Error: ' . $renewal_order->get_error_message() );
+
                     return;
                 }
 
                 // Add renewal order number on order note
                 $order->add_order_note(
                     sprintf(
-                        /* translators: renewal order number with link */
+                    /* translators: renewal order number with link */
                         __( 'Order %s created to record renewal.', 'dokan' ),
                         sprintf(
                             '<a href="%s">%s</a> ',
@@ -146,7 +161,7 @@ class InvoicePaymentSucceeded extends WebhookEvent {
                 // Add order number on renewal order note
                 $renewal_order->add_order_note(
                     sprintf(
-                        /* translators: 1) subscription order number with link */
+                    /* translators: 1) subscription order number with link */
                         __( 'Order created to record renewal subscription for %s.', 'dokan' ),
                         sprintf(
                             '<a href="%s">%s</a> ',
@@ -191,9 +206,9 @@ class InvoicePaymentSucceeded extends WebhookEvent {
     public function handle_custom_query_var( $query, $query_vars ) {
         if ( ! empty( $query_vars['search_transaction'] ) ) {
             $query['meta_query'][] = [
-                'key'       => OrderMeta::payment_capture_id_key(),
-                'value'     => $query_vars['search_transaction'],
-                'compare'   => '=',
+                'key'     => OrderMeta::payment_capture_id_key(),
+                'value'   => $query_vars['search_transaction'],
+                'compare' => '=',
             ];
         }
 

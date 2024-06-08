@@ -29,7 +29,7 @@ class Promotion extends DokanPromotion {
      *
      * @since 1.0.0
      *
-     * @return void
+     * @return array
      */
     public function get_promotion_data() {
         $license = get_option( 'dokan_license' );

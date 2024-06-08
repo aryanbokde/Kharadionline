@@ -90,15 +90,26 @@ class BlockData {
             return;
         }
 
-        $data             = [];
-        $data['price']    = ! empty( $request['wholesale_price'] ) ? wc_format_decimal( $request['wholesale_price'] ) : '';
-        $data['quantity'] = ! empty( $request['wholesale_quantity'] ) ? absint( $request['wholesale_quantity'] ) : '';
+        $data                     = [];
+        $data['price']            = ! empty( $request['wholesale_price'] ) ? wc_format_decimal( $request['wholesale_price'] ) : '';
+        $data['quantity']         = ! empty( $request['wholesale_quantity'] ) ? absint( $request['wholesale_quantity'] ) : '';
+        $data['enable_wholesale'] = '';
 
         if ( ! empty( $request['enable_wholesale'] ) ) {
             $enable_wholesale = sanitize_text_field( wp_unslash( $request['enable_wholesale'] ) );
             $data['enable_wholesale'] = ( $enable_wholesale || 'yes' === $enable_wholesale ) ? 'yes' : 'no';
-        } else {
-            $data['enable_wholesale'] = 'no';
+        }
+
+        if ( empty( $data['price'] ) && ! empty( $product->get_meta( $this->meta_key )['price'] ) ) {
+            $data['price'] = wc_format_decimal( $product->get_meta( $this->meta_key )['price'] );
+        }
+
+        if ( empty( $data['quantity'] ) && ! empty( $product->get_meta( $this->meta_key )['quantity'] ) ) {
+            $data['quantity'] = absint( $product->get_meta( $this->meta_key )['quantity'] );
+        }
+
+        if ( empty( $data['enable_wholesale'] ) ) {
+            $data['enable_wholesale'] = isset( $product->get_meta( $this->meta_key )['enable_wholesale'] ) && 'yes' ===  $product->get_meta( $this->meta_key )['enable_wholesale'] ? 'yes' : 'no';
         }
 
         $product->update_meta_data( $this->meta_key, $data );

@@ -2,6 +2,8 @@
 
 namespace WeDevs\DokanPro\Modules\MangoPay\Processor;
 
+use MangoPay\CurrencyIso;
+use MangoPay\PayOutEligibilityRequest;
 use WP_Error;
 use Exception;
 use MangoPay\Money;
@@ -27,7 +29,7 @@ class PayOut extends Processor {
      *
      * @param int $payout_id
      *
-     * @return object|false
+     * @return array|\MangoPay\PayOut|false
      */
     public static function get( $payout_id ) {
         try {
@@ -52,7 +54,7 @@ class PayOut extends Processor {
      * @param float  $amount
      * @param float  $fees
      *
-     * @return object|WP_Error
+     * @return array|object|\MangoPay\PayOut|WP_Error
      */
     public static function create( $wp_user_id, $order_id, $currency, $amount, $fees ) {
         $mp_user_id = Meta::get_mangopay_account_id( $wp_user_id );
@@ -144,29 +146,85 @@ class PayOut extends Processor {
             );
         }
 
+        // Create a new payout object
         $payout										 = new MangoPayOut();
-        $payout->Tag								 = "Earning from WC Order #$order_id";
-        $payout->AuthorId							 = $mp_user_id;
-        $payout->DebitedWalletId					 = $wallet->Id;
-        $payout->DebitedFunds						 = new Money();
-        $payout->DebitedFunds->Currency				 = $currency;
-        $payout->DebitedFunds->Amount				 = round( $amount * 100 );
+        $payout->Tag								 = "Earning from WC Order #$order_id"; // string (Max. length: 255 characters)
+        $payout->AuthorId							 = $mp_user_id; // required
+        $payout->DebitedWalletId					 = $wallet->Id; // required, string, The unique identifier of the debited wallet.
+        $payout->DebitedFunds						 = new Money(); // required
+        $payout->DebitedFunds->Currency				 = $currency; // required, string
+        $payout->DebitedFunds->Amount				 = round( $amount * 100 ); // required, integer
         $payout->Fees								 = new Money();
         $payout->Fees->Currency						 = $currency;
         $payout->Fees->Amount						 = round( $fees * 100 );
-        $payout->PaymentType						 = "BANK_WIRE";
-        $payout->MeanOfPaymentDetails				 = new PayOutPaymentDetailsBankWire();
-        $payout->MeanOfPaymentDetails->BankAccountId = $bank_account_id;
-        $payout->MeanOfPaymentDetails->BankWireRef	 = "WC Order: $order_id";
+        $payout->BankAccountId                       = $bank_account_id; // required, string, The unique identifier of the bank account.
+        $payout->PayoutPaymentDetails				 = new PayOutPaymentDetailsBankWire();
+        $payout->PayoutPaymentDetails->BankAccountId = $bank_account_id;
+        $payout->PayoutPaymentDetails->BankWireRef	 = "WC Order: $order_id";
+        $payout->MeanOfPaymentDetails                = $payout->PayoutPaymentDetails;
+        $payout->PaymentType                         = \MangoPay\PayOutPaymentType::BankWire;
 
-        if ( Settings::is_instant_payout_enabled() ) {
-            $payout->PayoutModeRequested = 'INSTANT_PAYMENT';
+        // Verify optional reference for bank wire, string (Max. length: 12 characters; only alphanumeric and spaces)
+        $bank_wire_ref = "Order: $order_id";
+        if( strlen( $bank_wire_ref ) <= 12 ){
+            $payout->BankWireRef    = "Order: $order_id";
+        } else {
+            $payout->BankWireRef    = '';
+        }
+
+        // Create eligibility request object
+        $eligibility                            = new PayOutEligibilityRequest();
+        $eligibility->AuthorId                  = $payout->AuthorId;
+        $eligibility->DebitedWalletId           = $payout->DebitedWalletId;
+        $eligibility->DebitedFunds              = $payout->DebitedFunds;
+        $eligibility->Fees                      = $payout->Fees;
+        $eligibility->BankAccountId             = $payout->MeanOfPaymentDetails->BankAccountId;
+        $eligibility->BankWireRef               = $payout->BankWireRef;
+        $eligibility->PayoutModeRequested       = 'INSTANT_PAYMENT';
+
+        try {
+            // Check if instant payout is enabled and the payout is eligible for instant payout.
+            if ( Settings::is_instant_payout_enabled() ) {
+                // Check if the payout is eligible for instant payout
+                $is_instant_payout_eligible = static::config()->mangopay_api->PayOuts->CheckInstantPayoutEligibility( $eligibility );
+                Helper::log( 'PayOutEligibilityResponse:' . print_r( $is_instant_payout_eligible, true ), 'PayOut' );
+
+                // Set payout request mode to "instant_payment" when it is enabled from settings.
+                $payout->PayoutModeRequested = 'INSTANT_PAYMENT';
+            }
+        } catch( Exception $e ) {
+            $error_details = array();
+            if ( method_exists( $e, 'GetErrorDetails' ) ) {
+                $error_details = $e->GetErrorDetails();
+            }
+
+            Helper::log( sprintf( 'Could not verify instant payout eligibility. Message: %s. %s', $e->getMessage(), print_r( $error_details, true ) ), 'PayOut' );
+            $order->add_order_note(
+                sprintf(
+                    __( '[%1$s] While the instant payout option is enabled in the settings, you are currently not eligible for it based on your account status. As a result, the standard payout request process will apply for now.', 'dokan' ),
+                    Helper::get_gateway_title()
+                )
+            );
         }
 
         try {
             $payout = static::config()->mangopay_api->PayOuts->Create( $payout );
+
+            // Log the payout details
+            $payout_mode = $payout->PayoutModeRequested === 'INSTANT_PAYMENT' ? __('Instant', 'dokan') : __('Standard', 'dokan');
+            $order->add_order_note(
+                sprintf(
+                    __( '[%1$s] %2$s Payout of amount %3$s successful to user: %4$s.', 'dokan' ),
+                    Helper::get_gateway_title(), $payout_mode, $amount, $wp_user_id
+                )
+            );
         } catch ( Exception $e ) {
-            Helper::log( sprintf( 'Could not do the Payout to user: %s. Message: %s', $wp_user_id, $e->getMessage() ), 'PayOut' );
+            $error_details = array();
+            if ( method_exists( $e, 'GetErrorDetails' ) ) {
+                $error_details = $e->GetErrorDetails();
+            }
+
+            Helper::log( sprintf( 'Could not do the Payout to user: %s. Message: %s. %s', $wp_user_id, $e->getMessage(), print_r( $error_details, true ) ), 'PayOut' );
             Helper::log( 'Object:' . print_r( $payout, true ), 'PayOut' );
             $order->add_order_note(
                 sprintf(
@@ -174,9 +232,10 @@ class PayOut extends Processor {
                     Helper::get_gateway_title(), $amount, $wp_user_id
                 )
             );
+
             return new WP_Error(
                 'dokan-mangopay-payout-error',
-                sprintf( __( 'Could not do the Payout to user: %s. Message: %s', 'dokan' ), $wp_user_id, $e->getMessage() )
+                sprintf( __( 'Could not do the Payout to user: %s. Message: %s.', 'dokan' ), $wp_user_id, $e->getMessage() )
             );
         }
 

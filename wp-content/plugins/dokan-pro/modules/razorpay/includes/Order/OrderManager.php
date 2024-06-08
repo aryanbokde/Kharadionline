@@ -44,13 +44,13 @@ class OrderManager {
         $platform_fee   = static::get_total_admin_commission( $order );
 
         // if tax fee recipient is 'admin' then it will added with platform fee
-        if ( 'admin' === get_post_meta( $order->get_id(), 'tax_fee_recipient', true ) ) {
+        if ( 'admin' === $order->get_meta( 'tax_fee_recipient', true ) ) {
             $subtotal  += $tax_total;
             $tax_total  = 0.00;
         }
 
         // if shipping fee recipient is 'admin' then it will added with platform fee
-        if ( 'admin' === get_post_meta( $order->get_id(), 'shipping_fee_recipient', true ) ) {
+        if ( 'admin' === $order->get_meta( 'shipping_fee_recipient', true ) ) {
             $subtotal       += $shipping_total;
             $shipping_total = 0.00;
         }
@@ -106,12 +106,7 @@ class OrderManager {
      * @return float
      */
     public static function get_minimum_order_discount( \WC_Order $order ) {
-        // check discount exists on order meta
-        $discount = $order->get_meta( 'dokan_order_discount' );
-        if ( $discount ) {
-            return floatval( $discount );
-        }
-        return 0;
+        return dokan_pro()->vendor_discount->deprecated_methods->get_order_discount( $order );
     }
 
     /**
@@ -147,16 +142,22 @@ class OrderManager {
             return new WP_Error( 'insert_vendor_withdraw_balance_error', sprintf( '[insert_vendor_withdraw_balance] Invalid order id. data: %1$s', print_r( $withdraw, true ) ) );
         }
 
+        $order = wc_get_order( $withdraw['order_id'] );
+        if ( ! $order ) {
+            return new WP_Error( 'insert_vendor_withdraw_balance_error', sprintf( '[insert_vendor_withdraw_balance] Invalid order. data: %1$s', print_r( $withdraw, true ) ) );
+        }
+
         // check disbursement mode
-        if ( false === $insert_now && get_post_meta( $withdraw['order_id'], '_dokan_razorpay_payment_disbursement_mode', true ) !== 'INSTANT' ) {
+        if ( false === $insert_now && $order->get_meta( '_dokan_razorpay_payment_disbursement_mode', true ) !== 'INSTANT' ) {
             // don't insert withdraw balance, store withdraw data as order meta
-            update_post_meta( $withdraw['order_id'], '_dokan_razorpay_payment_withdraw_data', $withdraw );
-            update_post_meta( $withdraw['order_id'], '_dokan_razorpay_payment_withdraw_balance_added', 'no' );
+            $order->update_meta_data( '_dokan_razorpay_payment_withdraw_data', $withdraw );
+            $order->update_meta_data( '_dokan_razorpay_payment_withdraw_balance_added', 'no' );
+            $order->save();
             return true;
         }
 
         // check if withdraw data is already inserted
-        if ( 'yes' === get_post_meta( $withdraw['order_id'], '_dokan_razorpay_payment_withdraw_balance_added', true ) ) {
+        if ( 'yes' === $order->get_meta( '_dokan_razorpay_payment_withdraw_balance_added', true ) ) {
             return true;
         }
 
@@ -175,7 +176,8 @@ class OrderManager {
         }
 
         // Update order meta that payment and withdraw balance is added
-        update_post_meta( $withdraw['order_id'], '_dokan_razorpay_payment_withdraw_balance_added', 'yes' );
+        $order->update_meta_data( '_dokan_razorpay_payment_withdraw_balance_added', 'yes' );
+        $order->save();
 
         return true;
     }
@@ -322,7 +324,7 @@ class OrderManager {
             return new WP_Error( 'dokan_invalid_order', __( 'Order not found', 'dokan' ) );
         }
 
-        $razorpay_order_id = get_post_meta( $order_id, '_dokan_razorpay_intent_id', true );
+        $razorpay_order_id = $order->get_meta( '_dokan_razorpay_intent_id', true );
         $is_create_order   = false;
         $razorpay_order    = null;
 
@@ -382,10 +384,7 @@ class OrderManager {
         }
 
         $order->update_meta_data( '_dokan_razorpay_intent_id', $razorpay_order['id'] );
-
-        if ( is_callable( [ $order, 'save' ] ) ) {
-            $order->save();
-        }
+        $order->save();
     }
 
     /**
@@ -402,18 +401,7 @@ class OrderManager {
         $all_orders   = [];
 
         if ( $has_suborder ) {
-            $sub_order_ids = get_children(
-                [
-                    'post_parent' => $order->get_id(),
-                    'post_type'   => 'shop_order',
-                    'fields'      => 'ids',
-                ]
-            );
-
-            foreach ( $sub_order_ids as $sub_order_id ) {
-                $sub_order    = wc_get_order( $sub_order_id );
-                $all_orders[] = $sub_order;
-            }
+            $all_orders = dokan()->order->get_child_orders( $order->get_id() );
         } else {
             $all_orders[] = $order;
         }
@@ -479,11 +467,12 @@ class OrderManager {
             return wc_format_decimal( dokan()->commission->get_earning_by_order( $order, 'admin' ), 2 );
         }
 
-        $sub_order_ids = get_children(
+        $sub_order_ids = wc_get_orders(
             [
-                'post_parent' => $order->get_id(),
-                'post_type'   => 'shop_order',
-                'fields'      => 'ids',
+                'type'   => 'shop_order',
+                'parent' => $order->get_id(),
+                'fields' => 'ids',
+                'limit'  => -1
             ]
         );
 

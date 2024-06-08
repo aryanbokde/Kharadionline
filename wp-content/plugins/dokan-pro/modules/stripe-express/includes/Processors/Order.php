@@ -9,6 +9,7 @@ use WeDevs\DokanPro\Modules\StripeExpress\Support\Helper;
 use WeDevs\DokanPro\Modules\StripeExpress\Support\UserMeta;
 use WeDevs\DokanPro\Modules\StripeExpress\Support\OrderMeta;
 use WeDevs\DokanPro\Modules\StripeExpress\Api\PaymentMethod;
+use WP_User;
 
 /**
  * Class for processing orders.
@@ -108,18 +109,7 @@ class Order {
         $all_orders = [];
 
         if ( $order->get_meta( 'has_sub_order' ) ) {
-            $sub_order_ids = get_children(
-                [
-                    'post_parent' => $order->get_id(),
-                    'post_type'   => 'shop_order',
-                    'fields'      => 'ids',
-                ]
-            );
-
-            foreach ( $sub_order_ids as $sub_order_id ) {
-                $sub_order    = wc_get_order( $sub_order_id );
-                $all_orders[] = $sub_order;
-            }
+            $all_orders = dokan()->order->get_child_orders( $order );
         } else {
             $all_orders[] = $order;
         }
@@ -350,36 +340,32 @@ class Order {
      * @return WC_Order|false
      */
     public static function get_order_by_charge_id( $charge_id ) {
-        global $wpdb;
-
         if ( empty( $charge_id ) ) {
             return false;
         }
 
-        $order_id = $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT posts.ID
-                FROM $wpdb->posts AS posts
-                LEFT JOIN $wpdb->postmeta AS meta
-                ON posts.ID = meta.post_id
-                WHERE meta.meta_value = %s
-                AND meta.meta_key = %s
-                AND posts.post_parent = '0'",
-                $charge_id,
-                OrderMeta::transaction_id_key()
-            )
+        $order_id = dokan()->order->all(
+            [
+                'parent'     => 0,
+                'meta_query' => [
+                    [
+                        'key'     => OrderMeta::transaction_id_key(),
+                        'value'   => $charge_id,
+                        'compare' => '=',
+                    ],
+                ],
+                'limit' => 1,
+                'return' => 'ids',
+            ]
         );
 
         if ( empty( $order_id ) ) {
             return false;
         }
 
-        $order = wc_get_order( $order_id );
-        if ( ! $order instanceof WC_Order ) {
-            return false;
-        }
+        $order_id = reset( $order_id );
 
-        return $order;
+        return wc_get_order( $order_id );
     }
 
     /**
@@ -393,35 +379,35 @@ class Order {
      * @return WC_Order|false
      */
     public static function get_order_by_intent_id( $intent_id, $is_setup = false ) {
-        global $wpdb;
-
-        $order_id = $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT DISTINCT ID
-                FROM $wpdb->posts as posts
-                LEFT JOIN $wpdb->postmeta as meta
-                ON posts.ID = meta.post_id
-                WHERE meta.meta_value = %s
-                AND (
-                    meta.meta_key = %s
-                    OR meta.meta_key = %s
-                )",
-                $intent_id,
-                OrderMeta::intent_id_key( $is_setup ),
-                OrderMeta::debug_intent_id_key( $is_setup )
-            )
+        $order_id = dokan()->order->all(
+            [
+                'limit' => 1,
+                'meta_query' => [
+                    [
+                        'relation' => 'OR',
+                        [
+                            'key'     => OrderMeta::intent_id_key( $is_setup ),
+                            'value'   => $intent_id,
+                            'compare' => '=',
+                        ],
+                        [
+                            'key'     => OrderMeta::debug_intent_id_key( $is_setup ),
+                            'value'   => $intent_id,
+                            'compare' => '=',
+                        ],
+                    ]
+                ],
+                'return' => 'ids',
+            ]
         );
 
         if ( empty( $order_id ) ) {
             return false;
         }
 
-        $order = wc_get_order( $order_id );
-        if ( ! $order instanceof WC_Order ) {
-            return false;
-        }
+        $order_id = reset( $order_id );
 
-        return $order;
+        return wc_get_order( $order_id );
     }
 
     /**

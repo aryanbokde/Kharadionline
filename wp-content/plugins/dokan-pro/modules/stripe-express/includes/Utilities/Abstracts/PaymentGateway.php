@@ -205,7 +205,7 @@ abstract class PaymentGateway extends WC_Payment_Gateway_CC {
 
             if ( ! Subscription::is_recurring_vendor_subscription_order( $order_id ) ) {
                 if ( $intent ) {
-                    $intent = Payment::update_intent( $intent->id, $order->get_id() );
+                    $intent = Payment::update_intent( $intent->id, $order );
                 } else {
                     $intent = Payment::create_intent( $order, $prepared_source );
                 }
@@ -564,7 +564,7 @@ abstract class PaymentGateway extends WC_Payment_Gateway_CC {
      *
      * @since 3.6.1
      *
-     * @param  stdClass $response  The response from the Stripe API.
+     * @param  object $response  The response from the Stripe API.
      * @param  WC_Order $order     The order to add a note to.
      *
      * @return void

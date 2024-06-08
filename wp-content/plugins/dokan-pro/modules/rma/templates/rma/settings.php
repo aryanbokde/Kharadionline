@@ -93,7 +93,10 @@
                     </span>
                 </label>
                 <div class="dokan-w5 dokan-text-left">
-                    <?php foreach ( $reasons as $reason_key => $reason_value ): ?>
+                    <?php
+                    foreach ( $reasons as $reason_key => $reason_value ) :
+                        $reason_value = apply_filters( 'dokan_pro_rma_reason', $reason_value );
+                        ?>
                         <div class="checkbox">
                             <label for="warranty_reason[<?php echo $reason_key ?>]">
                                 <input name="warranty_reason[]" <?php echo in_array( $reason_key, $rma_settings['reasons'] ) ? 'checked' : '' ?> id="warranty_reason[<?php echo $reason_key ?>]" value="<?php echo $reason_key; ?>" type="checkbox"> <?php echo $reason_value; ?>

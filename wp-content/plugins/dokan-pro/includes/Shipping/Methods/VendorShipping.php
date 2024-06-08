@@ -296,32 +296,7 @@ class VendorShipping extends WC_Shipping_Method {
      * @return bool
      */
     public function free_shipping_is_available( $package, $method ) {
-        $has_met_min_amount    = false;
-        $min_amount            = ! empty( $method['settings']['min_amount'] ) ? $method['settings']['min_amount'] : 0;
-        $apply_before_discount = ! empty( $method['settings']['apply_before_coupon_discount'] ) && 'true' === $method['settings']['apply_before_coupon_discount'];
-        $total                 = 0.0;
-        $discount_total        = 0.0;
-        $discount_tax          = 0.0;
-
-        foreach ( $package['contents'] as $line_item ) {
-            $total          += WC()->cart->display_prices_including_tax() ? ( $line_item['line_subtotal'] + $line_item['line_subtotal_tax'] ) : $line_item['line_subtotal'];
-            $discount_total += ( $line_item['line_subtotal'] - $line_item['line_total'] );
-            $discount_tax   += ( $line_item['line_subtotal_tax'] - $line_item['line_tax'] );
-        }
-
-        if ( WC()->cart->display_prices_including_tax() ) {
-            $total = $total - $discount_tax;
-        }
-
-        if ( $apply_before_discount ) {
-            $total = $total - $discount_total;
-        }
-
-        $total = NumberUtil::round( $total, wc_get_price_decimals() );
-
-        if ( $total >= $min_amount ) {
-            $has_met_min_amount = true;
-        }
+        list( $has_met_min_amount, $remaining ) = self::free_shipping_availability_check( $method, $package['contents'] );
 
         return apply_filters( 'dokaan_shipping_free_shipping_is_available', $has_met_min_amount, $package, $method );
     }
@@ -461,6 +436,50 @@ class VendorShipping extends WC_Shipping_Method {
      */
     public function get_method_rate_id( $method ) {
         return apply_filters( 'dokan_get_vendor_shipping_method_id', $method['id'] . ':' . $method['instance_id'] );
+    }
+
+    /**
+     * Free shipping availability check.
+     *
+     * @since 3.7.27
+     *
+     * @param array $method Payment Method.
+     * @param array $contents Line Items.
+     *
+     * @return array
+     */
+    public static function free_shipping_availability_check( $method, $contents ): array {
+        $has_met_min_amount    = false;
+        $min_amount            = ! empty( $method['settings']['min_amount'] ) ? $method['settings']['min_amount'] : 0;
+        $apply_before_discount = ! empty( $method['settings']['apply_before_coupon_discount'] ) && 'true' === $method['settings']['apply_before_coupon_discount'];
+        $total                 = 0.0;
+        $discount_total        = 0.0;
+        $discount_tax          = 0.0;
+        $remaining_amount      = 0.0;
+
+        foreach ( $contents as $line_item ) {
+            $total          += WC()->cart->display_prices_including_tax() ? ( $line_item['line_subtotal'] + $line_item['line_subtotal_tax'] ) : $line_item['line_subtotal'];
+            $discount_total += ( $line_item['line_subtotal'] - $line_item['line_total'] );
+            $discount_tax   += ( $line_item['line_subtotal_tax'] - $line_item['line_tax'] );
+        }
+
+        if ( WC()->cart->display_prices_including_tax() ) {
+            $total = $total - $discount_tax;
+        }
+
+        if ( $apply_before_discount ) {
+            $total = $total - $discount_total;
+        }
+
+        $total = NumberUtil::round( $total, wc_get_price_decimals() );
+
+        if ( $total >= $min_amount ) {
+            $has_met_min_amount = true;
+        } else {
+            $remaining_amount = abs( $min_amount - $total );
+        }
+
+        return [ $has_met_min_amount, $remaining_amount ];
     }
 
     /**

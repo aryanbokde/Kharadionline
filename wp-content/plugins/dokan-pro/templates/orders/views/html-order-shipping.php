@@ -59,10 +59,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<td class="line_cost" width="1%">
 		<div class="view">
 			<?php
-				echo ( isset( $item['cost'] ) ) ? wc_price( wc_round_tax_total( $item['cost'] ), array( 'currency' => dokan_get_prop( $order, 'get_order_currency', 'get_currency' ) ) ) : '';
+				echo ( isset( $item['cost'] ) ) ? wc_price( wc_round_tax_total( $item['cost'] ), array( 'currency' => $order->get_currency() ) ) : '';
                 $refunded = $order->get_total_refunded_for_item( $item_id, 'shipping' );
 			if ( $refunded ) {
-				echo ' <small class="refunded">-' . wc_price( $refunded, array( 'currency' => dokan_get_prop( $order, 'get_order_currency', 'get_currency' ) ) ) . '</small>';
+				echo ' <small class="refunded">-' . wc_price( $refunded, array( 'currency' => $order->get_currency() ) ) . '</small>';
 			}
 			?>
 		</div>
@@ -115,11 +115,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 		endif;
 	?>
 
-	<td class="wc-order-edit-line-item">
-		<?php if ( $order->is_editable() ) : ?>
+    <td class="wc-order-edit-line-item">
+        <?php if ( $order->is_editable() ) : ?>
 			<div class="wc-order-edit-line-item-actions">
 				<a class="edit-order-item" href="#"></a><a class="delete-order-item" href="#"></a>
 			</div>
-		<?php endif; ?>
-	</td>
+        <?php endif; ?>
+    </td>
 </tr>

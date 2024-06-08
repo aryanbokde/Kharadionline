@@ -408,11 +408,10 @@ class Meta {
      * @return array|false
      */
     public static function get_payout_attempts( $order ) {
-        if ( is_object( $order ) ) {
-            return $order->get_meta( self::key( 'payout_attempts' ) );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return get_post_meta( $order, self::key( 'payout_attempts' ), true );
+        return $order->get_meta( self::key( 'payout_attempts' ) );
     }
 
     /**
@@ -426,11 +425,11 @@ class Meta {
      * @return int|boolean
      */
     public static function update_payout_attempts( $order, $payout_attempts ) {
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data( self::key( 'payout_attempts' ), $payout_attempts );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
 
-        return update_post_meta( $order, self::key( 'payout_attempts' ), $payout_attempts );
+        return $order->update_meta_data( self::key( 'payout_attempts' ), $payout_attempts );
     }
 
     /**
@@ -443,11 +442,10 @@ class Meta {
      * @return string|false
      */
     public static function get_last_payout_attempt( $order ) {
-        if ( is_object( $order ) ) {
-            return $order->get_meta( self::key( 'last_payout_attempt' ) );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return get_post_meta( $order, self::key( 'last_payout_attempt' ), true );
+        return $order->get_meta( self::key( 'last_payout_attempt' ) );
     }
 
     /**
@@ -461,11 +459,10 @@ class Meta {
      * @return int|boolean
      */
     public static function update_last_payout_attempt( $order, $payout_attempts ) {
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data( self::key( 'last_payout_attempt' ), $payout_attempts );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return update_post_meta( $order, self::key( 'last_payout_attempt' ), $payout_attempts );
+        return $order->update_meta_data( self::key( 'last_payout_attempt' ), $payout_attempts );
     }
 
     /**
@@ -478,11 +475,10 @@ class Meta {
      * @return string|false
      */
     public static function get_commision_status( $order ) {
-        if ( is_object( $order ) ) {
-            return $order->get_meta( self::key( 'commission' ) );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return get_post_meta( $order, self::key( 'commission' ), true );
+        return $order->get_meta( self::key( 'commission' ) );
     }
 
     /**
@@ -496,11 +492,10 @@ class Meta {
      * @return int|boolean
      */
     public static function update_commision_status( $order, $status ) {
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data( self::key( 'commission' ), $status );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return update_post_meta( $order, self::key( 'commission' ), $status );
+        return $order->update_meta_data( self::key( 'commission' ), $status );
     }
 
     /**
@@ -513,11 +508,10 @@ class Meta {
      * @return string|false
      */
     public static function get_commision( $order ) {
-        if ( is_object( $order ) ) {
-            return $order->get_meta( self::key( 'commission' ) );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return get_post_meta( $order, self::key( 'commission' ), true );
+        return $order->get_meta( self::key( 'commission' ) );
     }
 
     /**
@@ -531,11 +525,10 @@ class Meta {
      * @return int|boolean
      */
     public static function update_commision( $order, $commission ) {
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data( self::key( 'commission' ), $commission );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return update_post_meta( $order, self::key( 'commission' ), $commission );
+        return $order->update_meta_data( self::key( 'commission' ), $commission );
     }
 
     /**
@@ -548,11 +541,10 @@ class Meta {
      * @return array|false
      */
     public static function get_withdraw_data( $order ) {
-        if ( is_object( $order ) ) {
-            return $order->get_meta( self::key( 'withdraw_data' ) );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return get_post_meta( $order, self::key( 'withdraw_data' ), true );
+        return $order->get_meta( self::key( 'withdraw_data' ) );
     }
 
     /**
@@ -566,11 +558,10 @@ class Meta {
      * @return int|boolean
      */
     public static function update_withdraw_data( $order, $withdraw_data ) {
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data( self::key( 'withdraw_data' ), $withdraw_data );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return update_post_meta( $order, self::key( 'withdraw_data' ), $withdraw_data );
+        return $order->update_meta_data( self::key( 'withdraw_data' ), $withdraw_data );
     }
 
     /**
@@ -583,11 +574,10 @@ class Meta {
      * @return string|false
      */
     public static function get_transaction_id( $order ) {
-        if ( is_object( $order ) ) {
-            return $order->get_meta( self::key( 'transaction_id' ) );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return get_post_meta( $order, self::key( 'transaction_id' ), true );
+        return $order->get_meta( self::key( 'transaction_id' ) );
     }
 
     /**
@@ -601,11 +591,10 @@ class Meta {
      * @return int|bool
      */
     public static function update_transaction_id( $order, $transaction_id ) {
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data( self::key( 'transaction_id' ), $transaction_id );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return update_post_meta( $order, self::key( 'transaction_id' ), $transaction_id );
+        return $order->update_meta_data( self::key( 'transaction_id' ), $transaction_id );
     }
 
     /**
@@ -618,11 +607,10 @@ class Meta {
      * @return array|false
      */
     public static function get_all_transaction_ids( $order ) {
-        if ( is_object( $order ) ) {
-            return $order->get_meta( self::key( 'transaction_ids' ) );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return (array) get_post_meta( $order, self::key( 'transaction_ids' ), true );
+        return $order->get_meta( self::key( 'transaction_ids' ) );
     }
 
     /**
@@ -636,11 +624,10 @@ class Meta {
      * @return int|bool
      */
     public static function update_all_transaction_ids( $order, $transaction_ids ) {
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data( self::key( 'transaction_ids' ), $transaction_ids );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return update_post_meta( $order, self::key( 'transaction_ids' ), $transaction_ids );
+        return $order->update_meta_data( self::key( 'transaction_ids' ), $transaction_ids );
     }
 
     /**
@@ -653,11 +640,10 @@ class Meta {
      * @return string|false
      */
     public static function get_succeeded_transaction_id( $order ) {
-        if ( is_object( $order ) ) {
-            return $order->get_meta( self::key( 'success_transaction_id' ) );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return get_post_meta( $order, self::key( 'success_transaction_id' ), true );
+        return $order->get_meta( self::key( 'success_transaction_id' ) );
     }
 
     /**
@@ -671,11 +657,10 @@ class Meta {
      * @return int|bool
      */
     public static function update_succeeded_transaction_id( $order, $transaction_id ) {
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data( self::key( 'success_transaction_id' ), $transaction_id );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return update_post_meta( $order, self::key( 'success_transaction_id' ), $transaction_id );
+        return $order->update_meta_data( self::key( 'success_transaction_id' ), $transaction_id );
     }
 
     /**
@@ -688,11 +673,10 @@ class Meta {
      * @return array|false
      */
     public static function get_transfers( $order ) {
-        if ( is_object( $order ) ) {
-            return $order->get_meta( self::key( 'transfers' ) );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return get_post_meta( $order, self::key( 'transfers' ), true );
+        return $order->get_meta( self::key( 'transfers' ) );
     }
 
     /**
@@ -706,11 +690,10 @@ class Meta {
      * @return int|boolean
      */
     public static function update_transfers( $order, $transfers ) {
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data( self::key( 'transfers' ), $transfers );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return update_post_meta( $order, self::key( 'transfers' ), $transfers );
+        return $order->update_meta_data( self::key( 'transfers' ), $transfers );
     }
 
     /**
@@ -723,11 +706,11 @@ class Meta {
      * @return array|false
      */
     public static function get_refund_ids( $order ) {
-        if ( is_object( $order ) ) {
-            $refund_ids = $order->get_meta( self::key( 'refunds' ) );
-        } else {
-            $refund_ids = get_post_meta( $order, self::key( 'refunds' ), true );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
+
+        $refund_ids = $order->get_meta( self::key( 'refunds' ) );
 
         if ( ! empty( $refund_ids ) ) {
             return (array) $refund_ids;
@@ -751,18 +734,11 @@ class Meta {
             return false;
         }
 
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data(
-                self::key( 'refunds' ),
-                array_merge(
-                    self::get_refund_ids( $order ),
-                    (array) $refund_ids
-                )
-            );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
 
-        return update_post_meta(
-            $order,
+        return $order->update_meta_data(
             self::key( 'refunds' ),
             array_merge(
                 self::get_refund_ids( $order ),
@@ -781,11 +757,10 @@ class Meta {
      * @return array|false
      */
     public static function get_payouts( $order ) {
-        if ( is_object( $order ) ) {
-            return $order->get_meta( self::key( 'payouts' ) );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return get_post_meta( $order, self::key( 'payouts' ), true );
+        return $order->get_meta( self::key( 'payouts' ) );
     }
 
     /**
@@ -807,11 +782,10 @@ class Meta {
             $succeeded_payouts = array( $payouts );
         }
 
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data( self::key( 'payouts' ), $succeeded_payouts );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return update_post_meta( $order, self::key( 'payouts' ), $succeeded_payouts );
+        return $order->update_meta_data( self::key( 'payouts' ), $succeeded_payouts );
     }
 
     /**
@@ -824,11 +798,10 @@ class Meta {
      * @return object|false
      */
     public static function get_payment_ref( $order ) {
-        if ( is_object( $order ) ) {
-            return $order->get_meta( self::key( 'payment_ref' ) );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return get_post_meta( $order, self::key( 'payment_ref' ), true );
+        return $order->get_meta( self::key( 'payment_ref' ) );
     }
 
     /**
@@ -842,11 +815,10 @@ class Meta {
      * @return int|boolean
      */
     public static function update_payment_ref( $order, $reference ) {
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data( self::key( 'payment_ref' ), $reference );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return update_post_meta( $order, self::key( 'payment_ref' ), $reference );
+        return $order->update_meta_data( self::key( 'payment_ref' ), $reference );
     }
 
     /**
@@ -859,11 +831,10 @@ class Meta {
      * @return string|false
      */
     public static function get_payment_type( $order ) {
-        if ( is_object( $order ) ) {
-            return $order->get_meta( self::key( 'payment_type' ) );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return get_post_meta( $order, self::key( 'payment_type' ), true );
+        return $order->get_meta( self::key( 'payment_type' ) );
     }
 
     /**
@@ -877,11 +848,10 @@ class Meta {
      * @return int|boolean
      */
     public static function update_payment_type( $order, $pay_type ) {
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data( self::key( 'payment_type' ), $pay_type );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return update_post_meta( $order, self::key( 'payment_type' ), $pay_type );
+        return $order->update_meta_data( self::key( 'payment_type' ), $pay_type );
     }
 
     /**
@@ -894,11 +864,10 @@ class Meta {
      * @return string|false
      */
     public static function get_payment_disburse_mode( $order ) {
-        if ( is_object( $order ) ) {
-            return $order->get_meta( self::key( 'payment_disbursement_mode' ) );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return get_post_meta( $order, self::key( 'payment_disbursement_mode' ), true );
+        return $order->get_meta( self::key( 'payment_disbursement_mode' ) );
     }
 
     /**
@@ -912,11 +881,10 @@ class Meta {
      * @return int|boolean
      */
     public static function update_payment_disburse_mode( $order, $disburse_mode ) {
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data( self::key( 'payment_disbursement_mode' ), $disburse_mode );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return update_post_meta( $order, self::key( 'payment_disbursement_mode' ), $disburse_mode );
+        return $order->update_meta_data( self::key( 'payment_disbursement_mode' ), $disburse_mode );
     }
 
     /**
@@ -929,11 +897,11 @@ class Meta {
      * @return boolean
      */
     public static function is_withdraw_balance_added( $order ) {
-        $is_added = is_object( $order )
-            ? $order->get_meta( self::key( 'withdraw_balance_added' ) )
-            : get_post_meta( $order, self::key( 'withdraw_balance_added' ), true );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
+        }
 
-        return 'yes' === $is_added;
+        return 'yes' === $order->get_meta( self::key( 'withdraw_balance_added' ) );
     }
 
     /**
@@ -947,11 +915,12 @@ class Meta {
      * @return int|boolean
      */
     public static function update_withdraw_balance( $order, $is_added ) {
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data( self::key( 'withdraw_balance_added' ), $is_added );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return update_post_meta( $order, self::key( 'withdraw_balance_added' ), $is_added );
+        $update_status = $order->update_meta_data( self::key( 'withdraw_balance_added' ), $is_added );
+        $order->save();
+        return $update_status;
     }
 
     /**
@@ -964,11 +933,10 @@ class Meta {
      * @return string|false
      */
     public static function get_transfer_id( $order ) {
-        if ( is_object( $order ) ) {
-            return $order->get_meta( self::key( 'transfer_id' ) );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return get_post_meta( $order, self::key( 'transfer_id' ), true );
+        return $order->get_meta( self::key( 'transfer_id' ) );
     }
 
     /**
@@ -982,11 +950,10 @@ class Meta {
      * @return int|boolean
      */
     public static function update_transfer_id( $order, $transfer_id ) {
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data( self::key( 'transfer_id' ), $transfer_id );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return update_post_meta( $order, self::key( 'transfer_id' ), $transfer_id );
+        return $order->update_meta_data( self::key( 'transfer_id' ), $transfer_id );
     }
 
     /**
@@ -999,11 +966,10 @@ class Meta {
      * @return string|false
      */
     public static function get_payout_id( $order ) {
-        if ( is_object( $order ) ) {
-            return $order->get_meta( self::key( 'payout_id' ) );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return get_post_meta( $order, self::key( 'payout_id' ), true );
+        return $order->get_meta( self::key( 'payout_id' ) );
     }
 
     /**
@@ -1017,11 +983,11 @@ class Meta {
      * @return int|boolean
      */
     public static function update_payout_id( $order, $payout_id ) {
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data( self::key( 'payout_id' ), $payout_id );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
 
-        return update_post_meta( $order, self::key( 'payout_id' ), $payout_id );
+        return $order->update_meta_data( self::key( 'payout_id' ), $payout_id );
     }
 
     /**
@@ -1037,11 +1003,10 @@ class Meta {
     public static function update_withdraw_threshold_processed( $order, $is_added = 'yes' ) {
         $is_added = 'yes' === $is_added ? 'yes' : 'no';
 
-        if ( is_object( $order ) ) {
-            return $order->update_meta_data( self::key( 'withdraw_threshold_processed' ), $is_added );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return update_post_meta( $order, self::key( 'withdraw_threshold_processed' ), $is_added );
+        return $order->update_meta_data( self::key( 'withdraw_threshold_processed' ), $is_added );
     }
 
     /**
@@ -1054,10 +1019,9 @@ class Meta {
      * @return boolean
      */
     public static function is_withdraw_threshold_processed( $order ) {
-        if ( is_object( $order ) ) {
-            return 'yes' === $order->get_meta( self::key( 'withdraw_threshold_processed' ) );
+        if ( ! is_object( $order ) ) {
+            $order = wc_get_order( $order );
         }
-
-        return 'yes' === get_post_meta( $order, self::key( 'withdraw_threshold_processed' ), true );
+        return 'yes' === $order->get_meta( self::key( 'withdraw_threshold_processed' ) );
     }
 }

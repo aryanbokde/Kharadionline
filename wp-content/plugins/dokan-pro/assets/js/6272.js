@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkdokan_pro=self.webpackChunkdokan_pro||[]).push([[6272],{6272:(k,e,p)=>{p.r(e)}}]);

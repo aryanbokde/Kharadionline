@@ -2,6 +2,9 @@
 
 namespace WeDevs\DokanPro\Modules\Auction;
 
+use DokanAuctionCache;
+use WC_Product_Auction;
+use WP_Roles;
 use WP_User;
 use WeDevs\Dokan\ProductCategory\Helper as CategoryHelper;
 
@@ -64,7 +67,7 @@ class Module {
         add_filter( 'dokan_get_all_cap', array( $this, 'add_capabilities' ) );
         add_filter( 'dokan_get_all_cap_labels', array( $this, 'add_caps_labels' ) );
 
-        // insert auction porduct type
+        // insert auction product type
         add_filter( 'dokan_get_product_types', array( $this, 'insert_auction_product_type' ) );
 
         // Loads frontend scripts and styles
@@ -72,19 +75,21 @@ class Module {
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
         add_action( 'dokan_seller_meta_fields', array( $this, 'add_admin_user_options' ) );
         add_action( 'dokan_process_seller_meta_fields', array( $this, 'save_admin_user_option' ) );
-        add_filter( 'dokan_get_dashboard_nav', array( $this, 'add_auction_dashboad_menu' ), 20, 1 );
+        add_filter( 'dokan_get_dashboard_nav', array( $this, 'add_auction_dashboard_menu' ), 20 );
         add_filter( 'dokan_settings_selling_option_vendor_capability', array( $this, 'add_auction_dokan_settings' ) );
         add_filter( 'dokan_query_var_filter', array( $this, 'add_dokan_auction_endpoint' ) );
         add_filter( 'dokan_set_template_path', array( $this, 'load_auction_templates' ), 10, 3 );
-        add_action( 'dokan_load_custom_template', array( $this, 'load_dokan_auction_template' ), 10, 1 );
+        add_action( 'dokan_load_custom_template', array( $this, 'load_dokan_auction_template' ) );
         add_action( 'dokan_auction_before_general_options', [ $this, 'load_downloadable_virtual_option' ] );
         add_action( 'user_register', array( $this, 'dokan_admin_user_register_enable_auction' ), 16 );
         add_action( 'dokan_product_listing_exclude_type', array( $this, 'product_listing_exclude_auction' ), 11 );
 
         add_filter( 'dokan_dashboard_nav_active', array( $this, 'dashboard_auction_active_menu' ) );
-        // dokan simple auciton email
-        add_filter( 'woocommerce_email_classes', array( $this, 'load_auction_email_class' ) );
-        add_filter( 'dokan_email_actions', array( $this, 'register_auction_email_action' ) );
+
+        // WooCommerce Simple Auction vendor restriction
+        add_filter('woocommerce_product_add_to_cart_text', [ $this, 'bid_now_button' ], 11, 2);
+        add_filter( 'wc_get_template', [ $this, 'override_single_page_bidding_form' ], 10, 2 );
+
 
         // send bid email to admin and vendor
         add_filter( 'woocommerce_email_recipient_bid_note', array( $this, 'send_bid_email' ), 99, 2 );
@@ -94,9 +99,8 @@ class Module {
         add_action( 'dokan_activated_module_auction', array( $this, 'activate' ) );
 
         add_filter( 'dokan_get_edit_product_url', [ $this, 'modify_edit_product_url' ], 10, 2 );
-        add_filter( 'dokan_email_list', array( $this, 'set_email_template_directory' ) );
 
-        add_action( 'wp_footer', [ $this, 'load_add_category_modal' ], 10 );
+        add_action( 'wp_footer', [ $this, 'load_add_category_modal' ] );
     }
 
     /**
@@ -111,7 +115,7 @@ class Module {
 
         if ( class_exists( 'WP_Roles' ) && ! isset( $wp_roles ) ) {
             // @codingStandardsIgnoreLine
-            $wp_roles = new \WP_Roles();
+            $wp_roles = new WP_Roles();
         }
 
         $all_cap = array(
@@ -119,15 +123,16 @@ class Module {
             'dokan_add_auction_product',
             'dokan_edit_auction_product',
             'dokan_delete_auction_product',
+            'dokan_duplicate_auction_product',
         );
 
-        foreach ( $all_cap as $key => $cap ) {
+        foreach ( $all_cap as $cap ) {
             $wp_roles->add_cap( 'seller', $cap );
             $wp_roles->add_cap( 'administrator', $cap );
             $wp_roles->add_cap( 'shop_manager', $cap );
         }
 
-        // flush rewrite rules after plugin is activate
+        // flush rewrite rules after plugin is activated
         $this->flush_rewrite_rules();
     }
 
@@ -141,8 +146,8 @@ class Module {
             return;
         }
 
-        // flush rewrite rules
-        $this->flush_rewrite_rules();
+        // flush rewrite rules after adding capabilities.
+        $this->activate();
     }
 
     /**
@@ -158,7 +163,7 @@ class Module {
             dokan()->rewrite->register_rule();
         }
 
-        flush_rewrite_rules( true );
+        flush_rewrite_rules();
     }
 
     /**
@@ -166,15 +171,18 @@ class Module {
      *
      * @since 1.0.0
      *
-     * @return void
+     * @param array $capabilities
+     *
+     * @return array
      */
-    public function add_capabilities( $capabilities ) {
+    public function add_capabilities( array $capabilities ): array {
         $capabilities['menu']['dokan_view_auction_menu'] = __( 'View auction menu', 'dokan' );
 
         $capabilities['auction'] = array(
             'dokan_add_auction_product'    => __( 'Add auction product', 'dokan' ),
             'dokan_edit_auction_product'   => __( 'Edit auction product', 'dokan' ),
             'dokan_delete_auction_product' => __( 'Delete auction product', 'dokan' ),
+            'dokan_duplicate_auction_product' => __( 'Duplicate auction product', 'dokan' ),
         );
 
         return $capabilities;
@@ -185,11 +193,11 @@ class Module {
      *
      * @since 3.0.0
      *
-     * @param string $caps
+     * @param array $caps
      *
      * @return array
      */
-    public function add_caps_labels( $caps ) {
+    public function add_caps_labels( array $caps ): array {
         $caps['auction'] = __( 'Auction', 'dokan' );
 
         return $caps;
@@ -202,7 +210,7 @@ class Module {
      *
      * @return array
      */
-    public function insert_auction_product_type( $types ) {
+    public function insert_auction_product_type( array $types ): array {
         $types['auction'] = __( 'Auction Product', 'dokan' );
 
         return $types;
@@ -221,13 +229,15 @@ class Module {
 
         // Init Cache for Auction module
         require_once dirname( __FILE__ ) . '/includes/DokanAuctionCache.php';
-        new \DokanAuctionCache();
+        new DokanAuctionCache();
     }
 
     /**
      * Register Scripts
      *
      * @since 3.7.4
+     *
+     * @return void
      */
     public function register_scripts() {
         list( $this->suffix, $this->version ) = dokan_get_script_suffix_and_version();
@@ -244,6 +254,8 @@ class Module {
      * @uses wp_enqueue_script()
      * @uses wp_localize_script()
      * @uses wp_enqueue_style
+     *
+     * @return void
      */
     public function enqueue_scripts() {
         global $wp;
@@ -287,9 +299,9 @@ class Module {
     *
     * @since 1.5.1
     *
-    * @return void
+    * @return string
     **/
-    public function plugin_path() {
+    public function plugin_path(): string {
         return untrailingslashit( plugin_dir_path( __FILE__ ) );
     }
 
@@ -298,9 +310,11 @@ class Module {
      *
      * @since 1.0.0
      *
-     * @param object $user
+     * @param WP_User $user
+     *
+     * @return void
      */
-    public function add_admin_user_options( $user ) {
+    public function add_admin_user_options( WP_User $user ) {
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
             return;
         }
@@ -331,11 +345,11 @@ class Module {
      *
      * @since  1.0.0
      *
-     * @param  integer $user_id
+     * @param  int $user_id
      *
      * @return void
      */
-    public function save_admin_user_option( $user_id ) {
+    public function save_admin_user_option( int $user_id ) {
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
             return;
         }
@@ -356,8 +370,10 @@ class Module {
      * @since 1.0.0
      *
      * @param array $settings_fields
+     *
+     * @return array
      */
-    public function add_auction_dokan_settings( $settings_fields ) {
+    public function add_auction_dokan_settings( array $settings_fields ): array {
         $settings_fields['new_seller_enable_auction'] = array(
             'name'    => 'new_seller_enable_auction',
             'label'   => __( 'New vendor Enable Auction', 'dokan' ),
@@ -375,16 +391,20 @@ class Module {
      * @since 1.0.0
      *
      * @param array $urls
+     *
+     * @return array
      */
-    public function add_auction_dashboad_menu( $urls ) {
+    public function add_auction_dashboard_menu( array $urls ): array {
+        $menu = [
+            'title' => __( 'Auction', 'dokan' ),
+            'icon'  => '<i class="fas fa-gavel"></i>',
+            'url'   => dokan_get_navigation_url( 'auction' ),
+            'pos'   => 185,
+            'permission' => 'dokan_view_auction_menu',
+        ];
+
         if ( dokan_is_seller_enabled( get_current_user_id() ) && ! dokan_is_seller_auction_disabled( get_current_user_id() ) ) {
-            $urls['auction'] = array(
-                'title' => __( 'Auction', 'dokan' ),
-                'icon'  => '<i class="fas fa-gavel"></i>',
-                'url'   => dokan_get_navigation_url( 'auction' ),
-                'pos'   => 185,
-                'permission' => 'dokan_view_auction_menu',
-            );
+            $urls['auction'] = $menu;
         }
 
         return $urls;
@@ -396,8 +416,10 @@ class Module {
      * @since 1.0.0
      *
      * @param array $query_var
+     *
+     * @return array
      */
-    public function add_dokan_auction_endpoint( $query_var ) {
+    public function add_dokan_auction_endpoint( array $query_var ): array {
         $query_var[] = 'auction';
         $query_var[] = 'new-auction-product';
         $query_var[] = 'auction-activity';
@@ -406,13 +428,17 @@ class Module {
     }
 
     /**
-    * Load dokan pro templates
-    *
-    * @since 1.5.1
-    *
-    * @return void
-    **/
-    public function load_auction_templates( $template_path, $template, $args ) {
+     * Load dokan pro templates
+     *
+     * @since 1.5.1
+     *
+     * @param string $template_path
+     * @param string $template
+     * @param array $args
+     *
+     * @return string
+     */
+    public function load_auction_templates( string $template_path, string $template, array $args ): string {
         if ( isset( $args['is_auction'] ) && $args['is_auction'] ) {
             return $this->plugin_path() . '/templates';
         }
@@ -429,7 +455,7 @@ class Module {
      *
      * @return void
      */
-    public function load_dokan_auction_template( $query_vars ) {
+    public function load_dokan_auction_template( array $query_vars ) {
         if ( isset( $query_vars['auction'] ) ) {
             if ( ! current_user_can( 'dokan_view_auction_menu' ) ) {
                 dokan_get_template_part( 'global/dokan-error', '', array( 'deleted' => false, 'message' => __( 'You have no permission to view this auction page', 'dokan' ) ) );
@@ -475,7 +501,7 @@ class Module {
      *
      * @param int $user_id
      */
-    public function dokan_admin_user_register_enable_auction( $user_id ) {
+    public function dokan_admin_user_register_enable_auction( int $user_id ) {
         $user = new WP_User( $user_id );
         $role = reset( $user->roles );
 
@@ -489,13 +515,15 @@ class Module {
     }
 
     /**
-    * Exclude auction product from product listing
-    *
-    * @since 1.5.1
-    *
-    * @return void
+     * Exclude auction product from product listing
+     *
+     * @since 1.5.1
+     *
+     * @param array $product_type
+     *
+     * @return array
     **/
-    public function product_listing_exclude_auction( $product_type ) {
+    public function product_listing_exclude_auction( array $product_type ): array {
         $product_type[] = 'auction';
         return $product_type;
     }
@@ -509,7 +537,7 @@ class Module {
      *
      * @return string
      */
-    public function dashboard_auction_active_menu( $active_menu ) {
+    public function dashboard_auction_active_menu( string $active_menu ): string {
         if ( 'new-auction-product' === $active_menu || 'auction-activity' === $active_menu ) {
             $active_menu = 'auction';
         }
@@ -517,49 +545,18 @@ class Module {
     }
 
     /**
-     * Load auction email class
-     *
-     * @since  2.7.1
-     *
-     * @param  array $wc_emails
-     *
-     * @return array
-     */
-    public function load_auction_email_class( $wc_emails ) {
-        $wc_emails['Dokan_Auction_Email'] = include DOKAN_AUCTION_DIR . '/includes/emails/class-dokan-auction-email.php';
-
-        return $wc_emails;
-    }
-
-    /**
-     * Register auction email action hook
-     *
-     * @since  2.7.1
-     *
-     * @param  array $actions
-     *
-     * @return array
-     */
-    public function register_auction_email_action( $actions ) {
-        $actions[] = 'dokan_new_auction_product_added';
-
-        return $actions;
-    }
-
-    /**
-     * Send bid email to seller and amdin
-     *
-     * @param $recipient
-     *
-     * @param $object
+     * Send bid email to seller and admin
      *
      * @since 2.8.2
      *
+     * @param $recipient
+     * @param $object
+     *
      * @return string
      */
-    public function send_bid_email( $recipient, $object ) {
+    public function send_bid_email( $recipient, $object ): string {
         if ( ! $object ) {
-            return;
+            return $recipient;
         }
 
         $product_id = $object->get_id();
@@ -577,13 +574,13 @@ class Module {
     /**
      * Set localized args
      *
-     * @param array $args
+     * @since 2.8.2
      *
-     * @since DOKAN_PLUGIN_SINCE
+     * @param array $args
      *
      * @return array
      */
-    public function set_localized_args( $args ) {
+    public function set_localized_args( array $args ): array {
         $auction_args = [
             'datepicker' => [
                 'now'         => __( 'Now', 'dokan' ),
@@ -602,6 +599,7 @@ class Module {
 
     /**
      * @since 3.1.4
+     *
      * @param $url
      * @param $product
      *
@@ -620,19 +618,6 @@ class Module {
         return $url;
     }
 
-
-    /**
-     * Set Proper template directory.
-     *
-     * @param array $template_array
-     *
-     * @return array
-     */
-    public function set_email_template_directory( $template_array ) {
-        array_push( $template_array, 'auction-product-added.php' );
-        return $template_array;
-    }
-
     /**
      * Load downloadable and virtual option on product edit page
      *
@@ -640,7 +625,7 @@ class Module {
      *
      * @return void
      */
-    public function load_downloadable_virtual_option( $auction_id ) {
+    public function load_downloadable_virtual_option( int $auction_id ) {
         global $post;
         $is_downloadable    = 'yes' === get_post_meta( $auction_id, '_downloadable', true );
         $is_virtual         = 'yes' === get_post_meta( $auction_id, '_virtual', true );
@@ -667,7 +652,7 @@ class Module {
      *
      * @since 3.7.5
      *
-     * @return html
+     * @return void
      */
     public function load_add_category_modal() {
         /**
@@ -676,7 +661,48 @@ class Module {
          */
         global $wp;
         if ( ( dokan_is_seller_dashboard() && isset( $wp->query_vars['new-auction-product'] ) ) || ( isset( $wp->query_vars['auction'] ) ) ) {
-            dokan_get_template_part( 'products/dokan-category-ui', '', array() );
+            dokan_get_template_part( 'products/dokan-category-ui' );
         }
+    }
+
+    /**
+     * WooCommerce Simple Auction `bid now` button override
+     *
+     * @since 3.7.30
+     *
+     * @param string $text
+     * @param object $auction_object
+     *
+     * @return string
+     */
+    public function bid_now_button( string $text, object $auction_object ): string {
+        if(
+            $auction_object instanceof WC_Product_Auction
+            && ! $auction_object->is_finished() && $auction_object->is_started()
+            && dokan_is_product_author( $auction_object->get_id() )
+        ) {
+            return __( 'Read More', 'dokan' );
+        }
+        return $text;
+    }
+
+    /**
+     * Overrides WooCommerce Simple Auction product single page template bidding template
+     *
+     * @since 3.7.30
+     *
+     * @param string $located
+     * @param string $template_name
+     *
+     * @return string
+     */
+    function override_single_page_bidding_form( string $located, string $template_name ): string {
+        if(
+            'single-product/auction-bid-form.php' === $template_name
+            && dokan_is_product_author( get_the_ID() )
+        ) {
+            return $this->plugin_path() . '/templates/auction/auction-bid-restriction.php';
+        }
+        return $located;
     }
 }

@@ -43,7 +43,7 @@ class VendorDisable extends WC_Email {
     }
 
     /**
-    * Trigger the this email.
+    * Trigger the email.
     */
     public function trigger( $seller_id ) {
         if ( ! $this->is_enabled() ) {

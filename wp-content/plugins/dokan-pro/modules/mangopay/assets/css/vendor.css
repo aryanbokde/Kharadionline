@@ -259,7 +259,6 @@
   cursor: pointer;
 }
 #dokan-mangopay-kyc button[id*='show_ubo_elements'] .dashicons {
-  line-height: 1.2;
   line-height: 1.6;
   font-size: 1.1em;
   color: #0f0f0fc2;

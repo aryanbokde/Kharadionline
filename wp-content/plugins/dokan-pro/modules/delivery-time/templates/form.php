@@ -36,7 +36,7 @@ $all_delivery_time_slots      = isset( $all_delivery_time_slots ) ? $all_deliver
     <form id="dokan_delivery_time" method="post" action="" class="dokan-form-horizontal">
 
         <div class="dokan-form-group">
-            <label class="dokan-w3 dokan-control-label"><?php esc_html_e( 'Delivery Support', 'dokan' ); ?></label>
+            <label class="dokan-w3 dokan-control-label delivery-time-label"><?php esc_html_e( 'Delivery Support', 'dokan' ); ?></label>
             <div class="dokan-w5 dokan-text-left">
                 <div class="checkbox">
                     <label>
@@ -68,7 +68,7 @@ $all_delivery_time_slots      = isset( $all_delivery_time_slots ) ? $all_deliver
 
         <div id="dokan-delivery-time-vendor-settings">
             <div class="dokan-form-group">
-                <label class="dokan-w3 dokan-control-label" for="pre_order_date">
+                <label class="dokan-w3 dokan-control-label delivery-time-label" for="pre_order_date">
                     <?php esc_html_e( 'Delivery blocked buffer', 'dokan' ); ?>
                 </label>
                 <div class="dokan-w5 dokan-text-left">
@@ -82,7 +82,7 @@ $all_delivery_time_slots      = isset( $all_delivery_time_slots ) ? $all_deliver
             </div>
 
             <div class="dokan-form-group">
-                <label class="dokan-w3 dokan-control-label" for="delivery_time_slot">
+                <label class="dokan-w3 dokan-control-label delivery-time-label" for="delivery_time_slot">
                     <?php esc_html_e( 'Time slot', 'dokan' ); ?>
                 </label>
                 <div class="dokan-w5 dokan-text-left">
@@ -93,7 +93,7 @@ $all_delivery_time_slots      = isset( $all_delivery_time_slots ) ? $all_deliver
             </div>
 
             <div class="dokan-form-group">
-                <label class="dokan-w3 dokan-control-label" for="order_per_slot"><?php esc_html_e( 'Order per slot', 'dokan' ); ?></label>
+                <label class="dokan-w3 dokan-control-label delivery-time-label" for="order_per_slot"><?php esc_html_e( 'Order per slot', 'dokan' ); ?></label>
                 <div class="dokan-w5 dokan-text-left">
                     <input type="number" id="order_per_slot" name="order_per_slot" class="dokan-form-control"
                         value="<?php echo esc_attr( $delivery_order_per_slot ); ?>" placeholder="<?php esc_attr_e( 'Order per slot', 'dokan' ); ?>" />
@@ -119,7 +119,7 @@ $all_delivery_time_slots      = isset( $all_delivery_time_slots ) ? $all_deliver
                         <div class="dokan-store-times">
                             <div class="dokan-form-group">
                                 <label class="day control-label" for="working-days">
-                                    <?php echo esc_html( dokan_get_translated_days( $day_key ) ); ?>
+                                    <?php echo esc_html( dokan_get_translated_days( $day_key, 'short' ) ); ?>
                                 </label>
 
                                 <label class="dokan-on-off dokan-status" for="<?php echo esc_attr( $day_key ); ?>-working-status">
@@ -130,8 +130,6 @@ $all_delivery_time_slots      = isset( $all_delivery_time_slots ) ? $all_deliver
                                         <input type="hidden" name="delivery_day[<?php echo esc_attr( $day_key ); ?>]"
                                             id="<?php echo esc_attr( $day_key ); ?>-working-status" class="dokan-on-off toogle-checkbox"
                                             value="<?php echo esc_attr( $working_status ); ?>" />
-                                        <span class="open-status"><?php esc_html_e( 'Open', 'dokan' ); ?></span>
-                                        <span class="close-status"><?php esc_html_e( 'Closed', 'dokan' ); ?></span>
                                     </p>
                                 </label>
 
@@ -174,10 +172,10 @@ $all_delivery_time_slots      = isset( $all_delivery_time_slots ) ? $all_deliver
                                 <!-- Store times action start -->
                                 <label for="open-close-actions" class="open-close-actions" style="visibility: <?php echo '1' === $working_status ? 'visible' : 'hidden'; ?>;" >
                                     <a href="" class="remove-store-closing-time">
-                                        <span class="fas fa-times"></span>
+                                        <span class="fas fa-trash"></span>
                                     </a>
                                     <a href="" class="added-store-opening-time <?php echo $full_day ? 'hide-element' : ''; ?>">
-                                        <?php echo esc_html( $add_action ); ?>
+                                        <?php echo $add_action; ?>
                                     </a>
                                 </label>
                                 <!-- Store times action end -->

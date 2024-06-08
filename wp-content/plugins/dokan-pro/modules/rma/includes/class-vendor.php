@@ -88,13 +88,16 @@ class Dokan_RMA_Vendor {
      */
     public function add_rma_menu( $urls ) {
         if ( dokan_is_seller_enabled( dokan_get_current_user_id() ) ) {
-            $urls['return-request'] = array(
+            $counts = dokan_warranty_request_status_count();
+
+            $urls['return-request'] = [
                 'title'      => __( 'Return Request', 'dokan' ),
                 'icon'       => '<i class="fas fa-undo-alt" aria-hidden="true"></i>',
                 'url'        => dokan_get_navigation_url( 'return-request' ),
                 'pos'        => 170,
                 'permission' => 'dokan_view_store_rma_menu',
-            );
+                'counts'     => $counts['new'] ?? 0,
+            ];
         }
 
         return $urls;

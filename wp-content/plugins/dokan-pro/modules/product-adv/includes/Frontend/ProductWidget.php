@@ -15,6 +15,16 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @package WeDevs\DokanPro\Modules\ProductAdvertisement\Frontend
  */
 class ProductWidget extends \WC_Widget {
+
+    /**
+     * Instance key to keep track of the widget inside widget container in dokan-lite
+     *
+     * @since 3.10.2
+     *
+     * @var string
+     */
+    const INSTANCE_KEY = 'product_adv__ProductWidget'; // Naming Structure: {module_slug}__{ClassName}
+
     /**
      * ProductWidget constructor.
      *

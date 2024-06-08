@@ -18,6 +18,7 @@ class Dokan_RMA_Product {
      */
     public function __construct() {
         add_action( 'dokan_product_edit_after_inventory_variants', [ $this, 'load_rma_content' ], 30, 2 );
+        add_action( 'dokan_new_product_added', [ $this, 'save_rma_data' ], 12 );
         add_action( 'dokan_product_updated', [ $this, 'save_rma_data' ], 12 );
         add_filter( 'woocommerce_product_tabs', [ $this, 'refund_policy_tab' ] );
     }

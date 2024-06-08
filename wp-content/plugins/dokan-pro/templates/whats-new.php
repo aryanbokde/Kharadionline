@@ -4,13 +4,1382 @@
  */
 $changelog = [
     [
-        'version'  => 'Version 3.7.26',
-        'released' => '2023-06-24',
+        'version'  => 'Version 3.11.1',
+        'released' => '2024-05-27',
+        'changes'  => [
+            'Improvement' => [
+                [
+                    'title'       => 'Update gateway reference urls on dokan stripe connect, stripe express & paypal payment management page.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Vendor Verification Redesign with Custom Verification method and Setup Wizard Support.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Announcement title and content for not contented vendors.',
+                    'description' => 'The announcement title and content displayed to vendors without any associated content or products have been updated to provide more relevant and up-to-date information.',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => 'Wholesale price display on Classic Cart page.',
+                    'description' => 'This change resolves the issue where the wholesale price displayed on the Classic Cart page did not match the wholesale price set within the Product Edit page, leading to potential confusion and incorrect expectations about the total purchase amount. The wholesale price is now accurately calculated and displayed on the Classic Cart page, ensuring consistency with the checkout process.',
+                ],
+                [
+                    'title'       => 'Exclusive seller badge button not working on admin dashboard vendor edit page.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Ambiguous seller badge content on admin dashboard.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Remove Withdrawal cache on automatic disbursement.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Translation loading in Product Q&A Frontend.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Default value set for chat_button_product_page in the admin settings.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Payment gateway fee calculation for Stripe and Stripe Express now include Tax.',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.11.0',
+        'released' => '2024-05-10',
+        'changes'  => [
+            'New Module' => [
+                [
+                    'title'       => 'Product Q&A',
+                    'description' => 'We have introduced a new module called Product Q&A.',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => 'Prevented fatal error during abuse reason module activation & in single product page.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[EmailVerification] Fixed verified sellers being redirected to first step of seller setup wizard after clicking `Let\'s Go` button from first step.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Remove translation on stripe express webhook url in the settings page.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Availability Rules of Resources Not Applying When Edited by Vendors in Vendor Dashboard.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Refund request table line item price display and table heading label',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.10.4',
+        'released' => '2024-04-25',
+        'changes'  => [
+            'Improvement' => [
+                [
+                    'title'       => 'Cart fee support added for PayPal Marketplace',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Delivery Time] Automatically select the store\'s default location for store pickups when a store has only one location',
+                    'description' => '',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => 'Store support topic sub-menu displayed a duplicate border',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Admin user\'s title and image were not rendering correctly on the Admin Store Support page',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fatal error while activating WeMail Plugin',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Announcement year data rendering issue on vendor dashboard widget',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Resolves an issue where the payment status failed to update correctly when the MangoPay payment resource ID validation failed during the payment process',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixes a problem that prevented payouts from working as expected when the instant payout option was enabled in the WooCommerce Payments (MangoPay) settings',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Order note added when there is a mismatch between the instant payout settings',
+                    'description' => 'Specifically, if instant payouts are disabled in the user\'s MangoPay account but enabled in the WooCommerce Payments (MangoPay) settings by the admin, an order note will be created to inform the user about the mismatch and the reason for the standard payout process being used.',
+                ],
+                [
+                    'title'       => 'Resolves an issue where payouts were not working correctly for digital products',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Booking calendar by time support added',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.10.3',
+        'released' => '2024-04-17',
+        'changes'  => [
+            'Improvement' => [
+                [
+                    'title'       => 'Warning message for selecting fixed cart discount on admin coupon add edit page if single seller mode is disabled',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Removed the Stripe Checkout setting from the Dokan Stripe Connect\'s settings screen',
+                    'description' => '',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => 'Return Request and Support menu notification count display fix for Menu Manager',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Advertisement product not purchasable for own product purchasing restriction',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Dokan admin dashboard section style broken',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fatal error occurs when user profile settings data is empty initially',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Enable selection of previous shipment dates for vendor orders',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Resolved several PHP warnings occurring in the shipping, store review, and vendor verification functionalities',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'A issue where modules activation indicator was not visible',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Vendor-specific coupon should not apply to admin',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'WC Simple Auctions Plugin -> Proxy Auction Option Not Reflecting in new Dokan Auction Product',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'The default category was set to null if the admin deleted the default category',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed an issue where if the admin deletes all the store categories, it does not display the Store Categories Icon',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Unnecessary page creation on Export & Import module activation',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'The debug log shows a PHP Deprecated notice regarding the get_page_by_title function in the Dokan Pro plugin',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Invalid order id error in Vendor subscriptions related orders metabox',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[StripeConnect] Renewal orders failing while using Dokan Stripe Connect',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Log Gateway Processing fees in order note if vendor pays processing fees',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.10.2',
+        'released' => '2024-04-02',
+        'changes'  => [
+            'Improvement' => [
+                [
+                    'title'       => '[RFQ] Updated description message for `Decrease Offered Price` to set the default value to zero',
+                    'description' => '',
+                ],[
+                    'title'       => 'Added requires plugin header for dokan pro so that required plugin check can be initiated.',
+                    'description' => '',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => 'Auction product form fields placeholder content translation issue',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Product advertisement Elementor widget warning fixed',
+                    'description' => 'Product advertisement Elementor widget was generating warning due to lack of proper initialization process. This warning messages has been fixed.',
+                ],
+                [
+                    'title'       => 'Color synchronization issue in vendor dashboard actions',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Refund issue with Stripe Express',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Manually refund button is not shown in the Order Single page (Vendor Dashboard)',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Broken UI for Announcement creation and Draft Editing',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Displaying debug log on MangoPay Settings Save',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Missing Stripe Processing Fees for Vendor Subscription Purchases',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed a fatal error while purchasing a product using a coupon for some users',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Content AI is displaying a popup if the site is not connected to RankMath',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Rank Math Content Length not Fetching from the Product Description in the Product Edit page',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[RFQ] fixed a fatal error if `Decrease Offered Price` under Dokan Settings --> Quote Settings is set to an empty string',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Modules are not loading if downgraded from higher package to lower package',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fatal error on changes a vendor email address',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Added type casting while calling `dokan_get_coupon_metadata_from_order()` method to prevent a fatal error',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Elementor single store templates loading issue for first time users',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.10.1',
+        'released' => '2024-03-18',
+        'changes'  => [
+            'Improvement' => [
+                [
+                    'title'       => 'Allowed category in vendor subscription translation support added',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Proper error not showing to users denoting they have to configure brand assets in Stripe Connect Settings',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Clear and Simplified Store Category Editing',
+                    'description' => 'In previous versions, editing store categories in the Dokan plugin for WordPress and WooCommerce was a confusing and complex process. However, with the latest update, a significant improvement has been introduced. The store category edit option is now conveniently available on the vendor edit page, providing a much clearer and user-friendly experience for administrators.
+                    This enhancement streamlines the process of managing store categories, making it easier for administrators to edit and update the categories associated with vendors. The improved user experience ensures smoother category management within the Dokan plugin, ultimately leading to a more efficient and hassle-free workflow.',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => 'Allowed amount decimal precision on RMA Request validation',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Free shipping remaining amount and discount message html escaping on mobile screen',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Bulk action triggering issue when deselect latest module',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Auction module menu not displaying initially',
+                    'description' => 'When activating the Auction Module from Dokan module manager and enabling the auction menu for vendors from the selling option settings for the first time, the menu is not displayed on the vendor dashboard menu bar. The issue is resolved when deactivating and reactivating the auction module',
+                ],
+                [
+                    'title'       => 'Set auction modules default product status as per product status settings',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Product Visibility Issue - Catalog-Only Setting Not Functioning Properly on Live Search',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'The text within the vendor verification module cannot be translated',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Quote Page Appearance is Broken on Guest Users Mobile Devices',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Support table responsive layout added',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.10.0',
+        'released' => '2024-03-04',
+        'changes'  => [
+            'New Feature' => [
+                [
+                    'title'       => 'Dashboard Menu Manager',
+                    'description' => 'Now the admin will be able to control which menus will be displayed under the vendor dashboard.',
+                ],
+            ],
+            'Improvement' => [
+                [
+                    'title'       => 'Updated FontAwesome library to version 6.5.1',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Lock premium features on subscription expiry',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Dokan Vendor Subscription WPML Support',
+                    'description' => '',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => 'Incorrect calculation in WooCommerce Analytics for Dokan sub-order',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[EU Compliance Fields] Fixed some deprecated warnings for Germanized integration.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[SPMV] "Other available vendor" searches don\'t work for SPMV when WooCommerce booking is enabled.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[RFQ] Order is created for both admin approval of the quote and conversion to quote',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[RFQ] "Reverse Withdrawal Payment" & "Product Advertisement Payment" products are visible in the Request for Quotation',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Refund via API not processing in Gateway',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'RMA Customer table on translation fix',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Announcement set to all vendors including not enabled.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'fix: [StripeExpress] Webhook not working after last updates of Stripe Express account.',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.9.10',
+        'released' => '2024-02-12',
+        'changes'  => [
+            'New' => [
+                [
+                    'title'       => 'Added PHP 8.2 support',
+                    'description' => '',
+                ],
+            ],
+            'Fix' => [
+                [
+                    'title'       => 'Fixed an issue where the HTML entities are appearing on the store category name if the user provided any special characters.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed progress bar percentage calculation for address and payment information in the Dokan seller setup wizard.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed an issue where the variable subscriptions product input fields are showing on variable product variations.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed an issue where the bulk product variation creation does not add a menu order to each variation.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed an issue where if a Marketplace coupon is created excluding a product, the coupon is not applied to any product.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Vendor-specific coupon issue - This fix prevents coupons that are meant for a single vendor from being applied to products from other vendors. This issue was caused by a logic error in the coupon validation function. The fix corrects the logic and ensures that the coupon is only valid for the intended vendor.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Coupon validation issue for vendor-specific coupons - This fix ensures that coupons that are generated by the admin for a specific vendor or store are only applicable to the products from that vendor or store.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed an issue where no error messages were displayed for invalid coupons on the cart page.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Auction] Fixed an issue where the vendors were not able to add downloadable files for auctionable products. The problem arises when vendors attempt to save a downloadable product with an attached file – despite receiving an update confirmation, the file fails to save correctly. This issue has been resolved.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[StoreReview] Fixed an issue where after deleting Store Reviews from the WP Admin Dashboard > Dokan > Store Review screen, the review count remains unchanged on the top of the review list.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[TableRateShipping] Fixed a periodic fatal error after calling Google Distance Matrix API if the API response takes a long time to respond due to network error.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[RequestForQuote] Fixed inconsistent Priority between the "Add to Cart" and "Add to Quote" Buttons on the Simple and Variable Products page.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[RequestForQuote] Removed the "X" button from the Quote Details After the Quote has been Converted to Order.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Many strings in Dokan shipping settings and related screens cannot be translated using WPML (#2162)',
+                    'description' => 'This pull request fixes an issue where some strings in the Dokan shipping settings and related screens were not translatable using the WPML plugin. This change improves the localization and accessibility of the Dokan plugin for multilingual users and customers.',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.9.9',
+        'released' => '2023-01-29',
+        'changes'  => [
+            'Improvement' => [
+                [
+                    'title'       => '[VendorStaff] Added Single Step Product creation from support for Vendor Staff while adding Auction and Booking products.',
+                    'description' => '',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => '[Auction] Fixed an issue where the Auction products are not appearing on the vendor dashboard\'s auction listing page when the HPOS feature is enabled.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed an issue where the regular price wasn’t displayed as strike-through when the sales price was present.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed a fatal error while trying to update an order from the admin panel if the HPOS feature is enabled.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[VendorDiscount] Fixed a PHP warning under the cart page if a customer clicks on the order again on a completed order from the My Account page.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[LiveSearch] Fixed an issue where the reverse withdrawal and product advertisement payment products are showing on the live search result',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[StoreSupport] Fixed an issue where the customer’s email is not triggering if the site\'s default admin email address is different than the registered admin email.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed a console error after updating a store category from the Dokan single vendor edit page.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed misleading email subject and title for Product Replacement Request Notifications to Vendors.',
+                    'description' => 'When a customer sends a replacement request for a product with a warranty, the email notification sent to the vendor has a misleading subject and title. The email subject mentions "A new refund request" and the title refers to "Refund request." This can confuse the vendor, as the request is a replacement request, not a refund request. These issues have been resolved.',
+                ],
+                [
+                    'title'       => 'Fixed a WPML translation issue where the product attribute\'s name wasn’t translatable with WPML.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed an issue where the delivery time date time picker wasn’t translatable.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed an issue where the Connect with Stripe button was not translatable in Stripe Express.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed a translation issue where the mobile number field placeholder was not translatable.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed a translation issue where the title of table rows on the Return Requests page on the vendor dashboard cannot be fully translated. The word "on" is always untranslated.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed a translation issue where the vendor and customer support ticket status and number hash are not translatable.',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.9.8',
+        'released' => '2023-01-12',
         'changes'  => [
             'Fix' => [
                 [
-                    'title'       => 'Fixed a fatal error while upgrading to Dokan Pro starter and professional plans.',
+                    'title'       => 'Appsero plugin update checker issue fixed.',
+                    'description' => 'Previously, the Appsero plugin update checker was not working properly. With this release, the issue is resolved.',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.9.7',
+        'released' => '2023-01-11',
+        'changes'  => [
+            'Fix' => [
+                [
+                    'title'       => '[StripeExpress] Performance improvement for Stripe Express module.',
+                    'description' => 'Previously, the Add to Cart button and proceed to the checkout page took extra time to load. With this release, we\'ve fixed the loading time issue.',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.9.6',
+        'released' => '2023-12-15',
+        'changes'  => [
+            'Fix' => [
+                [
+                    'title'       => 'Fixed an issue where the Dokan Subscription product switched to Simple Product after saving from WordPress Admin Panel --> Products --> Edit Product page.',
                     'description' => '',
+                ],
+                [
+                    'title'       => 'Resolved a fatal error that occurred when attempting to renew a subscription within the WordPress Admin Panel. Specifically, this issue occurred while navigating to WooCommerce > Subscription > Edit a single subscription that included a line item coupon.',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.9.5',
+        'released' => '2023-12-12',
+        'changes'  => [
+            'Improvement' => [
+                [
+                    'title'       => 'Ambiguous text RMA Requests is replaced with Returns & Refunds in my account menu list.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Vendors will see a new notification with the count of new Refund and Return requests beside the Return Request menu.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'A new Email called Dokan Send Refund Request Conversation Notification to Vendor and Customer will be triggered when a vendor or customer replies to any RMA Request Conversation notifying the other party.',
+                    'description' => '',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => 'Refund request with line item quantity 0 support added.',
+                    'description' => 'Previously, if the vendor tried to set the line item as 0 manually and tried to request a refund, they would get an unwanted validation error. Not the request will proceed as intended.',
+                ],
+                [
+                    'title'       => 'Product reviews widget in vendor dashboard visible even after disabling from the WooCommerce\'s setting',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Missing assets on the RFQ page with WPML',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed a fatal error due to a type casting error under the vendor coupon OrderDiscount section',
+                    'description' => '',
+                ],
+            ],
+            'Other'       => [
+                [
+                    'title'       => 'Removed PayPal Adaptive Payment Gateway module from Dokan Pro',
+                    'description' => '',
+                ],
+            ],
+
+        ],
+    ],
+    [
+        'version'  => 'Version 3.9.4',
+        'released' => '2023-11-30',
+        'changes'  => [
+            'New'         => [
+                [
+                    'title'       => '[Announcement] Introduce API for vendor announcements.',
+                    'description' => 'Endpoints:
+1. `dokan/v1/announcement/notice/{notice_id}` For Getting, updating, deleting single notice data
+2. `dokan/v1/announcement` For getting all the announcement records. Parameters `vendor_id, search, status, read_status, from, to` are now supported',
+                ],
+                [
+                    'title'       => '[DokanAuction] Previously vendors could not duplicate auction products from the vendor dashboard. After this update vendors will be able to duplicate auction products.',
+                    'description' => '',
+                ],
+            ],
+            'Improvement' => [
+                [
+                    'title'       => '[DeliveryTime] Enhanced Validation and Descriptive Messages: We\'ve added several validation checks and descriptive messages to the "delivery time" admin settings, making it easier to configure and understand.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[DeliveryTime] Order Notifications: Order update email notifications will now only be triggered when there are updates to the order\'s delivery time and/or date, ensuring that customers receive relevant information.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[DeliveryTime] Revamped Vendor Dashboard: We\'ve updated the design of the delivery time settings in the vendor dashboard, providing a more user-friendly and intuitive experience.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[DeliveryTime]  Improved Date Selection: Non-available dates are now automatically disabled on the admin dashboard when editing orders, simplifying the process of selecting delivery dates and times.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[StripeExpress] Improved Stripe Account Deletion: Synced Removal from Admin Dashboard.',
+                    'description' => 'In the past, when an admin deleted a Stripe account from the admin dashboard on the user edit page, the Stripe settings were only removed locally, while the remote user account on Stripe remained unaffected. With this update, we\'ve enhanced the process. Now, when you delete a Stripe account from the admin dashboard, not only will the local settings be deleted, but the corresponding remote Stripe user account will also be removed. This ensures a synchronized and comprehensive removal process for a more efficient and consistent user experience.',
+                ],
+                [
+                    'title'       => '[VendorDiscount] Replaced vendor discount implementation with coupons.',
+                    'description' => 'The vendor discount system has been overhauled to incorporate coupons for both Product Quantity Discounts and Order Discounts. The new system automatically generates and applies coupons based on cart items and order total, which enhances the user experience and streamlines vendor discounts. This will also fix some of the issues related to vendor discounts our users were having till now.',
+                ],
+                [
+                    'title'       => '[Booking] Added missing `Linked Products Section` under Booking Product Edit Page',
+                    'description' => '',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => '[DeliveryTime] Fixed an issue where users got a fatal error under the checkout page if the corresponding vendors didn’t add their store address.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed a typo under Add New Vendor Modal',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[SingleStepProductCreate] Fixed some issues like product data not being saved for the first time when the single step product create feature is enabled.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[ProductAddons] Fixed some translation issues under vendor dashboard → Settings page.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[MangoPay] Fixed the automatic connection of the vendor account to Mangopay.',
+                    'description' => 'Previously, when a customer transitioned to become a vendor, their vendor account is automatically linked to a MangoPay account without the need to submit a connection request. Now the issue is resolved.',
+                ],
+                [
+                    'title'       => '[StoreSupport] Fixed an issue where the new support ticket email was not sent to the admin and corresponding vendors.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[StripeConnect] Fixed an issue where the Dokan Stripe Connect is no longer showing the webhook url under payment gateway settings page description help text.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[RMA] Fixed an issue where overriding the RMA for a variable product was not working. With this release, the problem was resolved by fetching RMA data from the parent product if the cart item is a product variation.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[PayPalMarketplace] Fixed an issue where the pop up to connect the PayPal account of the vendors wasn’t working in Firefox browser.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[VendorShipping] Fixed an issue where the Shipping Zones were missing under the vendor dashboard on newly created sites.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Live Search option `Autoload Replace Current Content` under Dokan admin settings now replaces the page content for displaying product list under frontend.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[VendorShipping] Fixed an issue where the admin were getting fatal error while storing shipping zone data under WooCommerce → Settings → Shipping',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[VendorDiscount] Addressed an issue with Product Quantity Discounts on Variable Products. The update ensures correct commission allocation to administrators and accurate earnings for vendors, maintaining financial integrity.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[VendorDiscount] Resolved discrepancies in order totals between Vendor Orders and Order Details when both Product Quantity and Order Discounts are applied. This fix ensures consistency and prevents mismatch alerts during a refund.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[VendorDiscount] Implemented fixes for incorrect tax calculations, ensuring accurate tax amounts are applied and displayed in accordance with the applied discounts.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[VendorDiscount] Updated the Order Details to correctly show discounts on subscription products, ensuring all discounts are transparently and accurately reflected.',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.9.3',
+        'released' => '2023-11-13',
+        'changes'  => [
+            'Improvement' => [
+                [
+                    'title'       => 'Displaying wholesale price on product category archive which was missing on the earlier version of Dokan Pro',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[SellerVacation] Displaying Seller Vacation message on a single product page, previously there was no way for the customers to know if the seller was on vacation until they visited the single store page.',
+                    'description' => '',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => 'In the past, when an admin deleted the auto-generated page for the Request for Quote module, clicking the “Request a Quote” button would erroneously redirect users to the home page.',
+                    'description' => 'However, with this recent update, if the page is no longer available, the Request for Quote auto-generated page will be recreated, and users will be correctly redirected to the appropriate page.',
+                ],
+                [
+                    'title'       => 'Fixed an issue where the `Shipping Status` cannot be changed from the `Order Details` page',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[PayPalMarketplace] Fixed an issue where the "Refund via Dokan PayPal Marketplace" Option was missing for the booking products order that needed confirmation.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed an issue where the `Inventory` tab is appearing for the Dokan Subscription products when the WooCommerce Simple Auction plugin is activated.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed a fatal error while trying to "batch update wholesale customer" with non-existing user ids',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed an issue where the geolocation of a product is not working when adding a new bookable product.',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.9.2',
+        'released' => '2023-10-19',
+        'changes'  => [
+            'Fix' => [
+                [
+                    'title'       => '[StoreReview] Fixed a fatal error on the Single Store Page - Reviews tab when users are not logged in.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[StoreReview] Fixed couple of fatal errors on the Single Store Page, Store Listing page, and the Dokan vendor page on Dokan Pro Professional package due to a missing composer package.',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.9.1',
+        'released' => '2023-10-17',
+        'changes'  => [
+            'New'         => [
+                [
+                    'title'       => '[Auction] Added Single Step Product Creation feature for Auction Products',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[StripeExpress] Added a new hook named `dokan_stripe_express_account_capabilities` so that account capabilities values can be changed.',
+                    'description' => '',
+                ],
+            ],
+            'Improvement' => [
+                [
+                    'title'       => 'Added refund request approval method ( Manual or via API ) choice added for Admin.',
+                    'description' => 'Previously, the admin only controlled the refund processing method (manual or via Payment Gateway API) through Admin settings and during sending a new refund request, the vendor had to make the choice for Manual or Refund through Payment Gateway API. But that is confusing for both the admin and vendors.
+Now Admin has the choice to approve the process of the refund manually or through Payment Gateway API.
+The Admin settings related to Refund via API have been completely removed, streamlining the functionality. Additionally, the code has been refactored to accommodate these changes and introduced a new filter called dokan_pro_automatic_process_api_refund_enabled. This filter allows programmatic control over the option to refund via API and comes with a default value of true.
+Moreover, new features have been added to enhance the user experience. A new row action called "Refund via [Gateway Name]" (Like Refund via PayPal) has been introduced, specifically designed for the designated Payment Gateway that supports Rafund. Support for this action has also been integrated into the REST API. Furthermore, a new bulk action called "Refund via Payment Gateway" has been implemented, providing users with the ability to process refunds in bulk via the REST API.
+To address performance issues, the codebase has been refactored to resolve the caching problem related to the get_items function, ensuring smoother operation. Additionally, the information pill displayed on the table header, which previously informed users about the activation of Refund via API admin settings, has been removed for a cleaner interface.
+As for user interface improvements, the "Manual" pill has been replaced with a "Completed" tab, providing a clearer indication of the refund status. Moreover, the refund button\'s appearance and logic have been updated specifically for non-Dokan payment gateways, enhancing consistency throughout the platform.
+These changes aim to enhance functionality, improve performance, and provide a more seamless experience for users utilizing refund-related features within the application.',
+                ],
+                [
+                    'title'       => '[VendorSubscription] Added a new feature to restrict vendors from purchasing recurring subscription products using non-adaptive payment gateways.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Changed all the single date picker fields with date range picker. These updates will keep the design consistent throughout the plugin.',
+                    'description' => '',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => '[AdminCoupon] Fixed an issue where the admin commission is incorrect, while a coupon makes a product\'s price a decimal number.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Booking] Fixed mobile responsiveness issue of booking product creation page for vendors.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Auction] Fixed an issue where the Auction product bypassed the product status feature when edited by vendors.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[StoreReview] Fixed an issue where the Dokan Vendor Reviews on the Store Page - Display Add review button after the tab title and reviews.',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.9.0',
+        'released' => '2023-10-06',
+        'changes'  => [
+            'New'         => [
+                [
+                    'title'       => '[VendorStaff] Added REST API support for Vendor Staff module.',
+                    'description' => 'Endpoints:
+`dokan/v1/vendor-staff` for GET, CREATE vendor staff
+`dokan/v1/vendor-staff/{id}` for GET, UPDATE, DELETE a vendor staff
+`dokan/v1/vendor-staff/{id}/capabilities` for GET, UPDATE vendor capabilities',
+                ],
+            ],
+            'Improvement' => [
+                [
+                    'title'       => '[ProductAdvertising] Removed `Advertised Products Section` settings from vendor dashboard, now only Admin can change this value from theme customizer settings.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[DokanShortcodeBlock] Updated Dokan shortcode block under `WordPress Admin Panel → Pages` to include missing shortcodes.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Added Enable/Disable option support for `Dokan New Support Ticket` and `Dokan Reply To Admin Support Ticket` email templates.',
+                    'description' => 'Previously, there were no settings to enable/disable these emails from email template settings under `WordPress Admin Dashboard → WooCommerce → Emails`. Though admin can control whether to send support notification emails from `WordPress Admin Dashboard → Dokan → Settings → Store Support Settings` by enabling the `Support Ticket Email Notification` setting. Now we’ve removed this setting and added an enable/disable option under the corresponding email template settings under WooCommerce Email Settings.',
+                ],
+                [
+                    'title'       => '[SellerVacation] We’ve rewritten the `Product Vacation Status` feature entirely for the `Seller Vacation` module.',
+                    'description' => 'Previously, when a vendor enabled `Vacation Mode` under `Vendor Dashboard → Settings → Store Settings → Go to Vacation` settings, all published product statuses changed to `vacation` and vacation status changed to `publish` when the vendor disabled this setting. This limitation affected SEO for that particular vendor since the web crawler found corresponding product URLs unavailable and marked those links as 404 URLs. To tackle this problem, we’ve removed the `vacation` status for products and enabled the `Catalog Mode` feature for the corresponding vendor products. Since products can’t be purchased if they are in catalog mode, the corresponding vendor can enjoy their vacation, and search engines will be able to index those products. If a vendor is on vacation mode and a user visits the single store page of that vendor, they will see a vacation mode notice set by the corresponding vendor.',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => '[RFQ] Fixed an issue where the `Catalog Mode` settings were applied on the `Request For Quoto` rule, even though the vendor\'s catalog mode settings aren\'t enabled from the store settings.',
+                    'description' => 'Previously, if the site admin enabled the `Catalog Mode` feature from Dokan settings, the vendor’s `Catalog Mode` settings weren’t taken into consideration when applying `Request For Quotation` rules.',
+                ],
+                [
+                    'title'       => '[Refund] Fixed an issue where the  {amount} placeholder is not working when the {amount} placeholder was used as the email subject or email heading for the Dokan New Refund Request email template.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[ProductAddOns] Fixed an issue where the addOns feature under `Single Product Page` was displaying some HTML code due to `WooCommerce Product AddOns` plugin version incompatibility.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[DokanStripeExpress/RequestForQuote] Fixed an issue where the GooglePay or ApplePay button appears on Single Product Page even when the cart button is replaced with `Add to Quote` button.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[DeliveryTime] Fixed an issue where the `Delivery Time` date picker is not appearing on the checkout page under some specific themes.',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.8.4',
+        'released' => '2023-09-26',
+        'changes'  => [
+            'Improvement' => [
+                [
+                    'title'       => '[VendorSubscription] With this updates, after the successful purchase of a recurring subscription, the vendor will get a email notification.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Announcement] Vendor search box initial search placeholder text and no vendor found message has been updated to reduce confusion during initial search. on the admin dashboard for initial searching of the vendors.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[StoreListAPI/Geolocation] Added Geolocation filter support for Store list API.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Wholesale] Added `no name` text on wholesale customer table for user with no first name and last name.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Various style improvements of Dokan frontend including Vendor Dashboard, Single Store Page, Single Product Page etc.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[SPMV] Display store name instead of full name on Assigned product to vendors search box on admin dashboard product edit page.',
+                    'description' => '',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => '[Coupon] Fixed an issue where the excluded product feature of a coupon was not working as expected,',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[DeliveryTime] Fixed an issue where the translation of "am" and "pm" is not working as expected for store open and close feature.',
+                    'description' => 'Previously, after translating am|pm to another language. Delivery time on vendor dashboard section was not working properly. After the update the mentioned issue will be fixed.',
+                ],
+                [
+                    'title'       => '[VendorShipping] Added vendor shipping support for `Location not covered by your other zones`.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Wholesale] Fixed an issue where the customer can\'t become a wholesale customer if previously bought a WooCommerce product subscription [which changes the user role to subscriber]',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Wholesale] Fixed an issue where wholesale products can’t be created via REST API.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[SPMV] Fixed a fatal error while searching products via API while not providing any argument like `product_id`, Endpoint: `{{SERVER_URL}}/wp-json/dokan/{{version}}/spmv-product/search`',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[SPMV] Fixed a fatal error while trying already cloned product to cart, `Endpoint: {{SERVER_URL}}/wp-json/dokan/{{version}}/spmv-product/add-to-store`',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[VendorDashboard] Fixed an issue where the values of attributes are not appearing on the edit product page of Dokan Vendor Dashboard (new).',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.8.3',
+        'released' => '2023-09-13',
+        'changes'  => [
+            'Improvement' => [
+                [
+                    'title'       => '[Booking] Removed unnecessary product type filter from Vendor Dashboard Booking product list page.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[ColorSchemeCustomizer] Integrated Color Scheme Customizer support for Vendor Dashboard hamburger menu background for mobile view.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Booking]  Made Vendor dashboard add resources section behaviour consistent with backend (WordPress Admin → Add New Booking Product) add resource section.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Auction] Added Product Advertisement feature support for Auction products',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Booking] Added Product Advertisement feature support for Bookable products',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[VendorStaff] Fixed some issue with email templates for vendor staff module',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Removed the setting `Edited Product Status` and renamed `New Product Status` to `Product Status`  from Admin Dashboard → Dokan → Settings → Selling Options.',
+                    'description' => 'Previously, there were two different settings for the product status after creating a new product or updating a product: New Product Status and Edited Product Status. However, with the latest update, the Edited Product Status setting has been removed and the New Product Status setting has been renamed to Product Status. This single setting will be applied for both new and edited products. It’s important to note that the Publish Product Directly capability for vendors will take priority as usual.',
+                ],
+                [
+                    'title'       => 'Removed `Product Mail Notification` setting from Admin Dashboard → Dokan → Settings → Selling Options.',
+                    'description' => 'Previously, the `Product Mail Notification` setting wasn’t working even though the setting was disabled. Since Dokan New Product and Dokan New Pending Product email already include the enable/disable feature, this setting is redundant.',
+                ],
+                [
+                    'title'       => 'Added a button to reset filter options on the product list page under the vendor dashboard.',
+                    'description' => '',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => '[Booking/AddOns] Fixed an issue where product Add-ons section wasn’t loading uder Add New Booking page.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[VendorVerification] Fixed an issue where the SMS Verification and Social Verification does not appear in the Dokan: Verification widget on the single store page if either one among ID Verification, Address Verification, or Company Verification is not verified',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Update hash algorithm from md5 to sha256 for improved security for Cookies storage, also included serialized data in hash calculation to ensure data integrity.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed a fatal error on withdraw page if user updated only Dokan Pro. This was due to a hook incompatibility used on Dokan Pro.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Withdraw] Fixed an issue where the {amount} placeholder is not working for the Dokan New Withdraw Request email template.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed an issue where Date-Range selection calendar under vendor dashboar were broken on various themes.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[VendorSubscription] Fixed an issue where vendor subscription product can be assigned to any vendor.',
+                    'description' => 'With this fix, while creating a subscription product, the vendor section will be hidden.',
+                ],
+                [
+                    'title'       => 'Fixed an issue where the "Become A Wholesale Customer" feature gets removed by removing the "Become A Vendor" feature via hook.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[ShippingStatus] Fixed an issue where {title} & {message} placeholders do not work for the Shipping Status Notification for Customer email template',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[VendorSubscription] Fixed an issue where Dokan Vendor Subscription Product can not be purchased if admin enables catalog mode feature.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Geolocation] Fixed an issue where store listing location filtering wasn’t working if map radius is set to zero.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[DeliveryTime] Fixed an issue wehre email was not triggered if the vendor changes delivery time information from Vendor Dashboard → Order details page.Now customers will be notified about the changes by vendor.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[StripeExpress] Fixed an issue \'no such customer\' error while purchasing a vendor subscription product',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[StripeExpress] Fixed an issue where vendor subscription product can’t be purchased with discounted amount if Coupon code is applied to the cart.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[StripeExpress] Fixed initial payment and recurring payment amount if discount code is applied while purchasing a vendor subscription product using Stripe Express.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[SocialLogin] Fixed an issue where Apple SSO wasn’t working due to the composer package version inconsistency of PHP-JWT library',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed a fatal error when using Elementor Pro\'s My Account Widget with Dokan Pro',
+                    'description' => 'Before this update, when using Elementor Pro\'s My Account widget to render the My Account page with the Dokan Pro plugin, certain circumstances triggered a PHP error exception. With the latest update, all scenarios have been addressed, ensuring that no PHP error exceptions are encountered.',
+                ],
+                [
+                    'title'       => '[Booking] Fixed an issue where the Booking product is published directly, even though the product status is set to pending review from the Dokan settings.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'Fixed an issue where duplicating a product bypasses the Product Status setting under the Admin Dashboard → Dokan → Settings → Selling Options',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[VendorSubscription] Fixed in issue where bulk publishing product changing published product to pending based on Admin’s Product Status setting',
+                    'description' => '',
+                ],
+                [
+                    'title'       => 'There were couple of issues based on the admin `Publish Product` Settings and Vendor’s `Publish Product Directly` capabilities. We’ve tested all the scenarios and provided fix if necessary.',
+                    'description' => '',
+                ],
+
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.8.2',
+        'released' => '2023-08-25',
+        'changes'  => [
+            'Improvement' => [
+                [
+                    'title'       => '[PaypalMarketplace] Added reverse withdrawal payment support using PayPal Marketplace payment gateway.',
+                    'description' => '',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => '[ReportAbuse] Fixed an issue where login form doesn\'t disappear after guest user login to submit an abuse report.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Booking] Fixed an issue where if the vendor adds resources to a product this will create an additional bookable product.',
+                    'description' => 'Previously, If the vendor adds or removes resources to a bookable product this will create another additional product named Product in the vendor dashboard booking menu. In fact, each time a vendor adds or removes resources this will create a product called Product. This issue has been fixed now.',
+                ],
+                [
+                    'title'       => '[StoreReview] Fixed an issue where the star rating that the user provided while creating a store review is not included in the email content.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[VendorStaff] Fixed a PHP Deprecation warning while creating a new vendor staff.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[StoreReview] Fixed Layout breaks issue if a product review content length is more that 50 characters under vendor dashboard store review listing table.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[StoreReview] Fixed an issue where searching for customers under customer filter wasn’t working under Dokan admin dashboard.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Announcements] Fixed an issue where duplicate announcement emails are being sent.',
+                    'description' => 'Previously, if the Dokan Stripe Express payment gateway is enabled with the option Send Announcement to Non-connected Sellers enabled, New vendors are getting the announcement email multiple times. Now the issue is resolved.',
+                ],
+                [
+                    'title'       => '[RequestForQuote] Fixed some PHP warnings while trying to update quote rules with a non-existent quote rule id.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[VariableProduct] Fixed an issue where bulk actions for the variable product could not create any impact on the product variations.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[HPOS] Added HPOS support for Shipping Status and Vendor Subscription.',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.8.1',
+        'released' => '2023-08-21',
+        'changes'  => [
+            'Fix' => [
+                [
+                    'title'       => '[VendorSubscription] Fixed an issue where subscription was getting cancelled automatically.',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.8.0',
+        'released' => '2023-08-18',
+        'changes'  => [
+            'Improvement' => [
+                [
+                    'title'       => 'Added HPOS (High-Performance Order Storage)  support for Dokan Pro.',
+                    'description' => 'The High-Performance Order Storage (HPOS) feature is a solution that provides an easy-to-understand and solid database structure specifically designed for eCommerce needs. It uses the WooCommerce CRUD design to store order data in custom tables optimized for WooCommerce queries with minimal impact on the store’s performance. This feature enables eCommerce stores of all shapes and sizes to scale their business to their maximum potential without expert intervention. It also facilitates implementing read/write locks and prevents race conditions. You can enable High-Performance Order Storage by navigating to WooCommerce > Settings > Advanced > Features and choosing the suitable data storage options for orders.',
+                ],
+                [
+                    'title'       => 'Updated minimum PHP version requirement to 7.3',
+                    'description' => '',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => '[StripeExpress] Resolved an issue where the refund request gets canceled upon the vendor initiating the request.',
+                    'description' => 'Previously, When a vendor initiates a refund request through the Dokan Stripe Express payment method, the refund request is automatically canceled. This issue has been fixed now.',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.7.30',
+        'released' => '2023-07-25',
+        'changes'  => [
+            'Update' => [
+                [
+                    'title'       => '[StoreReview/Auction/RequestForQuotation] Restrictions added for vendors to Quote, Review and Purchase their own products.',
+                    'description' => 'Previously, vendors could purchase, add to quote and post reviews for their own product. Which is not logical and could manipulate the search results of a product in a marketplace. With this update, vendors will not be able to purchase or post reviews for their own product.',
+                ],
+                [
+                    'title'       => '[AdminReport] Updated Status filter to support multiple order status.',
+                    'description' => 'Now, users will be able to select multiple order statuses to filter the report lots and while exporting the report logs. Previously Only one status can be selected for the status filter.',
+                ],
+                [
+                    'title'       => '[AdminReport] Added refunded items log under the admin reports log table.',
+                    'description' => 'Now admin can see the refund amount along with the original amount for Shipping, Shipping Tax, and Product Tax In the Table rows.',
+                ],
+                [
+                    'title'       => '[RequestForQuotation] Enhanced Quote Approval Process: Admin Can Now Approve Quotes and Convert Quote to Orders.',
+                    'description' => 'In previous versions, admin lacked the ability to approve quotes, limiting their involvement to only converting quotes to orders. This created a gap in the quote approval process. However, with the latest update, significant improvements have been implemented to empower the admin with complete control over the entire quote lifecycle.',
+                ],
+                [
+                    'title'       => '[AdminSettings] Added tooltips for Withdraw Disbursement and Disbursement Schedule to guide users. Admin can enable single or both-way disbursement, and vendors can choose the most convenient option.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[AdminSettings] Added toggle switches for API integrations (Facebook, Twitter, Google, etc.) in Seller verification & social API settings, allowing users to enable/disable them individually.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[AdminSettings] Implemented a "Copy to Clipboard" feature for redirect links used in seller verification & social API settings, enabling users to copy links effortlessly.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[AdminSettings] Aligned the visibility behavior of the Active map API Source & input key field with that of live chat settings, active chat provider & input key field visibility.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[AdminSettings] Aligned the visibility behavior of the Active gateway (SMS verification gateway) & input section (Vonage/Twilio) with that of live chat settings, active chat provider & input key field visibility.',
+                    'description' => '',
+                ],
+            ],
+            'Fix'    => [
+                [
+                    'title'       => '[AdminSettings] Moved the tooltip from Store Terms And Condition to Enable Terms And Condition setting, correcting the tooltip placement issue.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Subscription] Subscription Cancellation email message for vendor subscription module has been updated.',
+                    'description' => 'Previously, Vendor Subscription Cancellation email was conveying a different message which was outright confusing. With this update the issue has been fixed.',
+                ],
+                [
+                    'title'       => '[Booking] Fixed an issue where the availability rows under WordPress Dashboard → Products → Add New are broken when the Dokan WooCommerce Booking Integration module is enabled with the latest version of WoCommerce Booking Plugin (v2.0.0).',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.7.29',
+        'released' => '2023-07-20',
+        'changes'  => [
+            'Fix' => [
+                [
+                    'title'       => '[Commission] Fixed an issue where the combine commission wasn\'t working.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[StoreSupport] Fixed an issue where the Store Support button wasn\'t working on the Single Product and Single Order Details page',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Elementor/SocialShare] Fixed an issue where the Store Support and Social Share button wasn\'t working on the Single Store Page template',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[SPMV] Fixed some warnings under vendor dashboard Add/Edit product page while searching for product via SPMV(Single Product Multi Vendor) module.',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.7.28',
+        'released' => '2023-07-14',
+        'changes'  => [
+            'Fix' => [
+                [
+                    'title'       => '[Booking] Fixed a fatal error while creating a bookable product if YITH Brands plugin wasn\'t installed.',
+                    'description' => '',
+                ],
+            ],
+        ],
+    ],
+    [
+        'version'  => 'Version 3.7.27',
+        'released' => '2023-07-12',
+        'changes'  => [
+            'New'         => [
+                [
+                    'title'       => '[DokanShipping] Added a feature to display the remaining amount to Free Shipping (Left to free shipping).',
+                    'description' => '',
+                ],
+            ],
+            'Improvement' => [
+                [
+                    'title'       => 'Replaced Magnific Popup library with iziModal.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[SocialLogin] With this update when a user uses social login from the checkout page, the user is redirected to the checkout page instead of the my-account page.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Auction] Added YITH WooCommerce Brands Add-On support for the Dokan Auction module.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[Booking] Added YITH WooCommerce Brands Add-On support for the Dokan Booking module.',
+                    'description' => '',
+                ],
+            ],
+            'Fix'         => [
+                [
+                    'title'       => '[ProductAdvertising] Fixed a PHP notice for creating product advertisements without any data via REST API',
+                    'description' => 'endpoint: {{SERVER_URL}}/wp-json/dokan/v1/product_adv/create',
+                ],
+                [
+                    'title'       => '[RequestAQuote] Fixed a PHP notice for converting quote request to order without providing status via REST API',
+                    'description' => 'endpoint: {{SERVER_URL}}/wp-json/dokan/v1/dokan-request-quote/convert-to-order/{quote_id}',
+                ],
+                [
+                    'title'       => 'Fixed a PHP notice for providing a non-existing announcement id to get a single announcement via REST API.',
+                    'description' => 'endpoint: {{SERVER_URL}}/wp-json/dokan/v1/announcement/{announcement_id}',
+                ],
+                [
+                    'title'       => '[StoreReview] Fixed a couple of PHP notices for trying to restore a non-deleted store review via REST API',
+                    'description' => 'endpoint: {{SERVER_URL}}/wp-json/dokan/v1/store-reviews/{review_id}/restore',
+                ],
+                [
+                    'title'       => 'Fixed a PHP Fatal error for adding product variation with a non-existing product id via REST API',
+                    'description' => 'endpoint: {{SERVER_URL}}/wp-json/dokan/v1/products/{product_id}/variations',
+                ],
+                [
+                    'title'       => 'Fixed a PHP notice while deleting a product variation via REST API',
+                    'description' => 'endpoint: {{SERVER_URL}}/wp-json/dokan/v1/products/{product_id}/variations/{variation_id}',
+                ],
+                [
+                    'title'       => '[RequestAQuote] While updating a quote rule without a name via REST API, was setting the quote rule name to empty. This issue now has been fixed.',
+                    'description' => 'endpoint: {{SERVER_URL}}/wp-json/dokan/v1/dokan-quote-rule/{rule_id}',
+                ],
+                [
+                    'title'       => 'Fixed a fatal error while getting all order notes for non-existing (deleted) orders.',
+                    'description' => 'endpoint: {{SERVER_URL}}/wp-json/dokan/v1/orders/{order_id}/notes',
+                ],
+                [
+                    'title'       => '[SellerVacation] Fixed a layout-breaking issue under Vendor Dashboard → Store Settings Page if vacation mode message is large text.',
+                    'description' => '',
+                ],
+                [
+                    'title'       => '[VendorSubscription] Fixed an issue where the Subscription menu wasn’t displaying under the vendor dashboard if the vendor’s selling capability was disabled.',
+                    'description' => 'Previously, If the vendor’s selling capability is disabled then the vendor could not see the subscription menu and its information and could not buy a new subscription. With this fix, now the vendor can see the subscription menu and buy them.',
                 ],
             ],
         ],
@@ -1479,7 +2848,7 @@ www.example.com/wp-json/dokan/v1/spmv-product/add-to-cart',
             'New Module'  => [
                 [
                     'title'       => 'Stripe Express',
-                    'description' => 'Enable split payments, multi-seller payments, Apple Pay, Google Pay, iDEAL and other marketplace features available in Stripe Express Kindly refer to the <a href="https://wedevs.com/docs/dokan/modules/stripe-express-integration/">documentation</a> for more information.',
+                    'description' => 'Enable split payments, multi-seller payments, Apple Pay, Google Pay, iDEAL and other marketplace features available in Stripe Express Kindly refer to the <a href="https://dokan.co/docs/wordpress/modules/stripe-express-integration/">documentation</a> for more information.',
                 ],
             ],
             'New'         => [
@@ -1533,7 +2902,7 @@ www.example.com/wp-json/dokan/v1/spmv-product/add-to-cart',
             'New Module'  => [
                 [
                     'title'       => 'Request for Quotation',
-                    'description' => 'Facilitate wholesale orders between merchants and customers with the option for quoted prices. Kindly refer to the <a href="https://wedevs.com/docs/dokan/modules/dokan-request-for-quotation-module/">documentation</a> for more information.',
+                    'description' => 'Facilitate wholesale orders between merchants and customers with the option for quoted prices. Kindly refer to the <a href="https://dokan.co/docs/wordpress/modules/dokan-request-for-quotation-module/">documentation</a> for more information.',
                 ],
             ],
             'Improvement' => [
@@ -1813,7 +3182,7 @@ www.example.com/wp-json/dokan/v1/spmv-product/add-to-cart',
             'New Feature' => [
                 [
                     'title'       => '[SPMV] Added product search feature under Add New Product  page if Single Product Multi Vendor module is enabled.',
-                    'description' => 'Product search in the Add new product window is added when the SPMV module is activated, <a href="https://wedevs.com/docs/dokan/modules/single-product-multiple-vendor/">Documentation</a>. Currently, we are giving product search functionality under Booking and Auction module also. The Booking or Auction Product search results displays Booking or Auction products only.',
+                    'description' => 'Product search in the Add new product window is added when the SPMV module is activated, <a href="https://dokan.co/docs/wordpress/modules/single-product-multiple-vendor/">Documentation</a>. Currently, we are giving product search functionality under Booking and Auction module also. The Booking or Auction Product search results displays Booking or Auction products only.',
                 ],
             ],
             'Improvement' => [
@@ -1901,33 +3270,33 @@ www.example.com/wp-json/dokan/v1/spmv-product/add-to-cart',
             'New Module'  => [
                 [
                     'title'       => 'Razorpay Payment Gateway',
-                    'description' => 'Accept credit card payments and allow your sellers to get automatic split payment in Dokan via Razorpay. Module is available under <strong>Professional+</strong> plans. Please visit <a href="https://wedevs.com/docs/dokan/modules/dokan-razorpay/" target="_blank">documentation</a> to learn more about this module.',
+                    'description' => 'Accept credit card payments and allow your sellers to get automatic split payment in Dokan via Razorpay. Module is available under <strong>Professional+</strong> plans. Please visit <a href="https://dokan.co/docs/wordpress/modules/dokan-razorpay/" target="_blank">documentation</a> to learn more about this module.',
                 ],
                 [
                     'title'       => 'MangoPay Payment Gateway',
-                    'description' => 'Enable split payments, multi-seller payments, and other marketplace features given by MangoPay. Module is available under <strong>Professional+</strong> plans. Please visit <a href="https://wedevs.com/docs/dokan/modules/dokan-mangopay/" target="_blank">documentation</a> to learn more about this module.',
+                    'description' => 'Enable split payments, multi-seller payments, and other marketplace features given by MangoPay. Module is available under <strong>Professional+</strong> plans. Please visit <a href="https://dokan.co/docs/wordpress/modules/dokan-mangopay/" target="_blank">documentation</a> to learn more about this module.',
                 ],
                 [
                     'title'       => 'Min Max Order Quantities ',
-                    'description' => 'Set a minimum or maximum purchase quantity or amount for the products of your marketplace. Module is available under <strong>Professional+</strong> plans. Please visit <a href="https://wedevs.com/docs/dokan/modules/how-to-enable-minimum-maximum-order-amount-for-dokan/" target="_blank">documentation</a> to learn more about this module.',
+                    'description' => 'Set a minimum or maximum purchase quantity or amount for the products of your marketplace. Module is available under <strong>Professional+</strong> plans. Please visit <a href="https://dokan.co/docs/wordpress/modules/how-to-enable-minimum-maximum-order-amount-for-dokan/" target="_blank">documentation</a> to learn more about this module.',
                 ],
                 [
                     'title'       => 'Product Advertising ',
-                    'description' => 'Admin can earn more by allowing vendors to advertise their products and give them the right exposure. Module is available under <strong>Business+</strong> plans. Please visit <a href="https://wedevs.com/docs/dokan/modules/how-to-enable-minimum-maximum-order-amount-for-dokan/" target="_blank">documentation</a> to learn more about this module.',
+                    'description' => 'Admin can earn more by allowing vendors to advertise their products and give them the right exposure. Module is available under <strong>Business+</strong> plans. Please visit <a href="https://dokan.co/docs/wordpress/modules/how-to-enable-minimum-maximum-order-amount-for-dokan/" target="_blank">documentation</a> to learn more about this module.',
                 ],
             ],
             'New Feature' => [
                 [
                     'title'       => '[Store Support] Added Store Support feature for site admin.',
-                    'description' => 'Now Admin will be able to participate in support ticket conversations made via customers right from the admin dashboard. Please visit <a href="https://wedevs.com/docs/dokan/modules/how-to-install-and-use-store-support/support-fot-admin/" target="_blank">documentation</a> to learn more about this feature.',
+                    'description' => 'Now Admin will be able to participate in support ticket conversations made via customers right from the admin dashboard. Please visit <a href="https://dokan.co/docs/wordpress/modules/how-to-install-and-use-store-support/support-fot-admin/" target="_blank">documentation</a> to learn more about this feature.',
                 ],
                 [
                     'title'       => 'Added support for Multiple store open close time for vendor store',
-                    'description' => 'Now seller will be able to add multiple open/close time for their store. Please visit <a href="https://wedevs.com/docs/dokan/vendor-guide/how-to-manage-opening-closing-hours-of-vendor-store/" target="_blank">documentation</a> to learn more about this feature.',
+                    'description' => 'Now seller will be able to add multiple open/close time for their store. Please visit <a href="https://dokan.co/docs/wordpress/vendor-guide/how-to-manage-opening-closing-hours-of-vendor-store/" target="_blank">documentation</a> to learn more about this feature.',
                 ],
                 [
                     'title'       => 'Automatic withdrawal disbursement',
-                    'description' => 'Now seller will be able to setup schedule to withdraw their earnings. Please visit <a href="https://wedevs.com/docs/dokan/withdraw/automatic-withdraw-disbursement/" target="_blank">documentation</a> to learn more about this feature.',
+                    'description' => 'Now seller will be able to setup schedule to withdraw their earnings. Please visit <a href="https://dokan.co/docs/wordpress/withdraw/automatic-withdraw-disbursement/" target="_blank">documentation</a> to learn more about this feature.',
                 ],
                 [
                     'title'       => 'Added custom withdraw method support for admin',
@@ -2563,7 +3932,7 @@ www.example.com/wp-json/dokan/v1/spmv-product/add-to-cart',
                 ],
                 [
                     'title'       => 'Added Apple Sign in Feature Under Dokan Social Login',
-                    'description' => 'Added Apple Sign in feature under Dokan Social Login ( https://wedevs.com/docs/dokan/settings/dokan-social-login/configuring-apple/ )',
+                    'description' => 'Added Apple Sign in feature under Dokan Social Login ( https://dokan.co/docs/wordpress/settings/dokan-social-login/configuring-apple/ )',
                 ],
                 [
                     'title'       => 'Added Refund Request Canceled Notification Email',
@@ -2851,7 +4220,7 @@ www.example.com/wp-json/dokan/v1/spmv-product/add-to-cart',
             'New Module' => [
                 [
                     'title'       => 'Introducing a new Payment Gateway Named Dokan PayPal Marketplace',
-                    'description' => 'Added a new Payment Gateway named <strong>Dokan PayPal Marketplace</strong>. This module will enable PayPal Commerce Platform (PCP) features including split & Multi-seller payments, multiple disbursement method and <a href="https://wedevs.com/dokan/modules/dokan-paypal-marketplace">more</a>. This new module will be available only on Dokan Pro <strong>Business</strong> and <strong>Enterprise</strong> Plans due to a API restriction from PayPal. We will include this module with all Dokan Pro plans in near future.',
+                    'description' => 'Added a new Payment Gateway named <strong>Dokan PayPal Marketplace</strong>. This module will enable PayPal Commerce Platform (PCP) features including split & Multi-seller payments, multiple disbursement method and <a href="https://dokan.co/wordpress/modules/dokan-paypal-marketplace">more</a>. This new module will be available only on Dokan Pro <strong>Business</strong> and <strong>Enterprise</strong> Plans due to a API restriction from PayPal. We will include this module with all Dokan Pro plans in near future.',
                 ],
                 [
                     'title'       => 'Introducing a new module named Delivery Time',

@@ -49,11 +49,20 @@ class Dashboard extends DokanDashboard {
      * @return void
      */
     public function get_review_widget() {
+        if ( ! apply_filters( 'dokan_dashboard_widget_applicable', true, 'reviews' ) ) {
+            return;
+        }
+
         if ( ! current_user_can( 'dokan_view_overview_menu' ) ) {
             return;
         }
 
         if ( ! current_user_can( 'dokan_view_review_reports' ) ) {
+            return;
+        }
+
+        // Check if product review is disabled from WooCommerce's setting.
+        if ( 'yes' !== get_option( 'woocommerce_enable_reviews' ) ) {
             return;
         }
 
@@ -72,6 +81,10 @@ class Dashboard extends DokanDashboard {
      * @return void
      */
     public function get_announcement_widget() {
+        if ( ! apply_filters( 'dokan_dashboard_widget_applicable', true, 'announcement' ) ) {
+            return;
+        }
+
         if ( ! current_user_can( 'dokan_view_overview_menu' ) ) {
             return;
         }
@@ -80,37 +93,17 @@ class Dashboard extends DokanDashboard {
             return;
         }
 
-        $template_notice = dokan_pro()->notice;
-
-        $args = array(
-            'post_type'      => 'dokan_announcement',
-            'post_status'    => 'publish',
-            'posts_per_page' => apply_filters( 'dokan_dashboard_widget_announcement_list_number', 3 ),
-            'orderby'        => 'post_date',
-            'order'          => 'DESC',
-        );
-
-        $template_notice->add_query_filter();
-
-        $seller_id   = dokan_get_current_user_id();
-        $cache_group = "seller_announcement_{$seller_id}";
-        $cache_key   = 'get_announcement_' . md5( wp_json_encode( array_merge( $args, [ 'author' => $seller_id ] ) ) );
-        $posts_data  = Cache::get( $cache_key, $cache_group );
-
-        if ( false === $posts_data ) {
-            $posts_data = new \WP_Query( $args );
-
-            Cache::set( $cache_key, $posts_data, $cache_group );
-        }
-
-        $seller_posts = $posts_data->posts;
-
-        $template_notice->remove_query_filter();
+        $announcement = dokan_pro()->announcement->manager;
+        $args         = [
+            'per_page'  => apply_filters( 'dokan_dashboard_widget_announcement_list_number', 3 ),
+            'vendor_id' => dokan_get_current_user_id(),
+        ];
+        $notices      = $announcement->all( $args );
 
         dokan_get_template_part(
             'dashboard/announcement-widget', '', array(
 				'pro'              => true,
-				'notices'          => $seller_posts,
+				'notices'          => $notices,
 				'announcement_url' => dokan_get_navigation_url( 'announcement' ),
 			)
         );

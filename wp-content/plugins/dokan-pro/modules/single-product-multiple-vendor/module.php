@@ -6,7 +6,6 @@ use WeDevs\DokanPro\Modules\SPMV\Search\Assets;
 use WeDevs\DokanPro\Modules\SPMV\Search\Dashboard;
 
 class Module {
-
     /**
      * Load automatically when class initiate
      *
@@ -73,7 +72,7 @@ class Module {
 
         new \Dokan_SPMV_Products();
         new Assets();
-        new Dashboard();
+        Dashboard::instance();
 
         $enable_option = dokan_get_option( 'enable_pricing', 'dokan_spmv', 'off' );
         if ( 'off' === $enable_option ) {

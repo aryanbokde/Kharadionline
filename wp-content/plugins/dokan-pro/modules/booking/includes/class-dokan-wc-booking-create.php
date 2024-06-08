@@ -1,4 +1,5 @@
 <?php
+use Automattic\WooCommerce\Utilities\OrderUtil;
 /**
  * Create new bookings page.
  *
@@ -63,7 +64,7 @@ class Dokan_WC_Bookings_Create {
 
                     $booking_order = $order_id;
 
-                    if ( ! $booking_order || get_post_type( $booking_order ) !== 'shop_order' ) {
+                    if ( ! $booking_order || dokan_pro_is_order( $booking_order ) ) {
                         throw new Exception( __( 'Invalid order ID provided', 'dokan' ) );
                     }
                 }
@@ -129,7 +130,7 @@ class Dokan_WC_Bookings_Create {
                 } elseif ( $booking_order > 0 ) {
                     $order_id = absint( $booking_order );
 
-                    if ( ! $order_id || get_post_type( $order_id ) !== 'shop_order' ) {
+                    if ( ! $order_id || dokan_pro_is_order( $order_id ) ) {
                         throw new Exception( __( 'Invalid order ID provided', 'dokan' ) );
                     }
 
@@ -216,7 +217,7 @@ class Dokan_WC_Bookings_Create {
                 if ( $order ) {
                     // Assigning the vendor to the order
                     $order->update_meta_data( '_dokan_vendor_id', $vendor_id );
-                    $order->save_meta_data();
+                    $order->save();
 
                     do_action( 'dokan_checkout_update_order_meta', $order_id, $vendor_id );
                 }

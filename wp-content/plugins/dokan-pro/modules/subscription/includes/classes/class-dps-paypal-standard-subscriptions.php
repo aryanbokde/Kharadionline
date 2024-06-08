@@ -171,7 +171,7 @@ class DPS_PayPal_Standard_Subscriptions {
         $custom      = (array) json_decode( $paypal_args['custom'] );
         $order_id    = $custom['order_id'];
         $order_key   = $custom['order_key'];
-        $order       = new WC_Order( $order_id );
+        $order       = wc_get_order( $order_id );
 
         // Only one subscription allowed in the cart when PayPal Standard is active
         $subs_product       = $order->get_items();
@@ -333,7 +333,7 @@ class DPS_PayPal_Standard_Subscriptions {
 
         $transaction_details['txn_type'] = strtolower( $transaction_details['txn_type'] );
 
-        $order              = new WC_Order( $order_id );
+        $order              = wc_get_order( $order_id );
         $subs_product       = $order->get_items();
         $product            = reset( $subs_product );
 
@@ -347,21 +347,21 @@ class DPS_PayPal_Standard_Subscriptions {
         $no_of_product_pack  = $vendor_subscription->get_number_of_products();
         $subscription_id     = $transaction_details['subscr_id'];
 
-        if ( dokan_get_prop( $order, 'order_key' ) !== $order_key ) {
+        if ( $order->get_order_key() !== $order_key ) {
             self::log( 'Subscription IPN Error: Order Key does not match invoice.' );
             return false;
         }
 
         if ( isset( $transaction_details['subscr_id'] ) ) {
-            update_post_meta( $order_id, '_paypal_subscriber_ID', $transaction_details['subscr_id'] );
+            $order->update_meta_data( '_paypal_subscriber_ID', $transaction_details['subscr_id'] );
         }
 
         switch ( $transaction_details['txn_type'] ) {
             case 'subscr_signup':
                 // Store PayPal Details
-                update_post_meta( $order_id, 'Payer PayPal address', $transaction_details['payer_email'] );
-                update_post_meta( $order_id, 'Payer PayPal first name', $transaction_details['first_name'] );
-                update_post_meta( $order_id, 'Payer PayPal last name', $transaction_details['last_name'] );
+                $order->update_meta_data( 'Payer PayPal address', $transaction_details['payer_email'] );
+                $order->update_meta_data( 'Payer PayPal first name', $transaction_details['first_name'] );
+                $order->update_meta_data( 'Payer PayPal last name', $transaction_details['last_name'] );
 
                 $vendor_subscription->activate_subscription( $order );
 
@@ -387,6 +387,7 @@ class DPS_PayPal_Standard_Subscriptions {
                     // translators: 1) PayPal Subscription ID
                     $order->add_order_note( sprintf( __( 'IPN subscription activated. Subscription ID: %s', 'dokan' ), $subscription_id ) );
                 }
+                $order->save();
 
                 break;
 
@@ -455,6 +456,7 @@ class DPS_PayPal_Standard_Subscriptions {
 
                     // Record payment capture id
                     $order->update_meta_data( '_dokan_paypal_payment_capture_id', $transaction_details['txn_id'] );
+                    $order->save();
 
                     // Delete trail metas
                     delete_user_meta( $customer_id, '_dokan_subscription_is_on_trial' );
@@ -553,8 +555,8 @@ class DPS_PayPal_Standard_Subscriptions {
      * When a store manager or user cancels a subscription in the store, also cancel the subscription with PayPal.
      */
     public static function cancel_subscription_with_paypal( $order_id, $user_id ) {
-        $order        = new WC_Order( $order_id );
-        $profile_id   = get_post_meta( $order->get_id(), '_paypal_subscriber_ID', true );
+        $order        = wc_get_order( $order_id );
+        $profile_id   = $order->get_meta( '_paypal_subscriber_ID', true );
 
         // Make sure a subscriptions status is active with PayPal
         $response = self::change_subscription_status( $profile_id, 'Cancel' );

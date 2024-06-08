@@ -37,17 +37,13 @@ get_header( 'shop' );
         $comments               = $dokan_template_reviews->comment_query( $id, $post_type, $limit, $status );
         ?>
 
+        <div class="dokan-store-review-iziModal"></div>
         <div id="reviews">
             <div id="comments">
-
-              <?php do_action( 'dokan_review_tab_before_comments' ); ?>
-
-                <h2 class="headline"><?php _e( 'Vendor Review', 'dokan' ); ?></h2>
-
+                <?php do_action( 'dokan_review_tab_before_comments' ); ?>
                 <ol class="commentlist">
-                    <?php echo $dokan_template_reviews->render_store_tab_comment_list( $comments , $store_user->ID); ?>
+                    <?php echo $dokan_template_reviews->render_store_tab_comment_list( $comments, $store_user->ID ); ?>
                 </ol>
-
             </div>
         </div>
 

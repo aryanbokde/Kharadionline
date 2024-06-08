@@ -65,6 +65,8 @@ class Dokan_RMA_Conversation {
             return new WP_Error( 'not-inserted', __( 'Conversation to saved', 'dokan' ) );
         }
 
+        do_action( 'dokan_pro_rma_conversion_created', $conversation_id, $data );
+
         return $conversation_id;
     }
 

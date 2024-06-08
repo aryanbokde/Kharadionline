@@ -135,16 +135,20 @@ trait DokanSubscriptions {
 
         // If order is set, get the order total, else look for the cart total
         if ( $this->order instanceof \WC_Order ) {
-            $total    = $this->order->get_total();
-            $discount = $this->order->get_discount_total();
-            $currency = $this->order->get_currency();
+            $total          = $this->order->get_total();
+            $discount       = $this->order->get_discount_total();
+            $discount_tax   = $this->order->get_discount_tax();
+            $total_discount = (float) wc_format_decimal( $discount, 2 ) + (float) wc_format_decimal( $discount_tax, 2 );
+            $currency       = $this->order->get_currency();
 
             $subscription_data['metadata']['order_id'] = $this->order->get_id();
         } else {
-            $cart     = WC()->cart;
-            $total    = ! empty( $cart ) ? $cart->get_total( '' ) : 0;
-            $discount = ! empty( $cart ) ? $cart->get_discount_total() : 0;
-            $currency = get_woocommerce_currency();
+            $cart           = WC()->cart;
+            $total          = ! empty( $cart ) ? $cart->get_total( '' ) : 0;
+            $discount       = ! empty( $cart ) ? $cart->get_discount_total() : 0;
+            $discount_tax   = ! empty( $cart ) ? $cart->get_discount_tax() : 0;
+            $total_discount = (float) wc_format_decimal( $discount, 2 ) + (float) wc_format_decimal( $discount_tax, 2 );
+            $currency       = get_woocommerce_currency();
         }
 
         $subscription_data['metadata']['product_id'] = $this->product_id;
@@ -171,12 +175,12 @@ trait DokanSubscriptions {
             $this->stripe_product_id = $stripe_product->id;
         }
 
-        if ( ! empty( $discount ) ) {
-            $coupon = Subscription::process_discount( [], $discount );
+        if ( ! empty( $total_discount ) ) {
+            $coupon = Subscription::process_discount( [], $total_discount  );
 
             if ( $coupon && ! is_wp_error( $coupon ) ) {
                 $subscription_data['coupon'] = $coupon;
-                $total = $total + $discount;
+                $total = $total + $total_discount;
             }
         }
 

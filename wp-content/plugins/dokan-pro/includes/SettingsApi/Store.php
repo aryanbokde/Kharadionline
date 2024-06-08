@@ -2,6 +2,8 @@
 
 namespace WeDevs\DokanPro\SettingsApi;
 
+use WeDevs\DokanPro\VendorDiscount\OrderDiscount;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -122,7 +124,7 @@ class Store {
             'info'      => [
                 [
                     'text' => __( 'Docs', 'dokan' ),
-                    'url'  => 'https://wedevs.com/docs/dokan/modules/how-to-install-and-use-store-support/',
+                    'url'  => 'https://dokan.co/docs/wordpress/modules/how-to-install-and-use-store-support/',
                     'icon' => 'dokan-icon-doc',
                 ],
             ],
@@ -150,8 +152,8 @@ class Store {
      * @return array
      */
     public function add_storewide_discount_card_to_vendor_settings_api( array $advance_tab ): array {
-        $is_enable_op_discount = dokan_get_option( 'discount_edit', 'dokan_selling', [] );
-        if ( empty( array_filter( $is_enable_op_discount ) ) ) {
+        // return from here if admin didn't enable order discount
+        if ( ! dokan_pro()->vendor_discount->admin_settings->is_order_discount_enabled() ) {
             return $advance_tab;
         }
 
@@ -163,7 +165,7 @@ class Store {
             'info'      => [
                 [
                     'text' => __( 'Docs', 'dokan' ),
-                    'url'  => 'https://wedevs.com/docs/dokan/tutorials/how-to-enable-store-wide-bulk-discount/',
+                    'url'  => 'https://dokan.co/docs/wordpress/tutorials/how-to-enable-store-wide-bulk-discount/',
                     'icon' => 'dokan-icon-doc',
                 ],
             ],
@@ -174,7 +176,7 @@ class Store {
             'editable'  => false,
         ];
         $storewide_discount_card[] = [
-            'id'        => 'show_min_order_discount',
+            'id'        => OrderDiscount::SHOW_MIN_ORDER_DISCOUNT,
             'title'     => __( 'Discount', 'dokan' ),
             'desc'      => __( 'Enable storewide discount', 'dokan' ),
             'info'      => [],
@@ -190,7 +192,7 @@ class Store {
             'card'      => 'storewide_discount_card',
         ];
         $storewide_discount_card[] = [
-            'id'        => 'setting_minimum_order_amount',
+            'id'        => OrderDiscount::SETTING_MINIMUM_ORDER_AMOUNT,
             'title'     => __( 'Minimum Order Amount', 'dokan' ),
             'desc'      => __( 'Minimum Order Amount to apply the discount.', 'dokan' ),
             'info'      => [],
@@ -201,7 +203,7 @@ class Store {
             'card'      => 'storewide_discount_card',
         ];
         $storewide_discount_card[] = [
-            'id'        => 'setting_order_percentage',
+            'id'        => OrderDiscount::SETTING_ORDER_PERCENTAGE,
             'title'     => __( 'Discount Percentage', 'dokan' ),
             'desc'      => '',
             'info'      => [],

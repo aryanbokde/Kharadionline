@@ -18,8 +18,8 @@ class RefundRequest extends WC_Email {
         $this->template_base    = DOKAN_PRO_DIR . '/templates/';
 
         // Triggers for this email
-        add_action( 'dokan_rma_requested', array( $this, 'trigger' ), 30 );
-        add_action( 'dokan_refund_requested', array( $this, 'trigger' ), 30 );
+        add_action( 'dokan_rma_requested_amount', array( $this, 'trigger' ), 30, 2 );
+        add_action( 'dokan_refund_requested_amount', array( $this, 'trigger' ), 30, 2 );
 
         // Call parent constructor
         parent::__construct();
@@ -47,28 +47,48 @@ class RefundRequest extends WC_Email {
     /**
      * Trigger the sending of this email.
      *
-     * @param int $product_id The product ID.
-     * @param array $postdata.
+     * @param int   $order_id      Order id
+     * @param float $refund_amount Refund amount
+     *
+     * @return void
      */
-    public function trigger( $order_id ) {
+    public function trigger( $order_id, $refund_amount ) {
         if ( ! $this->is_enabled() || ! $this->get_recipient() ) {
             return;
         }
 
-        $order                     = wc_get_order( $order_id );
-        $seller                    = get_user_by( 'id', dokan_get_current_user_id() );
+        $order = wc_get_order( $order_id );
+
+        if ( ! $order ) {
+            return;
+        }
+
+        // get seller id from order
+        $seller_id = dokan_get_seller_id_by_order( $order_id );
+        if ( ! $seller_id ) {
+            return;
+        }
+
+        // get seller object
+        $seller = dokan()->vendor->get( $seller_id );
+        if ( ! is_a( $seller, '\WeDevs\Dokan\Vendor\Vendor' ) ) {
+            return;
+        }
+
         $this->object              = $order;
         $this->find['seller_name'] = '{seller_name}';
         $this->find['order_id']    = '{order_id}';
         $this->find['refund_url']  = '{refund_url}';
         $this->find['site_name']   = '{site_name}';
         $this->find['site_url']    = '{site_url}';
+        $this->find['amount']      = '{amount}';
 
-        $this->replace['seller_name'] = $seller->display_name;
+        $this->replace['seller_name'] = $seller->get_shop_name();
         $this->replace['order_id']    = $order_id;
         $this->replace['refund_url']  = admin_url( 'admin.php?page=dokan#/refund?status=pending' );
         $this->replace['site_name']   = $this->get_from_name();
         $this->replace['site_url']    = site_url();
+        $this->replace['amount']      = dokan()->email->currency_symbol( wc_format_decimal( $refund_amount, '' ) );
 
         $this->setup_locale();
         $this->send( $this->get_recipient(), $this->get_subject(), $this->get_content(), $this->get_headers(), $this->get_attachments() );

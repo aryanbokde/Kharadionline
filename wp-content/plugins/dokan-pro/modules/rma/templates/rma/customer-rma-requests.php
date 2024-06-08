@@ -36,8 +36,7 @@
                     <tr class="order">
                         <td class="order-number">
                             <?php
-
-                                echo sprintf( '<a href="%1$s">#%2$s</a> on <a href="%3$s">%4$s #%5$s</a>', esc_url( wc_get_account_endpoint_url( 'view-rma-requests' ) ) . $request['id'], $request['id'], $order->get_view_order_url(), __( 'Order', 'dokan' ), $order->get_order_number() );
+                                echo sprintf( '<a href="%1$s">#%2$s</a> %3$s <a href="%4$s">%5$s #%6$s</a>', esc_url( wc_get_account_endpoint_url( 'view-rma-requests' ) ) . $request['id'], $request['id'], __( 'on', 'dokan' ), $order->get_view_order_url(), __( 'Order', 'dokan' ), $order->get_order_number() );
                             ?>
                         </td>
                         <td class="rma-vendor">

@@ -115,6 +115,6 @@ class PayOutRefundSucceeded extends WebhookEvent {
                 ),
             )
         );
-        $order->save_meta_data();
+        $order->save();
     }
 }

@@ -27,6 +27,7 @@ class Dokan_SPMV_Products {
         add_action( 'wp_trash_post', array( $this, 'trash_product' ) );
         add_action( 'untrashed_post', array( $this, 'untrash_product' ) );
         add_action( 'transition_post_status',  array( $this, 'on_product_status_changes' ), 10, 3 );
+        add_action( 'dokan_new_product_added',  array( $this, 'after_dokan_product_updated' ), 10, 3 );
         add_action( 'dokan_product_updated',  array( $this, 'after_dokan_product_updated' ), 10, 3 );
 
         if ( 'below_tabs' == $display_position ) {

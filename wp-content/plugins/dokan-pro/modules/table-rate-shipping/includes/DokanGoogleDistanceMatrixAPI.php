@@ -71,6 +71,7 @@ class DokanGoogleDistanceMatrixAPI {
      * @param string $params Request params.
      *
      * @return WP_Error|array The response from remote get.
+     * @throws Exception If request not successful.
      */
     private function perform_request( $params ) {
         $args = array(
@@ -156,10 +157,18 @@ class DokanGoogleDistanceMatrixAPI {
              *
              * @since 3.4.2
              */
-            $params   = apply_filters( 'dokan_google_distance_matrix_request_params', $params );
-            $params   = http_build_query( $params );
-            $response = $this->perform_request( $params );
-            $distance = json_decode( $response['body'] );
+            $params = apply_filters( 'dokan_google_distance_matrix_request_params', $params );
+            $params = http_build_query( $params );
+            try {
+                $response = $this->perform_request( $params );
+                $distance = json_decode( $response['body'] );
+            } catch ( Exception $e ) {
+                $distance = new \stdClass();
+                if ( $this->debug ) {
+                    wc_add_notice( 'Error in performing request.', 'notice' );
+                    wc_add_notice( 'Error Response: <br/><pre>' . print_r( $e, true ) . '</pre>', 'notice' );
+                }
+            }
 
             /**
              * Filter cache expiration of calculated distance.

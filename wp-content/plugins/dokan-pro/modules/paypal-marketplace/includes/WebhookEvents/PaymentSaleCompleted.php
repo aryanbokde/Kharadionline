@@ -166,6 +166,7 @@ class PaymentSaleCompleted extends WebhookEventHandler {
                 sprintf( __( 'PayPal processing fee is %s', 'dokan' ), $paypal_processing_fee )
             );
 
+            $subscription->set_payment_method( Helper::get_gateway_id() );
             $subscription->update_meta_data( '_dokan_paypal_payment_capture_id', $paypal_transaction_id );
             $subscription->update_meta_data( '_dokan_paypal_payment_processing_fee', $paypal_processing_fee );
             $subscription->update_meta_data( '_dokan_paypal_payment_processing_currency', $paypal_processing_fee_currency );
@@ -174,7 +175,7 @@ class PaymentSaleCompleted extends WebhookEventHandler {
             $subscription->update_meta_data( 'shipping_fee_recipient', 'admin' );
             $subscription->update_meta_data( 'tax_fee_recipient', 'admin' );
             $subscription->update_meta_data( '_dokan_vendor_subscription_order', 'yes' );
-            $subscription->save_meta_data();
+            $subscription->save();
 
             $test_mode = Helper::is_test_mode() ? __( 'PayPal Sandbox Transaction ID', 'dokan' ) : __( 'PayPal Transaction ID', 'dokan' );
             $subscription->add_order_note(

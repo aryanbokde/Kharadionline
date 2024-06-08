@@ -10,15 +10,15 @@ class RefundVendor extends WC_Email {
      * Constructor.
      */
     public function __construct() {
-        $this->id               = 'dokan_vendor_refund';
-        $this->title            = __( 'Dokan Refund Processed', 'dokan' );
-        $this->description      = __( 'These emails are sent to vendor when a vendor refund request is processed', 'dokan' );
-        $this->template_html    = 'emails/refund-seller-mail.php';
-        $this->template_plain   = 'emails/plain/refund-seller-mail.php';
-        $this->template_base    = DOKAN_PRO_DIR . '/templates/';
+        $this->id             = 'dokan_vendor_refund';
+        $this->title          = __( 'Dokan Refund Processed', 'dokan' );
+        $this->description    = __( 'These emails are sent to vendor when a vendor refund request is processed', 'dokan' );
+        $this->template_html  = 'emails/refund-seller-mail.php';
+        $this->template_plain = 'emails/plain/refund-seller-mail.php';
+        $this->template_base  = DOKAN_PRO_DIR . '/templates/';
 
         // Triggers for this email
-        add_action( 'dokan_refund_processed_notification', array( $this, 'trigger' ), 30, 5 );
+        add_action( 'dokan_refund_processed_notification', [ $this, 'trigger' ], 30, 5 );
 
         // Call parent constructor
         parent::__construct();
@@ -50,8 +50,11 @@ class RefundVendor extends WC_Email {
     /**
      * Trigger the sending of this email.
      *
-     * @param int $product_id The product ID.
-     * @param array $postdata.
+     * @param $seller_mail
+     * @param $order_id
+     * @param $status
+     * @param $refund_amount
+     * @param $refund_reason
      */
     public function trigger( $seller_mail, $order_id, $status, $refund_amount, $refund_reason ) {
         if ( ! $this->is_enabled() ) {
@@ -83,7 +86,7 @@ class RefundVendor extends WC_Email {
         $this->restore_locale();
     }
 
-        /**
+    /**
      * Get content html.
      *
      * @access public
@@ -91,14 +94,17 @@ class RefundVendor extends WC_Email {
      */
     public function get_content_html() {
         ob_start();
-            wc_get_template( $this->template_html, array(
-                'seller'        => $this->object,
-                'email_heading' => $this->get_heading(),
-                'sent_to_admin' => true,
-                'plain_text'    => false,
-                'email'         => $this,
-                'data'          => $this->replace
-            ), 'dokan/', $this->template_base );
+        wc_get_template(
+            $this->template_html, [
+				'seller'        => $this->object,
+				'email_heading' => $this->get_heading(),
+				'sent_to_admin' => true,
+				'plain_text'    => false,
+				'email'         => $this,
+				'data'          => $this->replace,
+			], 'dokan/', $this->template_base
+        );
+
         return ob_get_clean();
     }
 
@@ -110,14 +116,17 @@ class RefundVendor extends WC_Email {
      */
     public function get_content_plain() {
         ob_start();
-            wc_get_template( $this->template_html, array(
-                'seller'        => $this->object,
-                'email_heading' => $this->get_heading(),
-                'sent_to_admin' => true,
-                'plain_text'    => true,
-                'email'         => $this,
-                'data'          => $this->replace
-            ), 'dokan/', $this->template_base );
+        wc_get_template(
+            $this->template_html, [
+				'seller'        => $this->object,
+				'email_heading' => $this->get_heading(),
+				'sent_to_admin' => true,
+				'plain_text'    => true,
+				'email'         => $this,
+				'data'          => $this->replace,
+			], 'dokan/', $this->template_base
+        );
+
         return ob_get_clean();
     }
 
@@ -125,40 +134,40 @@ class RefundVendor extends WC_Email {
      * Initialise settings form fields.
      */
     public function init_form_fields() {
-        $this->form_fields = array(
-            'enabled' => array(
-                'title'         => __( 'Enable/Disable', 'dokan' ),
-                'type'          => 'checkbox',
-                'label'         => __( 'Enable this email notification', 'dokan' ),
-                'default'       => 'yes',
-            ),
-            'subject' => array(
-                'title'         => __( 'Subject', 'dokan' ),
-                'type'          => 'text',
-                'desc_tip'      => true,
+        $this->form_fields = [
+            'enabled'    => [
+                'title'   => __( 'Enable/Disable', 'dokan' ),
+                'type'    => 'checkbox',
+                'label'   => __( 'Enable this email notification', 'dokan' ),
+                'default' => 'yes',
+            ],
+            'subject'    => [
+                'title'       => __( 'Subject', 'dokan' ),
+                'type'        => 'text',
+                'desc_tip'    => true,
                 /* translators: %s: list of placeholders */
-                'description'   => sprintf( __( 'Available placeholders: %s', 'dokan' ), '<code>{site_name},{amount},{seller_name},{order_id},{status}</code>' ),
-                'placeholder'   => $this->get_default_subject(),
-                'default'       => '',
-            ),
-            'heading' => array(
-                'title'         => __( 'Email heading', 'dokan' ),
-                'type'          => 'text',
-                'desc_tip'      => true,
+                'description' => sprintf( __( 'Available placeholders: %s', 'dokan' ), '<code>{site_name},{amount},{seller_name},{order_id},{status}</code>' ),
+                'placeholder' => $this->get_default_subject(),
+                'default'     => '',
+            ],
+            'heading'    => [
+                'title'       => __( 'Email heading', 'dokan' ),
+                'type'        => 'text',
+                'desc_tip'    => true,
                 /* translators: %s: list of placeholders */
-                'description'   => sprintf( __( 'Available placeholders: %s', 'dokan' ), '<code>{site_name},{amount},{seller_name},{order_id},{status}</code>' ),
-                'placeholder'   => $this->get_default_heading(),
-                'default'       => '',
-            ),
-            'email_type' => array(
-                'title'         => __( 'Email type', 'dokan' ),
-                'type'          => 'select',
-                'description'   => __( 'Choose which format of email to send.', 'dokan' ),
-                'default'       => 'html',
-                'class'         => 'email_type wc-enhanced-select',
-                'options'       => $this->get_email_type_options(),
-                'desc_tip'      => true,
-            ),
-        );
+                'description' => sprintf( __( 'Available placeholders: %s', 'dokan' ), '<code>{site_name},{amount},{seller_name},{order_id},{status}</code>' ),
+                'placeholder' => $this->get_default_heading(),
+                'default'     => '',
+            ],
+            'email_type' => [
+                'title'       => __( 'Email type', 'dokan' ),
+                'type'        => 'select',
+                'description' => __( 'Choose which format of email to send.', 'dokan' ),
+                'default'     => 'html',
+                'class'       => 'email_type wc-enhanced-select',
+                'options'     => $this->get_email_type_options(),
+                'desc_tip'    => true,
+            ],
+        ];
     }
 }

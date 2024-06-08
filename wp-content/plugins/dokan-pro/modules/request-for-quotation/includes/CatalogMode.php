@@ -10,6 +10,7 @@ class CatalogMode {
      * @since 3.7.4
      */
     protected $catalog_child_products = [];
+    public $quote_rules;
 
     /**
      * Class Constructor
@@ -176,15 +177,21 @@ class CatalogMode {
      *
      * @since 3.7.4
      *
-     * @param bool $return
+     * @param bool $apply
      * @param \WC_Product $product
      *
      * @return bool
      */
-    public function apply_quote_rules( $return, $product ) {
+    public function apply_quote_rules( $apply, $product ) {
         // check if enabled from settings
         $vendor_id = dokan_get_vendor_by_product( $product, true );
-        return ! Helper::is_quote_support_disabled_for_catalog_mode( $vendor_id );
+        if (
+            CatalogModeHelper::is_enabled_by_admin()
+            && CatalogModeHelper::is_enabled_by_vendor( $vendor_id )
+        ) {
+            return ! Helper::is_quote_support_disabled_for_catalog_mode( $vendor_id );
+        }
+        return $apply;
     }
 
     /**

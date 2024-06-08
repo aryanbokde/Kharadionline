@@ -29,7 +29,7 @@ class Hooks {
      */
     public function __construct() {
         // For vendor
-        add_filter( 'dokan_get_dashboard_nav', [ $this, 'add_menu' ] );
+        add_filter( 'dokan_get_dashboard_nav', [ $this, 'add_menu' ], 10 );
         add_filter( 'dokan_query_var_filter', [ $this, 'badge_endpoints' ] );
         add_action( 'dokan_load_custom_template', [ $this, 'load_badge_template' ] );
         add_action( 'dokan_seller_badge_content', [ $this, 'load_vue_root_template' ] );
@@ -44,17 +44,17 @@ class Hooks {
      * @return array
      */
     public function add_menu( $menu_items ) {
-        if ( ! dokan_is_seller_enabled( dokan_get_current_user_id() ) ) {
-            return $menu_items;
-        }
-
-        $menu_items[ $this->vendor_endpoint ] = [
+        $menu = [
             'title'      => __( 'Badge', 'dokan' ),
             'icon'       => '<i class="fas fa-award"></i>',
             'url'        => dokan_get_navigation_url( $this->vendor_endpoint ),
-            'pos'        => 70,
+            'pos'        => 73,
             'permission' => 'dokan_view_badge_menu',
         ];
+
+        if ( dokan_is_seller_enabled( dokan_get_current_user_id() ) ) {
+            $menu_items[ $this->vendor_endpoint ] = $menu;
+        }
 
         return $menu_items;
     }

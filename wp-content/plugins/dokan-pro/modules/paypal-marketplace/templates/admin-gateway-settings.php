@@ -6,6 +6,9 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
 }
 
+// Collect sandbox endpoint if user on test mode.
+$paypal_env = Helper::is_test_mode() ? '/sandbox' : '';
+
 if ( method_exists( 'Dokan_WPML', 'remove_url_translation' ) ) {
     \Dokan_WPML::remove_url_translation();
 }
@@ -171,7 +174,7 @@ return apply_filters(
             'description' => wp_kses(
                 sprintf(
                 // translators: 1) UCC supported country lists
-                    __( 'Set up advanced payment options on your checkout page so your buyers can pay with debit and credit cards, PayPal, and alternative payment methods. <strong>Supported Countries:</strong> %1$s', 'dokan' ),
+                    __( 'Set up advanced payment options on your checkout page so your buyers can pay with debit and credit cards, PayPal, and alternative payment methods. <strong>Supported Countries:</strong> %1$s. Please note that you need to obtain PayPal product permission as <strong>PPCP</strong> to use this feature. Also, this feature is not compatible with the <strong>EXPRESS_CHECKOUT</strong> product type.', 'dokan' ),
                     implode( ', ', Helper::get_advanced_credit_card_debit_card_supported_countries() )
                 ),
                 [
@@ -222,17 +225,22 @@ return apply_filters(
             'type'        => 'title',
             'description' => wp_kses(
                 sprintf(
-                // translators: 1) site url 2) paypal dev doc url
-                    __( 'Webhook URL will be set <strong>automatically</strong> in your application settings with required events after you provide <strong>correct API information</strong>. You don\'t have to setup webhook url manually. Only make sure webhook url is available to <code>%1$s</code> in your PayPal <a href="%2$s" target="_blank">application settings</a>.', 'dokan' ),
-                    $redirect_url, 'https://developer.paypal.com/developer/applications/'
+                    // translators: 1) API URL 2) PayPal developer dashboard URL
+                    __( 'Webhook URL will be set <strong>automatically</strong> in your application settings with required events after you provide <strong>correct API information</strong>. You don\'t have to setup webhook url manually. Only make sure webhook url is available to <code>%1$s</code><span class="dokan-copy-to-clipboard" data-copy="%1$s"></span> in your PayPal <a href="%2$s" target="_blank">application settings</a>.', 'dokan' ),
+                    $redirect_url,
+                    "https://developer.paypal.com/dashboard/applications{$paypal_env}"
                 ),
                 [
-                    'a'         => [
+                    'a'      => [
                         'href'   => true,
                         'target' => true,
                     ],
-                    'code'      => [],
-                    'strong'    => [],
+                    'code'   => [],
+                    'strong' => [],
+                    'span'   => [
+                        'class' => true,
+                        'data-copy' => true,
+                    ],
                 ]
             ),
         ],

@@ -78,7 +78,8 @@ class PaymentCaptureRefunded extends WebhookEventHandler {
 
         //store refund id as array, this will help track all partial refunds
         $refund_ids[] = $refund_id;
-        update_post_meta( $order->get_id(), '_dokan_paypal_refund_id', $refund_ids );
+        $order->update_meta_data( '_dokan_paypal_refund_id', $refund_ids );
+        $order->save();
 
         // get seller payable data
         $seller_payable_breakdown = $event->resource->seller_payable_breakdown;

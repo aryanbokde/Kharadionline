@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitc5b00a4ced3070757f1d6e304d20a0dc
+class ComposerStaticInit3f18ffec2167effd2a2e4b538f6de8ea
 {
     public static $files = array (
         'b45b351e6b6f7487d819961fef2fda77' => __DIR__ . '/..' . '/jakeasmith/http_build_url/src/http_build_url.php',
@@ -117,6 +117,7 @@ class ComposerStaticInitc5b00a4ced3070757f1d6e304d20a0dc
         'WeDevs\\Dokan\\Install\\Installer' => __DIR__ . '/../..' . '/includes/Install/Installer.php',
         'WeDevs\\Dokan\\Order\\Admin\\Hooks' => __DIR__ . '/../..' . '/includes/Order/Admin/Hooks.php',
         'WeDevs\\Dokan\\Order\\Admin\\Permissions' => __DIR__ . '/../..' . '/includes/Order/Admin/Permissions.php',
+        'WeDevs\\Dokan\\Order\\Ajax' => __DIR__ . '/../..' . '/includes/Order/Ajax.php',
         'WeDevs\\Dokan\\Order\\Controller' => __DIR__ . '/../..' . '/includes/Order/Controller.php',
         'WeDevs\\Dokan\\Order\\EmailHooks' => __DIR__ . '/../..' . '/includes/Order/EmailHooks.php',
         'WeDevs\\Dokan\\Order\\Frontend\\Hooks' => __DIR__ . '/../..' . '/includes/Order/Frontend/Hooks.php',
@@ -289,9 +290,9 @@ class ComposerStaticInitc5b00a4ced3070757f1d6e304d20a0dc
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitc5b00a4ced3070757f1d6e304d20a0dc::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitc5b00a4ced3070757f1d6e304d20a0dc::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInitc5b00a4ced3070757f1d6e304d20a0dc::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit3f18ffec2167effd2a2e4b538f6de8ea::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit3f18ffec2167effd2a2e4b538f6de8ea::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit3f18ffec2167effd2a2e4b538f6de8ea::$classMap;
 
         }, null, ClassLoader::class);
     }

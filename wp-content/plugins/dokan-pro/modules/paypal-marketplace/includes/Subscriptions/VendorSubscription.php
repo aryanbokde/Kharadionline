@@ -266,7 +266,7 @@ class VendorSubscription {
         $order->update_meta_data( 'dokan_gateway_fee_paid_by', 'admin' );
         $order->update_meta_data( 'shipping_fee_recipient', 'admin' );
         $order->update_meta_data( 'tax_fee_recipient', 'admin' );
-        $order->save_meta_data();
+        $order->save();
 
         return [
             'product_type' => 'product_pack',
@@ -372,7 +372,7 @@ class VendorSubscription {
         $order->update_meta_data( 'dokan_gateway_fee_paid_by', 'admin' );
         $order->update_meta_data( 'shipping_fee_recipient', 'admin' );
         $order->update_meta_data( 'tax_fee_recipient', 'admin' );
-        $order->save_meta_data();
+        $order->save();
 
         return [
             'product_type' => 'product_pack',
@@ -443,6 +443,7 @@ class VendorSubscription {
 
         // get paypal subscription id
         $subscription_id = get_user_meta( $vendor_id, '_dokan_paypal_marketplace_vendor_subscription_id', true );
+        $subscription_id = empty( $subscription_id ) ? $order->get_meta( '_dokan_paypal_marketplace_vendor_subscription_id' ) : $subscription_id;
 
         $processor_obj = SubscriptionProcessor::init();
         // get main subscription info
@@ -501,6 +502,7 @@ class VendorSubscription {
 
         // get paypal subscription id
         $subscription_id = get_user_meta( $vendor_id, '_dokan_paypal_marketplace_vendor_subscription_id', true );
+        $subscription_id = empty( $subscription_id ) ? $order->get_meta( '_dokan_paypal_marketplace_vendor_subscription_id' ) : $subscription_id;
 
         if ( empty( $subscription_id ) ) {
             return;

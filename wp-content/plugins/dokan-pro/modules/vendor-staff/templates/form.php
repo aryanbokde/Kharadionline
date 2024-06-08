@@ -42,7 +42,7 @@ if ( ! empty( $is_edit ) ) {
         <div class="dokan-form-group">
             <label class="dokan-w3 dokan-control-label" for="title"><?php _e( 'Phone Number', 'dokan' ); ?></label>
             <div class="dokan-w5 dokan-text-left">
-                <input id="phone" name="phone" value="<?php echo esc_attr( $phone ); ?>" placeholder="<?php _e( 'Phone', 'dokan' ); ?>" class="dokan-form-control input-md" type="number">
+                <input id="phone" name="phone" value="<?php echo esc_attr( $phone ); ?>" placeholder="<?php _e( 'Phone', 'dokan' ); ?>" class="dokan-form-control input-md" type="text">
             </div>
         </div>
 

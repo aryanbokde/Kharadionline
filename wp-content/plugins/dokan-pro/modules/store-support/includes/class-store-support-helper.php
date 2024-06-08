@@ -163,7 +163,7 @@ if ( ! class_exists( 'StoreSupportHelper' ) ) :
 
             $users = $wpdb->users;
             $posts = $wpdb->posts;
-            $like  = '%' . $wpdb->esc_like( $searched_customer ) . '%';
+            $like  = "'%{$wpdb->esc_like( $searched_customer )}%'";
 
             $customer_where_clause = $searched_customer !== '' ? "AND $users.display_name LIKE $like" : '';
 
@@ -338,17 +338,17 @@ if ( ! class_exists( 'StoreSupportHelper' ) ) :
             $custom_logo_id = get_theme_mod( 'custom_logo' );
             $logo           = wp_get_attachment_image_src( $custom_logo_id, 'full' );
 
-            $result['site_image_url']      = has_custom_logo() ? $logo[0] : get_avatar_url( 0 );
+            $result['site_image_url']      = ( has_custom_logo() && ! empty( $logo[0] ) ) ? $logo[0] : get_avatar_url( 0 );
             $result['site_title']          = get_bloginfo( 'name', 'display' );
             $result['unread_topics_count'] = self::get_unread_support_topic_count();
 
-            $admin_global_settings = dokan_get_option( 'dokan_admin_email_notification', 'dokan_store_support_setting', 'off' );
+            $admin_global_settings = StoreSupportHelper::is_email_notification_enabled( 'DokanNewSupportTicketForAdmin' );
             $result['dokan_admin_email_notification_global'] = $admin_global_settings;
 
             $topic_specific_setting = get_post_meta( $topic_id, 'dokan_admin_email_notification', true );
 
             // Email notification setting is 'off' if global setting is 'off' or global setting is 'on' and topic specific setting is 'off'
-            $result['dokan_admin_email_notification'] = 'off' === $admin_global_settings || ( 'on' === $admin_global_settings && 'off' === $topic_specific_setting ) ? 'off' : 'on';
+            $result['dokan_admin_email_notification'] = ! $admin_global_settings || ( true === $admin_global_settings && 'off' === $topic_specific_setting ) ? 'off' : 'on';
 
             return $result;
         }
@@ -424,6 +424,24 @@ if ( ! class_exists( 'StoreSupportHelper' ) ) :
             }
 
             return $result;
+        }
+
+        /**
+          * Check if email notification is enabled for a specific email class.
+          *
+          * @param string $email_class
+          *
+          * @return bool
+         */
+        public static function is_email_notification_enabled( $email_class = 'DokanNewSupportTicketForAdmin' ) {
+            $enabled = false;
+            $emails  = WC_Emails::instance()->get_emails();
+
+            if ( array_key_exists(  $email_class, $emails ) ) {
+                $enabled = $emails[ $email_class ]->is_enabled();
+            }
+
+            return $enabled;
         }
     }
 endif;

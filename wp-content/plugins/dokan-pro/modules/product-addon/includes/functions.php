@@ -60,6 +60,7 @@ function dokan_pa_get_posted_product_addons( $postdata = [] ) {
         $addon_min                = $postdata['product_addon_min'];
         $addon_max                = $postdata['product_addon_max'];
         $total_addon_name         = count( $addon_name );
+        $id = isset( $postdata['product_addon_id_'] ) ? $postdata['product_addon_id_'] : [];
 
         for ( $i = 0; $i < $total_addon_name; $i++ ) {
             if ( ! isset( $addon_name[ $i ] ) || ( '' === $addon_name[ $i ] ) ) {
@@ -108,6 +109,7 @@ function dokan_pa_get_posted_product_addons( $postdata = [] ) {
             $data['price']              = wc_format_decimal( sanitize_text_field( stripslashes( $addon_price[ $i ] ) ) );
             $data['min']                = (float) sanitize_text_field( stripslashes( $addon_min[ $i ] ) );
             $data['max']                = (float) sanitize_text_field( stripslashes( $addon_max[ $i ] ) );
+            $data['id']                 = ! empty( $id[ $i ] ) ? sanitize_key( $id[ $i ] ) : dokan_get_random_string();
 
             if ( ! empty( $addon_options ) ) {
                 $data['options'] = $addon_options;

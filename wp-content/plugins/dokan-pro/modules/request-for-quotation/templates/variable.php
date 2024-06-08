@@ -19,15 +19,15 @@ global $product;
 
 	do_action( 'woocommerce_after_add_to_cart_quantity' );
 
-	echo '<a href="javascript:void(0)" rel="nofollow" data-product_id="' . intval( $product->get_ID() ) . '" data-product_sku="' . esc_attr( $product->get_sku() ) . '" class="dokan_request_button button single_add_to_cart_button alt product_type_' . esc_attr( $product->get_type() ) . '">' . esc_html( $single_quote_rule->button_text ) . '</a>';
-	do_action( 'addify_after_add_to_quote_button' );
-
     if ( 'keep_and_add_new' === $single_quote_rule->hide_cart_button ) {
         ?>
 	    <button type="submit" class="single_add_to_cart_button button alt<?php echo esc_attr( wc_wp_theme_get_element_class_name( 'button' ) ? ' ' . wc_wp_theme_get_element_class_name( 'button' ) : '' ); ?>"><?php echo esc_html( $product->single_add_to_cart_text() ); ?></button>
         <?php
     }
-
+    if ( ! dokan_is_product_author( $product->get_id() ) ) {
+        echo '<a href="javascript:void(0)" rel="nofollow" data-product_id="' . $product->get_ID() . '" data-product_sku="' . esc_attr( $product->get_sku() ) . '" class="dokan_request_button button single_add_to_cart_button alt product_type_' . esc_attr( $product->get_type() ) . '">' . esc_html( $single_quote_rule->button_text ) . '</a>';
+        do_action( 'dokan_pro_after_add_to_quote_button' );
+    }
 	do_action( 'woocommerce_after_add_to_cart_button' );
 	?>
 

@@ -34,7 +34,7 @@ class Helper {
 				'title'               => __( 'Products Published', 'dokan' ),
 				'description'         => __( 'When a vendor publishes a certain number of products', 'dokan' ),
 				'condition_text'      => [
-					'prefix' => __( 'When vendor publishes more than', 'dokan' ),
+					'prefix' => __( 'When vendor publishes', 'dokan' ),
 					'suffix' => __( 'products', 'dokan' ),
 					'type'   => 'count',
 				],
@@ -58,7 +58,7 @@ class Helper {
 				'title'               => __( 'Number of Items Sold', 'dokan' ),
 				'description'         => __( 'When a vendor sells a certain number of items', 'dokan' ),
 				'condition_text'      => [
-					'prefix' => __( 'When a vendor sells more than', 'dokan' ),
+					'prefix' => __( 'When a vendor sells', 'dokan' ),
 					'suffix' => __( 'items', 'dokan' ),
 					'type'   => 'count',
 				],
@@ -229,7 +229,7 @@ class Helper {
 				'title'               => __( 'Number of Orders', 'dokan' ),
 				'description'         => __( 'When a vendor receives a certain number of orders', 'dokan' ),
 				'condition_text'      => [
-					'prefix' => __( 'When vendor receives more than', 'dokan' ),
+					'prefix' => __( 'When vendor receives', 'dokan' ),
 					'suffix' => __( 'orders', 'dokan' ),
 					'type'   => 'count',
 				],
@@ -253,7 +253,7 @@ class Helper {
 				'title'               => __( 'Sale Amount', 'dokan' ),
 				'description'         => __( 'When Sale amount is a certain amount', 'dokan' ),
 				'condition_text'      => [
-					'prefix' => __( 'When Sales amount is more than', 'dokan' ),
+					'prefix' => __( 'When Sales amount is', 'dokan' ),
 					'suffix' => __( '', 'dokan' ),
 					'type'   => 'price',
 				],
@@ -277,7 +277,7 @@ class Helper {
 				'title'               => __( 'Customer Review', 'dokan' ),
 				'description'         => __( 'When a vendor gets a certain number of reviews ', 'dokan' ),
 				'condition_text'      => [
-					'prefix' => __( 'When vendor gets more than', 'dokan' ),
+					'prefix' => __( 'When vendor gets', 'dokan' ),
 					'suffix' => __( 'five star reviews', 'dokan' ),
 				],
 				'responsible_class'   => 'WeDevs\DokanPro\Modules\SellerBadge\Events\CustomerReview',
@@ -302,7 +302,7 @@ class Helper {
 				'title'               => __( 'Store Support Count', 'dokan' ),
 				'description'         => __( 'When a vendor gives a certain number of customer support', 'dokan' ),
 				'condition_text'      => [
-					'prefix' => __( 'When vendor provides more than', 'dokan' ),
+					'prefix' => __( 'When vendor provides', 'dokan' ),
 					'suffix' => __( 'store support', 'dokan' ),
 				],
 				'responsible_class'   => 'WeDevs\DokanPro\Modules\SellerBadge\Events\StoreSupportCount',

@@ -2,7 +2,8 @@
 
 namespace WeDevs\DokanPro\Modules\StoreReviews;
 
-use WeDevs\DokanPro\Modules\StoreReviews\Emails\Manager;
+use WeDevs\DokanPro\Modules\StoreReviews\Emails\Manager as EmailManager;
+use WeDevs\DokanPro\Modules\StoreReviews\Manager as StoreReviewsManager;
 
 class Module {
 
@@ -46,7 +47,7 @@ class Module {
         list( $suffix, $version ) = dokan_get_script_suffix_and_version();
 
         wp_register_style( 'dsr-styles', plugins_url( 'assets/css/style' . $suffix . '.css', __FILE__ ), false, $version );
-        wp_register_script( 'dsr-scripts', plugins_url( 'assets/js/script' . $suffix . '.js', __FILE__ ), array( 'jquery', 'dokan-magnific-popup' ), $version, true );
+        wp_register_script( 'dsr-scripts', plugins_url( 'assets/js/script' . $suffix . '.js', __FILE__ ), array( 'jquery' ), $version, true );
         wp_register_style( 'dsr-scripts', plugins_url( 'assets/css/script' . $suffix . '.css', __FILE__ ), false, $version );
     }
 
@@ -62,7 +63,6 @@ class Module {
     public function enqueue_scripts() {
         //only load the scripts on store page for optimization
         if ( dokan_is_store_page() ) {
-            wp_enqueue_style( 'dokan-magnific-popup' );
             wp_enqueue_style( 'dsr-styles' );
             wp_enqueue_script( 'dsr-scripts' );
             wp_enqueue_style( 'dsr-scripts' );
@@ -85,12 +85,11 @@ class Module {
         require_once DOKAN_SELLER_RATINGS_DIR . '/classes/Emails/Manager.php';
         require_once DOKAN_SELLER_RATINGS_DIR.'/classes/DSR_View.php';
         require_once DOKAN_SELLER_RATINGS_DIR.'/classes/DSR_SPMV.php';
-        require_once DOKAN_SELLER_RATINGS_DIR . '/functions.php';
     }
 
     public function instances() {
         new \DSR_SPMV();
-        new Manager();
+        new EmailManager();
     }
 
     /**
@@ -164,31 +163,27 @@ class Module {
      */
     public function replace_rating_value( $rating, $store_id ) {
         $args = array(
-            'post_type'      => 'dokan_store_reviews',
-            'meta_key'       => 'store_id',
-            'meta_value'     => $store_id,
-            'post_status'    => 'publish',
+            'seller_id'     => $store_id,
         );
 
-        $query = new \WP_Query( $args );
+        $manager = new StoreReviewsManager();
+        $reviews = $manager->get_user_review( $args );
 
-        $review_count = $query->post_count;
-
-        if ( $review_count ) {
+        if ( count( $reviews ) ) {
 
             $rating = 0;
-            foreach ( $query->posts as $review ) {
+            foreach ( $reviews as $review ) {
                 $rating += intval( get_post_meta( $review->ID, 'rating', true ) );
             }
 
-            $rating = number_format( $rating / $review_count, 2 );
+            $rating = number_format( $rating / count( $reviews ), 2 );
         } else {
             $rating = __( 'No Ratings found yet', 'dokan' );
         }
 
         return array(
             'rating' => $rating,
-            'count'  => $review_count
+            'count'  => count( $reviews )
         );
     }
 
@@ -204,21 +199,19 @@ class Module {
      */
     public function replace_ratings_list( $review_list, $store_id ) {
         $paged = ( get_query_var( 'paged' ) ) ? get_query_var( 'paged' ) : 1;
-        $args = array(
-            'post_type'      => 'dokan_store_reviews',
-            'meta_key'       => 'store_id',
-            'meta_value'     => $store_id,
-            'post_status'    => 'publish',
+        $args = [
             'author__not_in' => array( get_current_user_id(), $store_id ),
+            'seller_id'      => $store_id,
             'paged'          => $paged,
-            'posts_per_page' => 20,
-        );
+            'per_page'       => 20,
+        ];
 
-        $query = new \WP_Query( $args );
-        $no_review_msg = apply_filters( 'dsr_no_review_found_msg', 'No Reviews found' );
+        $namager = new StoreReviewsManager();
+        $posts = $namager->get_user_review( $args );
+        $no_review_msg = apply_filters( 'dsr_no_review_found_msg', __( 'No Reviews found', 'dokan' ), $posts );
         ob_start();
 
-        \DSR_View::init()->render_review_list( $query->posts, $no_review_msg );
+        \DSR_View::init()->print_store_reviews( $posts, $no_review_msg );
 
         wp_reset_postdata();
 

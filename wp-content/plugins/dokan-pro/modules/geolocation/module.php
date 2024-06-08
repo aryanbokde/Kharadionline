@@ -64,7 +64,7 @@ class Module {
         if ( $this->has_map_api_key ) {
             add_action( 'init', array( $this, 'register_scripts' ) );
             add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
-            add_action( 'widgets_init', array( $this, 'register_widget' ) );
+            add_action( 'dokan_widgets', array( $this, 'register_widget' ) );
             add_action( 'dokan_new_seller_created', array( $this, 'set_default_geolocation_data' ), 35 );
             add_action( 'woocommerce_product_import_inserted_product_object', array( $this, 'set_product_geo_location_meta_on_import' ), 10, 2 );
         } else {
@@ -148,9 +148,9 @@ class Module {
     }
 
     public function register_scripts() {
-        list( $suffix, $version ) = dokan_get_script_suffix_and_version();
+        [ $suffix, $version ] = dokan_get_script_suffix_and_version();
 
-        wp_register_style( 'dokan-geolocation', DOKAN_GEOLOCATION_ASSETS . '/css/geolocation' . $suffix . '.css', array( 'dokan-magnific-popup' ), $version );
+        wp_register_style( 'dokan-geolocation', DOKAN_GEOLOCATION_ASSETS . '/css/geolocation' . $suffix . '.css', array(), $version );
 
         $js = DOKAN_GEOLOCATION_ASSETS . '/js/geolocation-vendor-dashboard-product-google-maps' . $suffix . '.js';
 
@@ -178,7 +178,7 @@ class Module {
             || is_product_category()
             || is_product_tag()
             || ( isset( $wp->query_vars['products'] ) && isset( $_GET['action'] ) && 'edit' === sanitize_text_field( wp_unslash( $_GET['action'] ) ) ) //phpcs:ignore
-            || ( isset( $wp->query_vars['booking'] ) && 'edit' === $wp->query_vars['booking'] )
+            || ( isset( $wp->query_vars['booking'] ) && ( ( 'edit' === $wp->query_vars['booking'] ) || ( 'new-product' === $wp->query_vars['booking'] ) ) )
             || ( isset( $wp->query_vars['auction'] ) && isset( $_GET['action'] ) && 'edit' === sanitize_text_field( wp_unslash( $_GET['action'] ) ) ) //phpcs:ignore
         ) {
             wp_enqueue_style( 'dokan-geolocation' );
@@ -194,12 +194,16 @@ class Module {
      * Register module widgets
      *
      * @since 1.0.0
+     * @since 3.10.2 Updated to comply with `dokan-lite` widget registration process
      *
-     * @return void
+     * @param array $widgets List of widgets to be registered
+     *
+     * @return array
      */
-    public function register_widget() {
-        register_widget( 'Dokan_Geolocation_Widget_Filters' );
-        register_widget( 'Dokan_Geolocation_Widget_Product_Location' );
+    public function register_widget( array $widgets ): array {
+        $widgets[ \Dokan_Geolocation_Widget_Filters::INSTANCE_KEY ] = \Dokan_Geolocation_Widget_Filters::class;
+        $widgets[ \Dokan_Geolocation_Widget_Product_Location::INSTANCE_KEY ] = \Dokan_Geolocation_Widget_Product_Location::class;
+        return $widgets;
     }
 
     /**

@@ -32,7 +32,7 @@ class PayIn extends Processor {
      *
      * @param int $transaction_id
      *
-     * @return object|false
+     * @return array|\MangoPay\PayIn|false
      */
     public static function get( $transaction_id ) {
         try {
@@ -50,7 +50,7 @@ class PayIn extends Processor {
      *
      * @since 3.5.0
      *
-     * @param object $pay_in
+     * @param \MangoPay\PayIn $pay_in
      *
      * @return object|WP_Error
      */
@@ -373,7 +373,7 @@ class PayIn extends Processor {
      * @param int|string $user_id
      * @param array 	 $data
      *
-     * @return object|false
+     * @return \MangoPay\PayIn|\WP_Error|false
      */
     public static function prepare( $payment_type, $user_id, $data ) {
         $user_id = User::sync_account_data( $user_id );

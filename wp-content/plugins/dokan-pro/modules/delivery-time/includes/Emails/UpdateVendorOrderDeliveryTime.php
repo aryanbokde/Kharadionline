@@ -85,7 +85,7 @@ class UpdateVendorOrderDeliveryTime extends WC_Email {
      * @return void
      */
     public function trigger( $seller_id, $updated_data ) {
-        if ( ! current_user_can( 'manage_options' ) || ! $seller_id ) {
+        if ( ! current_user_can( 'seller' ) || ! $seller_id ) {
             return;
         }
 

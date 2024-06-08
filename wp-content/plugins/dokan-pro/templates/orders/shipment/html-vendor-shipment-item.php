@@ -1,4 +1,7 @@
 <?php
+    /**
+     * @var WC_Order $order Order.
+     */
     $hide_others_area = ( 'sp-other' === $provider ) ? '' : 'dokan-hide';
 ?>
 <div class="shipping-status-tracking-shippments-inner shipment_id_<?php echo esc_attr( $shipment_id ); ?>">
@@ -7,7 +10,12 @@
             <strong><?php esc_html_e( 'Shipment', 'dokan' ); ?> #<?php echo esc_html( $incre ); ?> </strong>
         </h4>
         <p class="shippments-tracking-status">
-            <strong class="<?php echo esc_attr( $shipping_status ); ?> status_label_<?php echo esc_attr( $shipment_id ); ?>"><?php echo esc_html( $status ); ?> </strong>
+            <strong class="<?php echo esc_attr( $shipping_status ); ?> status_label_<?php echo esc_attr( $shipment_id ); ?>">
+                <?php
+                $status = apply_filters( 'dokan_pro_shipping_status', $status );
+                echo esc_html( $status );
+                ?>
+            </strong>
 
             <span class="shipment-item-details-tab-toggle" data-shipment_id="<?php echo esc_attr( $shipment_id ); ?>">
                 <span class="fa fa-chevron-down details-tab-toggle-sort-desc"></span>
@@ -42,7 +50,10 @@
                 <select name="update_shipping_status_<?php echo esc_attr( $shipment_id ); ?>" id="update_shipping_status_<?php echo esc_attr( $shipment_id ); ?>" class="dokan-form-control" style="width: 50%;" <?php echo $is_editable ? '' : 'disabled="disabled"'; ?>>
                     <option value=""><?php esc_html_e( 'Select', 'dokan' ); ?></option>
                     <?php if ( ! empty( $status_list ) ) : ?>
-                        <?php foreach ( $status_list as $s_status ) : ?>
+                        <?php
+                        foreach ( $status_list as $s_status ) :
+                            $s_status['value'] = apply_filters( 'dokan_pro_shipping_status', $s_status['value'] );
+                            ?>
                             <option value="<?php echo esc_attr( $s_status['id'] ); ?>" <?php echo selected( $shipping_status, $s_status['id'], false ); ?>><?php echo esc_html( $s_status['value'] ); ?></option>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -63,7 +74,10 @@
             </div>
             <div class="dokan-form-group shipped-status-date">
                 <label class="dokan-control-label"><?php esc_html_e( 'Date Shipped', 'dokan' ); ?></label>
-                <input type="text" name="shipped_status_date_<?php echo esc_attr( $shipment_id ); ?>" id="shipped_status_date_<?php echo esc_attr( $shipment_id ); ?>" class="dokan-form-control shipped_status_date" value="<?php echo esc_attr( $date ); ?>" autocomplete="off" placeholder="<?php esc_attr_e( 'Select date', 'dokan' ); ?>" <?php echo $is_editable ? '' : 'readonly="readonly"'; ?>>
+                <input class="dokan-form-control shipped_status_date" value="<?php echo esc_attr( $date ); ?>"
+                    data-ordered-date="<?php echo esc_attr( $order->get_date_created() ); ?>" autocomplete="off" type="text"
+                    name="shipped_status_date_<?php echo esc_attr( $shipment_id ); ?>" id="shipped_status_date_<?php echo esc_attr( $shipment_id ); ?>"
+                    placeholder="<?php esc_attr_e( 'Select date', 'dokan' ); ?>" <?php echo $is_editable ? '' : 'readonly="readonly"'; ?> />
             </div>
             <div class="dokan-form-group">
                 <label class="dokan-control-label tracking-status-number-label"><?php esc_html_e( 'Tracking Number', 'dokan' ); ?></label>

@@ -24,6 +24,51 @@ class NewStoreReview extends WC_Email {
     public $reviewer_name = '';
 
     /**
+     * Review id.
+     *
+     * @since 3.10.3
+     *
+     * @var int
+     */
+    protected $post_id;
+
+    /**
+     * Review title.
+     *
+     * @since 3.10.3
+     *
+     * @var string
+     */
+    protected $post_title;
+
+    /**
+     * Review details.
+     *
+     * @since 3.10.3
+     *
+     * @var string
+     */
+    protected $post_details;
+
+    /**
+     * Review rating.
+     *
+     * @since 3.10.3
+     *
+     * @var int
+     */
+    protected $rating;
+
+    /**
+     * Store name.
+     *
+     * @since 3.10.3
+     *
+     * @var string
+     */
+    private $store_name;
+
+    /**
      * Constructor.
      */
     public function __construct() {

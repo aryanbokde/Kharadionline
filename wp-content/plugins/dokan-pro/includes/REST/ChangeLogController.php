@@ -4,6 +4,7 @@ namespace WeDevs\DokanPro\REST;
 
 use WeDevs\Dokan\Abstracts\DokanRESTAdminController;
 use WeDevs\Dokan\Cache;
+use WP_REST_Response;
 use WP_REST_Server;
 
 /**

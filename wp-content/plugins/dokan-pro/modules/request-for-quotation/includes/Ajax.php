@@ -77,10 +77,11 @@ class Ajax {
             /* translators: %s: Product name */
             wc_add_notice( sprintf( __( 'Quote is not available for “%s”', 'dokan' ), $product_name ), 'error' );
         } else {
+
             if ( SettingsHelper::is_redirect_to_quote_page() ) {
                 wp_send_json(
                     [
-                        'redirect_to' => esc_url( get_page_link( get_option( 'dokan_request_quote_page_id' ) ) ),
+                        'redirect_to' => esc_url( get_page_link( Helper::get_quote_page_id() ) ),
                     ]
                 );
             }
@@ -88,7 +89,7 @@ class Ajax {
             if ( SettingsHelper::is_ajax_add_to_quote_enabled() ) {
                 ob_start();
                 ?>
-                <a href="<?php echo esc_url( get_page_link( get_option( 'dokan_request_quote_page_id' ) ) ); ?>" class="added_to_cart added_to_quote wc-forward" title="<?php echo __( 'View Quote', 'dokan' ); ?>"><?php echo __( 'View Quote', 'dokan' ); ?></a>
+                <a href="<?php echo esc_url( get_page_link( Helper::get_quote_page_id() ) ); ?>" class="added_to_cart added_to_quote wc-forward" title="<?php echo __( 'View Quote', 'dokan' ); ?>"><?php echo __( 'View Quote', 'dokan' ); ?></a>
                 <?php
                 $view_quote_btn = ob_get_clean();
                 wp_send_json(

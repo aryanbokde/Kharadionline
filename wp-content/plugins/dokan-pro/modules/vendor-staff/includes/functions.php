@@ -27,6 +27,35 @@ function dokan_get_all_vendor_staffs( $args ) {
         ),
     );
 
+    if ( ! empty( $args['search'] ) ) {
+        $search_string                  = sanitize_text_field( $args['search'] );
+        $args['meta_query']['relation'] = 'AND';
+        $args['meta_query'][]           = array(
+            'relation' => 'OR',
+            array(
+                'key'     => 'first_name',
+                'value'   => $search_string,
+                'compare' => 'LIKE'
+            ),
+            array(
+                'key'     => 'last_name',
+                'value'   => $search_string,
+                'compare' => 'LIKE'
+            ),
+            array(
+                'key'     => '_staff_phone',
+                'value'   => $search_string,
+                'compare' => 'LIKE'
+            ),
+        );
+        $args['search_columns']          = array(
+            'user_login',
+            'user_nicename',
+            'user_email',
+            'user_url',
+        );
+    }
+
     $cache_group = "vendor_staff_{$args['vendor_id']}";
     $cache_key   = 'staffs_data_' . md5( wp_json_encode( $args ) );
     $user_search = Cache::get( $cache_key, $cache_group );
@@ -90,12 +119,11 @@ function dokan_get_staff_capabilities() {
  * @return array
  */
 function dokan_get_staff_id_by_order( $id ) {
-    if ( get_post_meta( $id, 'has_sub_order', true ) ) {
-        return 0;
-    }
-
-    $order     = wc_get_order( $id );
-    $staff_ids = array();
+	$order     = wc_get_order( $id );
+	$staff_ids = array();
+	if ( ! $order || $order->get_meta( 'has_sub_order', true ) ) {
+		return $staff_ids;
+	}
 
     foreach ( $order->get_items( 'line_item' ) as $item ) {
         $product_id = $item['product_id'];

@@ -63,7 +63,17 @@ class Webhook {
      * @return string
      */
     public static function generate_url() {
-        return home_url( 'wc-api/' . self::prefix(), 'https' );
+        if ( method_exists( 'Dokan_WPML', 'remove_url_translation' ) ) {
+            \Dokan_WPML::remove_url_translation();
+        }
+
+        $url = home_url( 'wc-api/' . self::prefix(), 'https' );
+
+        if ( method_exists( 'Dokan_WPML', 'restore_url_translation' ) ) {
+            \Dokan_WPML::restore_url_translation();
+        }
+
+        return $url;
     }
 
     /**
@@ -79,6 +89,7 @@ class Webhook {
             'enabled_events' => array_keys( self::get_supported_events() ),
             'api_version'    => Helper::get_api_version(),
             'description'    => __( 'This webhook is created by Dokan Pro.', 'dokan' ),
+            'connect'        => false,
         ];
     }
 
@@ -135,6 +146,7 @@ class Webhook {
                 Event::INVOICE_PAYMENT_SUCCEEDED                => 'InvoicePaymentSucceeded',
                 Event::INVOICE_PAYMENT_FAILED                   => 'InvoicePaymentFailed',
                 Event::INVOICE_PAYMENT_ACTION_REQUIRED          => 'InvoicePaymentActionRequired',
+                Event::ACCOUNT_UPDATED                          => 'AccountUpdated',
             ]
         );
     }
@@ -154,27 +166,47 @@ class Webhook {
         }
 
         try {
-            $data      = self::generate_data();
-            $endpoints = WebhookEndpoint::all();
+            $settings    = Settings::get();
+            $webhook_key = isset( $settings['testmode'] ) && 'yes' !== $settings['testmode'] ? 'webhook_key' : 'test_webhook_key';
+            $data        = self::generate_data();
+            $endpoints   = WebhookEndpoint::all();
 
             // If no endpoint exists, create one.
             if ( empty( $endpoints ) ) {
-                WebhookEndpoint::create( $data );
-                self::delete_key();
+                $webhook = WebhookEndpoint::create( $data );
+                self::add_key( $webhook->secret );
                 return true;
             }
 
             $endpoint_updated = false;
+            $available_events = self::get_supported_events();
 
-            /*
-             * Traverse all the existing endpoints and update if needed.
-             * Any endpoint that doesn't match as expected will be deleted.
-             */
-            foreach ( $endpoints as $endpoint ) {
-                if ( $endpoint->url === self::generate_url() ) {
-                    unset( $data['api_version'] );
-                    WebhookEndpoint::update( $endpoint->id, $data );
-                    $endpoint_updated = true;
+            if ( empty( $settings[ $webhook_key ] ) ) {
+                // delete old webhook url
+                self::delete();
+                $endpoint_updated = false;
+            } else {
+                /*
+                 * Traverse all the existing endpoints and update if needed.
+                 * Any endpoint that doesn't match as expected will be deleted.
+                 */
+                foreach ( $endpoints as $endpoint ) {
+                    if ( $endpoint->url === self::generate_url() ) {
+                        $endpoint_updated   = true;
+                        $needs_event_update = false;
+
+                        foreach ( $endpoint->enabled_events as $event ) {
+                            if ( ! array_key_exists( $event, $available_events ) ) {
+                                $needs_event_update = true;
+                                break;
+                            }
+                        }
+
+                        if ( $needs_event_update ) {
+                            unset( $data['api_version'] );
+                            WebhookEndpoint::update( $endpoint->id, $data );
+                        }
+                    }
                 }
             }
 
@@ -184,8 +216,8 @@ class Webhook {
              * so we need to create one.
              */
             if ( ! $endpoint_updated ) {
-                WebhookEndpoint::create( $data );
-                self::delete_key();
+                $webhook = WebhookEndpoint::create( $data );
+                self::add_key( $webhook->secret );
             }
 
             return true;
@@ -243,6 +275,20 @@ class Webhook {
         $settings[ $webhook_key ]        = '';
         $settings[ "test_$webhook_key" ] = '';
 
+        return Settings::update( $settings );
+    }
+
+    /**
+     * Add webhook secret.
+     *
+     * @since 3.8.0
+     *
+     * @return boolean
+     */
+    public static function add_key( $value ) {
+        $settings                 = Settings::get();
+        $webhook_key              = isset( $settings['testmode'] ) && 'yes' !== $settings['testmode'] ? 'webhook_key' : 'test_webhook_key';
+        $settings[ $webhook_key ] = $value;
         return Settings::update( $settings );
     }
 

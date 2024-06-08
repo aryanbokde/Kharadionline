@@ -120,7 +120,7 @@ class Balance {
             $order = wc_get_order( $order );
         }
 
-        if ( ! $order instanceof \WC_Order ) {
+        if ( ! $order ) {
             return false;
         }
 

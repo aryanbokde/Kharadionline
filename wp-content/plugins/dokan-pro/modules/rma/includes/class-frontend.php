@@ -128,6 +128,11 @@ class Dokan_RMA_Frontend {
         }
 
         $product_id = ( version_compare( WC_VERSION, '3.0', '<' ) && isset( $_product->variation_id ) ) ? $_product->variation_id : $_product->get_id();
+
+        if ( is_a( $_product,'WC_Product_Variation' ) ) {
+            $product_id = $_product->get_parent_id();
+        }
+
         $warranty   = $this->get_settings( $product_id );
 
         if ( $warranty ) {
@@ -203,6 +208,10 @@ class Dokan_RMA_Frontend {
     public function get_item_data( $other_data, $cart_item ) {
         $_product   = $cart_item['data'];
         $product_id = $_product->get_id();
+
+        if ( is_a( $_product,'WC_Product_Variation' ) ) {
+            $product_id = $_product->get_parent_id();
+        }
 
         $warranty       = $this->get_settings( $product_id );
         $warranty_label = $warranty['label'];

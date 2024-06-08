@@ -25,6 +25,7 @@ use WeDevs\Dokan\Walkers\TaxonomyDropdown;
     $_additional_price       = get_post_meta( $auction_id, '_additional_price', true );
     $_additional_qty         = get_post_meta( $auction_id, '_additional_qty', true );
     $classes_options         = wc_get_product_tax_class_options();
+    $is_proxy_auction_on     = get_option( 'simple_auctions_proxy_auction_on', 'no' );
     ?>
 
     <div class="dokan-dashboard-content">
@@ -140,6 +141,8 @@ use WeDevs\Dokan\Walkers\TaxonomyDropdown;
                                     echo str_replace( '<select', '<select data-placeholder="'.__( 'Select product tags', 'dokan' ).'" multiple="multiple" ', $drop_down_tags );
                                     ?>
                                 </div>
+
+                                <?php do_action( 'dokan_auction_new_product_after_product_tags' ); ?>
                             </div>
                         </div>
 
@@ -195,7 +198,7 @@ use WeDevs\Dokan\Walkers\TaxonomyDropdown;
                                     <div class="dokan-form-group dokan-auction-proxy-bid">
                                         <div class="checkbox">
                                             <label for="_auction_proxy">
-                                                <input type="checkbox" name="_auction_proxy" id="_auction_proxy" value="yes">
+                                                <input type="checkbox" name="_auction_proxy" id="_auction_proxy" value="yes" <?php checked( $is_proxy_auction_on, 'no' ); ?> />
                                                 <?php _e( 'Enable proxy bidding for this auction product', 'dokan' );?>
                                             </label>
                                         </div>

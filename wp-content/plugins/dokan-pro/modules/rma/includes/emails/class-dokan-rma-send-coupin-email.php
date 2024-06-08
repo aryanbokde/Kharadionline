@@ -181,5 +181,3 @@ class Dokan_Send_Coupon_Email extends WC_Email {
 }
 
 endif;
-
-return new Dokan_Send_Coupon_Email();

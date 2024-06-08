@@ -30,6 +30,7 @@ class ProductBulkEdit {
         add_action( 'dokan_product_list_before_table_body_start', [ $this, 'bulk_edit_form' ] );
         add_action( 'template_redirect', [ $this, 'bulk_edit' ] );
         add_action( 'dokan_product_dashboard_errors', [ $this, 'display_updated_message' ] );
+        add_action( 'dokan_after_bulk_edit_save_single_item', 'dokan_trigger_product_create_email' );
     }
 
     /**
@@ -83,10 +84,16 @@ class ProductBulkEdit {
 
         $shipping_class = get_terms( 'product_shipping_class', [ 'hide_empty' => false ] );
         $post_statuses  = [
-            ''        => __( '— No change —', 'dokan' ),
-            'draft'   => __( 'Draft', 'dokan' ),
-            'publish' => __( 'Online', 'dokan' ),
+            ''        => __( '- No change -', 'dokan' ),
+            'draft'   => dokan_get_post_status( 'draft' ),
         ];
+
+        if ( 'publish' === dokan_get_new_post_status() ) {
+            $post_statuses['publish'] = dokan_get_post_status( 'publish' );
+        } else {
+            $post_statuses['pending'] = dokan_get_post_status( 'pending' );
+        }
+
         $comment_status = [
             ''      => __( '— No change —', 'dokan' ),
             'open'  => __( 'Allow', 'dokan' ),
@@ -170,6 +177,7 @@ class ProductBulkEdit {
             'sold_individually'  => $sold_individually,
             'is_single_category' => $is_single_category,
         ];
+
         dokan_get_template_part( 'products/edit/bulk-edit-form', '', $args );
     }
 
@@ -197,7 +205,6 @@ class ProductBulkEdit {
         $request_data       = wp_unslash( $_POST );
         $bulk_products      = isset( $request_data['products_id'] ) ? array_map( 'sanitize_text_field', (array) $request_data['products_id'] ) : [];
         $is_single_category = 'single' === dokan_get_option( 'product_category_style', 'dokan_selling', 'single' );
-
 
         // $request_data['status'] is product bulk action status ( edit/publish... ), when user publishes products we have to skip updating chosen cats.
         if ( isset( $request_data['status'] ) && 'publish' !== $request_data['status'] && isset( $request_data['chosen_product_cat_bulk'] ) ) {
@@ -234,12 +241,9 @@ class ProductBulkEdit {
         }
 
         // set product status
-        $post_status    = '';
-        $pending_review = 'on' === dokan_get_option( 'edited_product_status', 'dokan_selling', 'off' );
-
-        if ( $pending_review ) {
-            $post_status = 'pending';
-        } elseif ( ! empty( $request_data['post_status'] ) && in_array( $request_data['post_status'], [ 'draft', 'publish' ], true ) ) {
+        $vendor_id   = dokan_get_current_user_id();
+        $post_status = dokan_get_new_post_status( $vendor_id );
+        if ( ! empty( $request_data['post_status'] ) && 'publish' !== $request_data['post_status'] ) {
             $post_status = $request_data['post_status'];
         }
 
@@ -256,7 +260,7 @@ class ProductBulkEdit {
                 }
 
                 // Make sure it's current vendor's product
-                if ( dokan_get_vendor_by_product( $product, true ) !== (int) dokan_get_current_user_id() ) {
+                if ( dokan_get_vendor_by_product( $product, true ) !== (int) $vendor_id ) {
                     continue;
                 }
 
@@ -423,7 +427,7 @@ class ProductBulkEdit {
         }
 
         // set product status
-        if ( ! empty( $request_data['post_status'] ) && $product->get_status() !== 'pending' ) {
+        if ( ! empty( $request_data['post_status'] ) ) {
             $product->set_status( $request_data['post_status'] );
         }
 
@@ -573,5 +577,4 @@ class ProductBulkEdit {
 
         return $product;
     }
-
 }

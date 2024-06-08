@@ -75,3 +75,53 @@ function display_vendor_url_shortcode2() {
     printf( '<h3>Alle Erlebnisse von <a href="%s">%s</a> entdecken</h3>', $store_url, $store_name );
 }
 
+
+function custom_menu_shortcode() {
+    ob_start();
+    $vendor_registration_url = dokan_get_page_url('myaccount', 'dokan');
+    ?>
+    <style>
+        .top-header-right {
+            text-align: right;
+        }
+
+        .top-header-right .menu-item {
+            color: #fff !important;
+            text-decoration: none;
+            margin-left: 15px;
+        }
+
+        .menu-item i {
+			margin-right: 5px;
+			color: #95664E;
+		}
+
+        .menu-item:hover {
+            color: #ECF0F1;
+        }
+
+        @media (max-width: 600px) {
+	        .top-header-right .menu-item {
+				display: block;
+				margin: 5px 0;
+            }
+        }
+    </style>
+    <div class="top-header-right">
+        <?php if (is_user_logged_in()) { ?>
+            <a href="<?php echo esc_url(get_permalink(get_option('woocommerce_myaccount_page_id'))); ?>" class="menu-item">
+                <i class="fas fa-user"></i> My Account
+            </a>
+        <?php }else{ ?>
+            <!-- <a href="<?php echo esc_url($vendor_registration_url); ?>" class="menu-item">
+                <i class="fas fa-map-marker-alt"></i> Become a Seller
+            </a> -->
+            <a href="<?php echo esc_url(get_permalink(get_option('woocommerce_myaccount_page_id'))); ?>" class="menu-item">
+                <i class="fas fa-user"></i> Login / Register
+            </a>            
+        <?php } ?>        
+    </div>
+    <?php
+    return ob_get_clean();
+}
+add_shortcode('custom_menu', 'custom_menu_shortcode');

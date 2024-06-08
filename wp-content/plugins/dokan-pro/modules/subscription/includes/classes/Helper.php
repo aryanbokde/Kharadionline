@@ -780,13 +780,19 @@ class Helper {
      * @return boolean
      */
     public static function maybe_cancel_subscription( $vendor_id ) {
-        if ( 'unlimited' === self::get_pack_end_date( $vendor_id ) ) {
-            return false;
+        $pack_end_date = self::get_pack_end_date( $vendor_id );
+	    if ( 'unlimited' === $pack_end_date ) {
+		    return false;
+	    }
+
+        if ( ! strtotime( $pack_end_date ) ) {
+            // if an invalid date is stored, we need to cancel the subscription plan
+            return true;
         }
 
         $current_date = dokan_current_datetime();
 
-        $validation_date = $current_date->modify( self::get_pack_end_date( $vendor_id ) );
+        $validation_date = $current_date->modify( $pack_end_date );
         if ( ! $validation_date ) {
             return false;
         }
@@ -920,30 +926,21 @@ class Helper {
                 $order_item->save();
             }
 
-            // copy order billing address
-            $meta_query = $wpdb->prepare(
-                "SELECT `meta_key`, `meta_value`
-                 FROM {$wpdb->postmeta}
-                 WHERE `post_id` = %d
-                 AND ( `meta_key` LIKE '_billing_%%' OR `meta_key` = '_dokan_vendor_id' )",
-                [ $parent_order->get_id() ]
-            );
-
-            $meta = $wpdb->get_results( $meta_query, 'ARRAY_A' );
-
-            foreach ( $meta as $meta_item ) {
-                /*
-                 * For setting internal billing meta data, using setter methods is recommended.
-                 * The metta setter methods are typically named. For example, the setter
-                 * method for `_billing_email` meta is `set_billing_email`
-                 */
-                if ( is_callable( [ $new_order, "set{$meta_item['meta_key']}" ] ) ) {
-                    call_user_func( [ $new_order, "set{$meta_item['meta_key']}" ], $meta_item['meta_value'] );
-                } else {
-                    $new_order->update_meta_data( $meta_item['meta_key'], $meta_item['meta_value'] );
-                }
-            }
-            $new_order->save_meta_data();
+            // set billing address
+            $new_order->set_billing_address_1( $parent_order->get_billing_address_1() );
+            $new_order->set_billing_address_2( $parent_order->get_billing_address_2() );
+            $new_order->set_billing_city( $parent_order->get_billing_city() );
+            $new_order->set_billing_state( $parent_order->get_billing_state() );
+            $new_order->set_billing_postcode( $parent_order->get_billing_postcode() );
+            $new_order->set_billing_country( $parent_order->get_billing_country() );
+            $new_order->set_billing_phone( $parent_order->get_billing_phone() );
+            $new_order->set_billing_email( $parent_order->get_billing_email() );
+            $new_order->set_billing_company( $parent_order->get_billing_company() );
+            $new_order->set_billing_first_name( $parent_order->get_billing_first_name() );
+            $new_order->set_billing_last_name( $parent_order->get_billing_last_name() );
+            $new_order->set_customer_id( $parent_order->get_customer_id() );
+            $new_order->set_customer_ip_address( $parent_order->get_customer_ip_address() );
+            $new_order->set_customer_user_agent( $parent_order->get_customer_user_agent() );
 
             // copy payment gateway data
             $new_order->set_currency( $parent_order->get_currency() );
@@ -956,6 +953,10 @@ class Helper {
             } else {
                 $new_order->set_total( $parent_order->get_total( 'edit' ) );
             }
+
+            // store vendor id
+            $new_order->update_meta_data( '_dokan_vendor_id', $parent_order->get_meta( '_dokan_vendor_id' ) );
+            $new_order->save();
 
             $new_order->save();
             // If we got here, the subscription was created without problems

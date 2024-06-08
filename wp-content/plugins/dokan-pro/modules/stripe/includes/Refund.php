@@ -76,8 +76,9 @@ class Refund {
         // Get parent order id, because charge id is stored on parent order id
         $parent_order_id = $order->get_parent_id() ? $order->get_parent_id() : $order->get_id();
 
+        $parent_order = wc_get_order( $parent_order_id );
         // get intent id of the parent order
-        $payment_intent_id = get_post_meta( $parent_order_id, 'dokan_stripe_intent_id', true );
+        $payment_intent_id = $parent_order->get_meta( 'dokan_stripe_intent_id', true );
         if ( ! empty( $payment_intent_id ) ) {
             // if payment is processed with stripe3ds, return from here
             return;
@@ -310,8 +311,9 @@ class Refund {
         // Get parent order id, because charge id is stored on parent order id
         $parent_order_id = $order->get_parent_id() ? $order->get_parent_id() : $order->get_id();
 
+        $parent_order = wc_get_order( $parent_order_id );
         // get intent id of the parent order
-        $payment_intent_id = get_post_meta( $parent_order_id, 'dokan_stripe_intent_id', true );
+        $payment_intent_id = $parent_order->get_meta( 'dokan_stripe_intent_id', true );
         if ( empty( $payment_intent_id ) ) {
             return;
         }
@@ -559,6 +561,6 @@ class Refund {
         }
 
         $order->update_meta_data( 'dokan_gateway_fee', $gateway_fee );
-        $order->save_meta_data();
+        $order->save();
     }
 }

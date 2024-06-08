@@ -23,9 +23,13 @@ class Product {
     public function __construct() {
         // add new column under vendor dashboard's product listing page
         add_action( 'dokan_product_list_table_after_status_table_header', [ $this, 'product_listing_table_column' ], 1 );
+        add_action( 'dokan_auction_product_list_table_after_status_table_header', [ $this, 'product_listing_table_column' ], 1 );
+        add_action( 'dokan_booking_product_list_table_after_status_table_header', [ $this, 'product_listing_table_column' ], 1 );
 
         // featured column value
         add_action( 'dokan_product_list_table_after_status_table_data', [ $this, 'product_listing_table_content' ], 1, 2 );
+        add_action( 'dokan_auction_product_list_table_after_status_table_data', [ $this, 'product_listing_table_content' ], 1, 2 );
+        add_action( 'dokan_booking_product_list_table_after_status_table_data', [ $this, 'product_listing_table_content' ], 1, 2 );
 
         // render advertise product section under single product edit page
         add_action( 'dokan_product_edit_after_options', [ $this, 'render_advertise_product_section' ], 99, 1 );
@@ -57,12 +61,6 @@ class Product {
         $advertisement_data = Helper::get_advertisement_data_by_product( $post_id );
 
         if ( empty( $advertisement_data ) ) {
-            return;
-        }
-
-        $product = wc_get_product( $post_id );
-        // don't render content for booking and auction products
-        if ( in_array( $product->get_type(), [ 'booking', 'auction' ], true ) ) {
             return;
         }
 
@@ -151,26 +149,33 @@ EOD;
     public function load_product_scripts() {
         global $wp;
 
-        // target only frontend dashboard product list and edit page
-        if ( dokan_is_seller_dashboard() && isset( $wp->query_vars['products'] ) ) {
-            wp_enqueue_script( 'dokan-product-adv-purchase' );
-
-            $colors = dokan_get_option( 'store_color_pallete', 'dokan_colors', [] );
-
-            // localize scripts
-            $localized_data = [
-                'advertise_alert'              => esc_html__( 'Are you sure you want to advertise this product?', 'dokan' ),
-                'advertise_active'             => ! empty( $colors['btn_primary'] ) ? $colors['btn_primary'] : 'tomato',
-                'advertise_product_nonce'      => wp_create_nonce( 'dokan_advertise_product_nonce' ),
-                'on_error_message'             => esc_html__( 'Something went wrong.', 'dokan' ),
-                'on_success_message'           => esc_html__( 'Success.', 'dokan' ),
-                'product_not_published'        => esc_html__( 'You can not advertise this product. Products needs to be published before you can advertise.', 'dokan' ),
-                'on_load_advertisement_status' => esc_html__( 'Loading advertisement data. Please wait...', 'dokan' ),
-                'checkout_url'                 => wc_get_checkout_url(),
-                'ajaxurl'                      => admin_url( 'admin-ajax.php' ),
-
-            ];
-            wp_localize_script( 'dokan-product-adv-purchase', 'dokan_purchase_advertisement', $localized_data );
+        // Check if not vendor dashboard.
+        if ( ! dokan_is_seller_dashboard() ) {
+            return;
         }
+
+        // Check if the page is not "products", "auction" or "booking" vendor dashboard product pages.
+        if ( ! isset( $wp->query_vars['products'] ) && ! isset( $wp->query_vars['auction'] ) && ! isset( $wp->query_vars['booking'] ) ) {
+            return;
+        }
+
+        wp_enqueue_script( 'dokan-product-adv-purchase' );
+
+        $colors = dokan_get_option( 'store_color_pallete', 'dokan_colors', [] );
+
+        // localize scripts
+        $localized_data = [
+            'advertise_alert'              => esc_html__( 'Are you sure you want to advertise this product?', 'dokan' ),
+            'advertise_active'             => ! empty( $colors['btn_primary'] ) ? $colors['btn_primary'] : 'tomato',
+            'advertise_product_nonce'      => wp_create_nonce( 'dokan_advertise_product_nonce' ),
+            'on_error_message'             => esc_html__( 'Something went wrong.', 'dokan' ),
+            'on_success_message'           => esc_html__( 'Success.', 'dokan' ),
+            'product_not_published'        => esc_html__( 'You can not advertise this product. Products needs to be published before you can advertise.', 'dokan' ),
+            'on_load_advertisement_status' => esc_html__( 'Loading advertisement data. Please wait...', 'dokan' ),
+            'checkout_url'                 => wc_get_checkout_url(),
+            'ajaxurl'                      => admin_url( 'admin-ajax.php' ),
+
+        ];
+        wp_localize_script( 'dokan-product-adv-purchase', 'dokan_purchase_advertisement', $localized_data );
     }
 }

@@ -210,19 +210,13 @@ class PayPal extends WC_Payment_Gateway {
             return $process_payment['data'];
         }
 
-        $sub_orders     = get_children(
-            [
-                'post_parent' => $order_id,
-                'post_type'   => 'shop_order',
-            ]
-        );
+        $sub_orders     = dokan()->order->get_child_orders( $order_id );
         $purchase_units = [];
 
         if ( $order->get_meta( 'has_sub_order' ) ) {
-            foreach ( $sub_orders as $item ) {
-                $sub_order = wc_get_order( $item->ID );
+            foreach ( $sub_orders as $sub_order ) {
                 $sub_order->update_meta_data( '_dokan_paypal_payment_disbursement_mode', Helper::get_disbursement_mode() );
-                $sub_order->save_meta_data();
+                $sub_order->save();
                 $purchase_units[] = OrderManager::make_purchase_unit_data( $sub_order );
             }
         } else {
@@ -271,7 +265,7 @@ class PayPal extends WC_Payment_Gateway {
         $order->update_meta_data( '_dokan_paypal_redirect_url', $create_order_url['links'][1]['href'] );
         $order->update_meta_data( 'shipping_fee_recipient', 'seller' );
         $order->update_meta_data( 'tax_fee_recipient', 'seller' );
-        $order->save_meta_data();
+        $order->save();
 
         return [
             'result'              => 'success',
@@ -502,7 +496,7 @@ class PayPal extends WC_Payment_Gateway {
             $order = wc_get_order( $order_id );
 
             //return if this is not an order object
-            if ( ! is_object( $order ) ) {
+            if ( ! $order ) {
                 return false;
             }
         }

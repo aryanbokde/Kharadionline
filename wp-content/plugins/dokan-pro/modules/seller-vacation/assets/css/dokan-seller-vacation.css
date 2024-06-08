@@ -24,6 +24,10 @@
     opacity: 0.6;
 }
 
+#dokan-seller-vacation-list-table {
+    table-layout: fixed;
+}
+
 #dokan-seller-vacation-list-table th {
     padding-top: 0;
 }

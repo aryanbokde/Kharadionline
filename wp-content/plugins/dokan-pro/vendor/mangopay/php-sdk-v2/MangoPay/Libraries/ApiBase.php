@@ -52,23 +52,34 @@ abstract class ApiBase
         'card_get' => ['/cards/%s', RequestType::GET],
         'cards_get_by_fingerprint' => ['/cards/fingerprints/%s', RequestType::GET],
         'card_save' => ['/cards/%s', RequestType::PUT],
-        'card_validate' => ['/cards/%s/validate', RequestType::POST],
+        'card_validate' => ['/cards/%s/validation', RequestType::POST],
+        'get_card_validation' => ['/cards/%s/validation/%s', RequestType::GET],
 
         // pay ins URLs
-        'payins_card-web_create' => [ '/payins/card/web/', RequestType::POST ],
-        'payins_card-direct_create' => [ '/payins/card/direct/', RequestType::POST ],
-        'payins_preauthorized-direct_create' => [ '/payins/preauthorized/direct/', RequestType::POST ],
-        'payins_bankwire-direct_create' => [ '/payins/bankwire/direct/', RequestType::POST ],
-        'payins_directdebit-web_create' => [ '/payins/directdebit/web', RequestType::POST ],
-        'payins_directdebit-direct_create' => [ '/payins/directdebit/direct', RequestType::POST ],
-        'payins_directdebitdirect-direct_create' => [ '/payins/directdebit/direct', RequestType::POST ],
-        'payins_paypal-web_create' => [ '/payins/paypal/web', RequestType::POST ],
-        'payins_payconiq-web_create' => [ '/payins/payconiq/web', RequestType::POST ],
-        'payins_get' => [ '/payins/%s', RequestType::GET ],
-        'payins_createrefunds' => [ '/payins/%s/refunds', RequestType::POST ],
+        'payins_card-web_create' => ['/payins/card/web/', RequestType::POST],
+        'payins_card-direct_create' => ['/payins/card/direct/', RequestType::POST],
+        'payins_preauthorized-direct_create' => ['/payins/preauthorized/direct/', RequestType::POST],
+        'payins_bankwire-direct_create' => ['/payins/bankwire/direct/', RequestType::POST],
+        'payins_directdebit-web_create' => ['/payins/directdebit/web', RequestType::POST],
+        'payins_directdebit-direct_create' => ['/payins/directdebit/direct', RequestType::POST],
+        'payins_directdebitdirect-direct_create' => ['/payins/directdebit/direct', RequestType::POST],
+        'payins_paypal-web_create' => ['/payins/paypal/web', RequestType::POST],
+        'payins_paypal-web_create_v2' => ['/payins/payment-methods/paypal', RequestType::POST],
+        'payins_payconiq-web_create' => ['/payins/payconiq/web', RequestType::POST],
+        'payins_get' => ['/payins/%s', RequestType::GET],
+        'payins_createrefunds' => ['/payins/%s/refunds', RequestType::POST],
         'payins_applepay-direct_create' => ['/payins/applepay/direct', RequestType::POST],
         'payins_googlepay-direct_create' => ['/payins/googlepay/direct', RequestType::POST],
-        'payins_mbway-direct_create' => ['/payins/payment-methods/mbway', RequestType::POST],
+        'payins_googlepay-direct_create_v2' => ['/payins/payment-methods/googlepay', RequestType::POST],
+        'payins_mbway-web_create' => ['/payins/payment-methods/mbway', RequestType::POST],
+        'payins_multibanco-web_create' => ['/payins/payment-methods/multibanco', RequestType::POST],
+        'payins_satispay-web_create' => ['/payins/payment-methods/satispay', RequestType::POST],
+        'payins_blik-web_create' => ['/payins/payment-methods/blik', RequestType::POST],
+        'payins_klarna-web_create' => ['/payins/payment-methods/klarna', RequestType::POST],
+        'payins_ideal-web_create' => ['/payins/payment-methods/ideal', RequestType::POST],
+        'payins_giropay-web_create' => ['/payins/payment-methods/giropay', RequestType::POST],
+
+        'payment_method-metadata' => ['/payment-methods/metadata', RequestType::POST],
 
         'payins_recurring_registration' => ['/recurringpayinregistrations', RequestType::POST],
         'payins_recurring_registration_get' => ['/recurringpayinregistrations/%s', RequestType::GET],
@@ -122,6 +133,8 @@ abstract class ApiBase
         'users_getemoney_month' => ['/users/%s/emoney/%s/%s', RequestType::GET],
         'users_block_status' => ['/users/%s/blockStatus', RequestType::GET],
         'users_block_status_regulatory' => ['/users/%s/Regulatory', RequestType::GET],
+
+        'validate_the_format_of_user_data' => ['/users/data-formats/validation', RequestType::POST],
 
         'bankaccounts_save' => ['/users/%s/bankaccounts/%s', RequestType::PUT],
 
@@ -210,7 +223,11 @@ abstract class ApiBase
 
         'deposits_create' => ['/deposit-preauthorizations/card/direct', RequestType::POST],
         'deposits_get' => ['/deposit-preauthorizations/%s', RequestType::GET],
-        'deposits_cancel' => ['/deposit-preauthorizations/%s', RequestType::PUT]
+        'deposits_cancel' => ['/deposit-preauthorizations/%s', RequestType::PUT],
+
+        'get_conversion_rate' => ['/conversion/rate/%s/%s', RequestType::GET],
+        'create_instant_conversion' => ['/instant-conversion', RequestType::POST],
+        'get_instant_conversion' => ['/instant-conversion/%s', RequestType::GET]
     ];
 
     /**
@@ -316,7 +333,7 @@ abstract class ApiBase
      * @param \MangoPay\Sorting $sorting Object to sorting data
      * @return object[] Response data
      */
-    protected function GetList($methodKey, & $pagination, $responseClassName = null, $entityId = null, $filter = null, $sorting = null, $secondEntityId = null, $clientIdRequired = true)
+    protected function GetList($methodKey, &$pagination, $responseClassName = null, $entityId = null, $filter = null, $sorting = null, $secondEntityId = null, $clientIdRequired = true)
     {
         $urlMethod = sprintf($this->GetRequestUrl($methodKey), $entityId, $secondEntityId);
 
@@ -372,6 +389,34 @@ abstract class ApiBase
 
         $rest = new RestTool($this->_root, true);
         $response = $rest->Request($urlMethod, $this->GetRequestType($methodKey), $requestData);
+
+        if (!is_null($responseClassName)) {
+            return $this->CastResponseToEntity($response, $responseClassName);
+        }
+
+        return $response;
+    }
+
+    /**
+     * Executes a POST request
+     * @param $methodKey Key with request data
+     * @param $entity Entity object
+     * @param $responseClassName Name of entity class from response
+     * @param $entityId Entity identifier
+     * @return object Response data
+     */
+    protected function ExecutePostRequest($methodKey, $entity, $responseClassName, $entityId = null)
+    {
+        if ($entityId != null) {
+            $urlMethod = sprintf($this->GetRequestUrl($methodKey), $entityId);
+        } else {
+            $urlMethod = $this->GetRequestUrl($methodKey);
+        }
+
+        $requestData = $this->BuildRequestData($entity);
+
+        $rest = new RestTool($this->_root, true);
+        $response = $rest->Request($urlMethod, $this->GetRequestType($methodKey), $requestData, null);
 
         if (!is_null($responseClassName)) {
             return $this->CastResponseToEntity($response, $responseClassName);

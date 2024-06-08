@@ -25,11 +25,42 @@ class StripeConnect extends StripePaymentGateway {
     public $retry_interval;
 
     /**
+     * Stripe test mode.
+     *
+     * @var bool
+     */
+    public $testmode;
+
+
+    /**
+     * @var string $secret_key
+     */
+    public $secret_key;
+
+    /**
+     * @var string $publishable_key
+     */
+    public $publishable_key;
+
+    /**
+     * @var bool $saved_cards
+     */
+    public $saved_cards;
+
+    /**
+     * @var string $currency
+     */
+    public $currency;
+
+    /**
+     * @var string $stripe_meta_key
+     */
+    public $stripe_meta_key;
+
+    /**
      * Constructor method
      *
      * @since 3.0.3
-     *
-     * @return vois
      */
     public function __construct() {
         $this->retry_interval     = 1;
@@ -63,10 +94,6 @@ class StripeConnect extends StripePaymentGateway {
         $this->secret_key      = $this->testmode ? $this->get_option( 'test_secret_key' ) : $this->get_option( 'secret_key' );
         $this->publishable_key = $this->testmode ? $this->get_option( 'test_publishable_key' ) : $this->get_option( 'publishable_key' );
         $this->saved_cards     = 'yes' === $this->get_option( 'saved_cards' );
-        $this->checkout_modal  = 'yes' === $this->get_option( 'stripe_checkout' );
-        $this->checkout_locale = $this->get_option( 'stripe_checkout_locale' );
-        $this->checkout_image  = $this->get_option( 'stripe_checkout_image' );
-        $this->checkout_label  = $this->get_option( 'stripe_checkout_label' );
         $this->currency        = strtolower( get_woocommerce_currency() );
         $this->stripe_meta_key = '_dokan_stripe_charge_id_';
 
@@ -348,21 +375,22 @@ class StripeConnect extends StripePaymentGateway {
      */
     public function add_subscription_payment_meta( $payment_meta, $subscription ) {
         $subscription_id = $subscription->get_id();
-        $source_id       = get_post_meta( $subscription_id, '_stripe_source_id', true );
+        $source_id       = $subscription->get_meta( '_stripe_source_id', true );
 
         // For BW compat will remove in future.
         if ( empty( $source_id ) ) {
-            $source_id = get_post_meta( $subscription_id, '_stripe_card_id', true );
+            $source_id = $subscription->get_meta(  '_stripe_card_id', true );
 
             // Take this opportunity to update the key name.
-            update_post_meta( $subscription_id, '_stripe_source_id', $source_id );
-            delete_post_meta( $subscription_id, '_stripe_card_id', $source_id );
+            $subscription->update_meta_data( '_stripe_source_id', $source_id );
+            $subscription->delete_meta_data( '_stripe_card_id' );
+            $subscription->save();
         }
 
         $payment_meta[ $this->id ] = array(
             'post_meta' => array(
                 '_stripe_customer_id' => array(
-                    'value' => get_post_meta( $subscription_id, '_stripe_customer_id', true ),
+                    'value' => $subscription->get_meta( '_stripe_customer_id', true ),
                     'label' => 'Stripe Customer ID',
                 ),
                 '_stripe_source_id'   => array(
@@ -394,10 +422,11 @@ class StripeConnect extends StripePaymentGateway {
         }
 
         foreach ( $subscriptions as $key => $subscription ) {
-            update_post_meta( $subscription->get_id(), '_stripe_customer_id', $intent->customer );
-            update_post_meta( $subscription->get_id(), '_transaction_id', $intent->charges->first()->id );
-            update_post_meta( $subscription->get_id(), '_stripe_source_id', $intent->source );
-            update_post_meta( $subscription->get_id(), '_stripe_intent_id', $intent->id );
+            $subscription->update_meta_data( '_stripe_customer_id', $intent->customer );
+            $subscription->update_meta_data( '_transaction_id', $intent->charges->first()->id );
+            $subscription->update_meta_data( '_stripe_source_id', $intent->source );
+            $subscription->update_meta_data( '_stripe_intent_id', $intent->id );
+            $subscription->save();
         }
 	}
 
@@ -463,8 +492,9 @@ class StripeConnect extends StripePaymentGateway {
      * @return void
      */
     public function update_failing_payment_method( $subscription, $renewal_order ) {
-        update_post_meta( $subscription->get_id(), '_stripe_customer_id', $renewal_order->get_meta( '_stripe_customer_id', true ) );
-        update_post_meta( $subscription->get_id(), '_stripe_source_id', $renewal_order->get_meta( '_stripe_source_id', true ) );
+        $subscription->update_meta_data( '_stripe_customer_id', $renewal_order->get_meta( '_stripe_customer_id', true ) );
+        $subscription->update_meta_data(  '_stripe_source_id', $renewal_order->get_meta( '_stripe_source_id', true ) );
+        $subscription->save();
     }
 
     /**
@@ -515,10 +545,11 @@ class StripeConnect extends StripePaymentGateway {
             if ( ! empty( $all_subs ) ) {
                 foreach ( $all_subs as $sub ) {
                     if ( $sub->has_status( $subs_statuses ) ) {
-                        update_post_meta( $sub->get_id(), '_stripe_source_id', $source_id );
-                        update_post_meta( $sub->get_id(), '_stripe_customer_id', $stripe_customer->get_id() );
-                        update_post_meta( $sub->get_id(), '_payment_method', $this->id );
-                        update_post_meta( $sub->get_id(), '_payment_method_title', $this->method_title );
+                        $sub->update_meta_data( '_stripe_source_id', $source_id );
+                        $sub->update_meta_data(  '_stripe_customer_id', $stripe_customer->get_id() );
+                        $sub->update_meta_data(  '_payment_method', $this->id );
+                        $sub->update_meta_data( '_payment_method_title', $this->method_title );
+                        $sub->save();
                     }
                 }
             }
@@ -541,18 +572,19 @@ class StripeConnect extends StripePaymentGateway {
             return $payment_method_to_display;
         }
 
-        $stripe_source_id = get_post_meta( $subscription->get_id(), '_stripe_source_id', true );
+        $stripe_source_id = $subscription->get_meta( '_stripe_source_id', true );
 
         // For BW compat will remove in future.
         if ( empty( $stripe_source_id ) ) {
-            $stripe_source_id = get_post_meta( $subscription->get_id(), '_stripe_card_id', true );
+            $stripe_source_id = $subscription->get_meta( '_stripe_card_id', true );
 
             // Take this opportunity to update the key name.
-            update_post_meta( $subscription->get_id(), '_stripe_source_id', $stripe_source_id );
+            $subscription->update_meta_data( '_stripe_source_id', $stripe_source_id );
+            $subscription->save();
         }
 
         $stripe_customer    = new Customer();
-        $stripe_customer_id = get_post_meta( $subscription->get_id(), '_stripe_customer_id', true );
+        $stripe_customer_id = $subscription->get_meta( '_stripe_customer_id', true );
 
         // If we couldn't find a Stripe customer linked to the subscription, fallback to the user meta data.
         if ( ! $stripe_customer_id || ! is_string( $stripe_customer_id ) ) {
@@ -571,15 +603,16 @@ class StripeConnect extends StripePaymentGateway {
 
         // If we couldn't find a Stripe customer linked to the account, fallback to the order meta data.
         if ( ( ! $stripe_customer_id || ! is_string( $stripe_customer_id ) ) && false !== $subscription->order ) {
-            $stripe_customer_id = get_post_meta( $subscription->get_parent_id(), '_stripe_customer_id', true );
-            $stripe_source_id   = get_post_meta( $subscription->get_parent_id(), '_stripe_source_id', true );
+            $stripe_customer_id = $subscription->get_meta( '_stripe_customer_id', true );
+            $stripe_source_id   = $subscription->get_meta( '_stripe_source_id', true );
 
             // For BW compat will remove in future.
             if ( empty( $stripe_source_id ) ) {
-                $stripe_source_id = get_post_meta( $subscription->get_parent_id(), '_stripe_card_id', true );
+                $stripe_source_id = $subscription->get_meta( '_stripe_card_id', true );
 
                 // Take this opportunity to update the key name.
-                update_post_meta( $subscription->get_parent_id(), '_stripe_source_id', $stripe_source_id );
+                $subscription->update_meta_data( '_stripe_source_id', $stripe_source_id );
+                $subscription->save();
             }
         }
 
@@ -667,16 +700,17 @@ class StripeConnect extends StripePaymentGateway {
 
     /**
      * Don't transfer Stripe customer/token meta to resubscribe orders.
-     * @param int $resubscribe_order The order created for the customer to resubscribe to the old expired/cancelled subscription
+     * @param \WC_Order $resubscribe_order The order created for the customer to resubscribe to the old expired/cancelled subscription
      */
     public function delete_resubscribe_meta( $resubscribe_order ) {
-        delete_post_meta( $resubscribe_order->get_id(), '_stripe_customer_id' );
-        delete_post_meta( $resubscribe_order->get_id(), '_stripe_source_id' );
+        $resubscribe_order->delete_meta_data( '_stripe_customer_id' );
+        $resubscribe_order->delete_meta_data( '_stripe_source_id' );
         // For BW compat will remove in future
-        delete_post_meta( $resubscribe_order->get_id(), '_stripe_card_id' );
+        $resubscribe_order->delete_meta_data( '_stripe_card_id' );
         // delete payment intent ID
-        delete_post_meta( $resubscribe_order->get_id(), '_stripe_intent_id' );
-        delete_post_meta( $resubscribe_order->get_id(), 'dokan_stripe_intent_id' );
+        $resubscribe_order->delete_meta_data( '_stripe_intent_id' );
+        $resubscribe_order->delete_meta_data( 'dokan_stripe_intent_id' );
+        $resubscribe_order->save();
     }
 
     /**
@@ -686,8 +720,9 @@ class StripeConnect extends StripePaymentGateway {
      */
     public function delete_renewal_meta( $renewal_order ) {
         // delete payment intent ID
-        delete_post_meta( $renewal_order->get_id(), '_stripe_intent_id' );
-        delete_post_meta( $renewal_order->get_id(), 'dokan_stripe_intent_id' );
+        $renewal_order->delete_meta_data( '_stripe_intent_id' );
+        $renewal_order->delete_meta_data( 'dokan_stripe_intent_id' );
+        $renewal_order->save();
 
         return $renewal_order;
     }
@@ -741,7 +776,7 @@ class StripeConnect extends StripePaymentGateway {
         if ( $order ) {
             $order_id = $order->get_id();
 
-            $stripe_customer_id = get_post_meta( $order_id, '_stripe_customer_id', true );
+            $stripe_customer_id = $order->get_meta( '_stripe_customer_id', true );
 
             if ( $stripe_customer_id ) {
                 $stripe_customer->set_id( $stripe_customer_id );
@@ -993,12 +1028,7 @@ class StripeConnect extends StripePaymentGateway {
 
         wp_enqueue_style( 'dokan_stripe', DOKAN_STRIPE_ASSETS . 'css/stripe.css' );
 
-        if ( ! Helper::is_3d_secure_enabled() && $this->checkout_modal && ! is_add_payment_method_page() ) {
-            wp_enqueue_script( 'stripe', 'https://checkout.stripe.com/v2/checkout.js', [], '2.0', true );
-
-            $dokan_stripe_version = filemtime( plugin_dir_path( __FILE__ ) . '../assets/js/stripe-checkout.js' );
-            wp_enqueue_script( 'dokan_stripe', plugins_url( 'assets/js/stripe-checkout.js', dirname( __FILE__ ) ), [ 'stripe' ], $dokan_stripe_version, true );
-        } elseif ( ! Helper::is_3d_secure_enabled() && ! is_add_payment_method_page() ) {
+        if ( ! Helper::is_3d_secure_enabled() && ! is_add_payment_method_page() ) {
             $this->tokenization_script();
             wp_enqueue_script( 'stripe', 'https://js.stripe.com/v1/', [], '1.0', true );
 
@@ -1023,9 +1053,6 @@ class StripeConnect extends StripePaymentGateway {
             'is_add_payment_page'   => is_wc_endpoint_url( 'add-payment-method' ) ? 'yes' : 'no',
             'name'                  => get_bloginfo( 'name' ),
             'description'           => get_bloginfo( 'description' ),
-            'label'                 => $this->checkout_label,
-            'locale'                => $this->checkout_locale,
-            'image'                 => $this->checkout_image,
             'i18n_terms'            => __( 'Please accept the terms and conditions first', 'dokan' ),
             'i18n_required_fields'  => __( 'Please fill in required checkout fields first', 'dokan' ),
             'invalid_request_error' => __( 'Unable to process this payment, please try again or use alternative method.', 'dokan' ),
@@ -1178,11 +1205,7 @@ class StripeConnect extends StripePaymentGateway {
                     data-amount="<?php echo esc_attr( Helper::get_stripe_amount( WC()->cart->total ) ); ?>"
                     data-currency="<?php echo esc_attr( strtolower( get_woocommerce_currency() ) ); ?>"
                 >
-                    <?php
-                    if ( ! $this->checkout_modal ) {
-                        $this->form();
-                    }
-                    ?>
+                    <?php $this->form(); ?>
                 </div>
             <?php endif; ?>
 

@@ -1,7 +1,7 @@
 <div class="dokan-attribute-variation-options dokan-edit-row dokan-clearfix">
     <div class="dokan-section-heading" data-togglehandler="dokan_attribute_variation_options">
-        <h2><i class="far fa-list-alt" aria-hidden="true"></i> <?php _e( 'Attribute', 'dokan' ); ?></h2>
-        <p class=""><?php _e( 'Manage attributes for this auction', 'dokan' ); ?></p>
+        <h2><i class="far fa-list-alt" aria-hidden="true"></i> <?php esc_html_e( 'Attribute', 'dokan' ); ?></h2>
+        <p class=""><?php esc_html_e( 'Manage attributes for this auction', 'dokan' ); ?></p>
 
         <a href="#" class="dokan-section-toggle">
             <i class="fas fa-sort-down fa-flip-vertical" aria-hidden="true"></i>
@@ -48,7 +48,7 @@
                             'is_auction'         => true,
                             'thepostid'          => $post_id,
                             'taxonomy'           => $taxonomy,
-                            'attribute_taxonomy' => isset( $attribute_taxonomy ) ? $attribute_taxonomy : null,
+                            'attribute_taxonomy' => $attribute_taxonomy ?? null,
                             'attribute_label'    => $attribute_label,
                             'attribute'          => $attribute,
                             'metabox_class'      => $metabox_class,
@@ -62,19 +62,19 @@
 
             <div class="dokan-attribute-type">
                 <select name="predefined_attribute" id="predefined_attribute" class="dokan-w5 dokan-form-control dokan_attribute_taxonomy" data-predefined_attr='<?php echo json_encode( $attribute_taxonomies ); ?>'>
-                    <option value=""><?php _e( 'Custom Attribute', 'dokan' ); ?></option>
+                    <option value=""><?php esc_html_e( 'Custom Attribute', 'dokan' ); ?></option>
                     <?php
                     if ( ! empty( $attribute_taxonomies ) ) {
                         foreach ( $attribute_taxonomies as $tax ) {
                             $attribute_taxonomy_name = wc_attribute_taxonomy_name( $tax->attribute_name );
-                            $label = $tax->attribute_label ? $tax->attribute_label : $tax->attribute_name;
+                            $label = wc_attribute_label( 'pa_' . $tax->attribute_name );
                             echo '<option value="' . esc_attr( $attribute_taxonomy_name ) . '">' . esc_html( $label ) . '</option>';
                         }
                     }
                     ?>
                 </select>
-                <a href="#" class="dokan-btn dokan-btn-default add_new_attribute"><?php _e( 'Add attribute', 'dokan' ) ?></a>
-                <a href="#" class="dokan-btn dokan-btn-default dokan-btn-theme dokan-save-attribute"><?php _e( 'Save attribute', 'dokan' ) ?></a>
+                <a href="#" class="dokan-btn dokan-btn-default add_new_attribute"><?php esc_html_e( 'Add attribute', 'dokan' ) ?></a>
+                <a href="#" class="dokan-btn dokan-btn-default dokan-btn-theme dokan-save-attribute"><?php esc_html_e( 'Save attribute', 'dokan' ) ?></a>
                 <span class="dokan-spinner dokan-attribute-spinner dokan-hide"></span>
             </div>
         </div>

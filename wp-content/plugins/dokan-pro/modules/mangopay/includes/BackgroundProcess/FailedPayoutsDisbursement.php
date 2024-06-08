@@ -154,7 +154,7 @@ class FailedPayoutsDisbursement extends WC_Background_Process {
             Meta::update_last_payout_attempt( $order, dokan_current_datetime()->getTimestamp() );
             Meta::update_payout_attempts( $order, ! empty( $payout['total_attempt'] ) ? (int) $payout['total_attempt'] + 1 : 1 );
             Meta::remove_failed_payout( $payout );
-            $order->save_meta_data();
+            $order->save();
         }
 
         return false;

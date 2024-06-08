@@ -89,7 +89,7 @@ class StoreSocialProfile extends Widget_Social_Icons {
                 'default'     => 'fab fa-wordpress',
                 'include'     => [
                     'fab fa-facebook',
-                    'fab fa-twitter',
+                    'fab fa-x-twitter',
                     'fab fa-pinterest',
                     'fab fa-linkedin',
                     'fab fa-youtube',
@@ -135,10 +135,10 @@ class StoreSocialProfile extends Widget_Social_Icons {
                     ],
                     [
                         'social_icon' => [
-                            'value'   => 'fab fa-twitter',
+                            'value'   => 'fab fa-x-twitter',
                             'library' => 'fa-brands',
                         ],
-                        'social' => 'fab fa-twitter',
+                        'social' => 'fab fa-x-twitter',
                     ],
                     [
                         'social_icon' => [

@@ -31,7 +31,7 @@ class VendorInbox {
      * @return void
      */
     public function init_hooks() {
-        add_filter( 'dokan_get_dashboard_nav', array( $this, 'dokan_add_inbox_menu' ), 22, 1 );
+        add_filter( 'dokan_get_dashboard_nav', [ $this, 'dokan_add_inbox_menu' ], 22 );
         add_filter( 'dokan_query_var_filter', array( $this, 'dokan_add_endpoint' ) );
         add_action( 'dokan_load_custom_template', array( $this, 'dokan_load_inbox_template' ), 22 );
         add_action( 'dokan_set_template_path', [ $this, 'set_template_path' ], 10, 3 );
@@ -47,14 +47,15 @@ class VendorInbox {
      * @return array
      */
     public function dokan_add_inbox_menu( $urls ) {
+        $menu = [
+            'title' => __( 'Inbox', 'dokan' ),
+            'icon'  => '<i class="fas fa-comment"></i>',
+            'url'   => dokan_get_navigation_url( 'inbox' ),
+            'pos'   => 195,
+            'permission' => 'dokan_view_inbox_menu',
+        ];
         if ( dokan_is_seller_enabled( get_current_user_id() ) ) {
-            $urls['inbox'] = array(
-                'title' => __( 'Inbox', 'dokan' ),
-                'icon'  => '<i class="fas fa-comment"></i>',
-                'url'   => dokan_get_navigation_url( 'inbox' ),
-                'pos'   => 195,
-                'permission' => 'dokan_view_inbox_menu',
-            );
+            $urls['inbox'] = $menu;
         }
 
         return $urls;

@@ -123,7 +123,7 @@ class Store {
                 'info'      => [
                     [
                         'text' => __( 'Docs', 'dokan-lite' ),
-                        'url'  => 'https://wedevs.com/docs/dokan/modules/how-to-enable-minimum-maximum-order-amount-for-dokan/',
+                        'url'  => 'https://dokan.co/docs/wordpress/modules/how-to-enable-minimum-maximum-order-amount-for-dokan/',
                         'icon' => 'dokan-icon-doc',
                     ],
                 ],

@@ -23,7 +23,7 @@ class Wallet extends Processor {
      *
      * @param string|int $mangopay_user_id
      *
-     * @return object|false
+     * @return \MangoPay\Wallet[]|false
      */
     public static function get( $mangopay_user_id ) {
         if ( empty( $mangopay_user_id ) ) {

@@ -6,6 +6,7 @@ defined( 'ABSPATH' ) || exit; // Exit if called directly
 
 use WeDevs\DokanPro\Modules\MangoPay\Processor\User;
 use WeDevs\DokanPro\Modules\MangoPay\Support\Helper;
+use WeDevs\DokanPro\Modules\MangoPay\Support\Meta;
 
 /**
  * CLass for managing checkout options
@@ -90,6 +91,13 @@ class Manager {
      * @return void
      */
     public function synchronize_account_data( $wp_user_id ) {
+        $mp_user_id = Meta::get_mangopay_account_id( $wp_user_id );
+        $user       = User::get( $mp_user_id );
+
+        if ( ! $user ) {
+            return;
+        }
+
         User::sync_account_data( $wp_user_id );
     }
 }

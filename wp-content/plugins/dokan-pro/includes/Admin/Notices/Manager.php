@@ -14,7 +14,7 @@ class Manager {
     public function __construct() {
         $this->init_classes();
         // temporary disabling Dokan Pro Survey so not removing the existing codebase
-        //$this->init_hooks();
+        $this->init_hooks();
     }
 
     /**
@@ -38,8 +38,8 @@ class Manager {
      */
     private function init_hooks() {
         // dokan pro survey notices
-        add_filter( 'dokan_admin_promo_notices', [ $this, 'dokan_pro_survey_notice' ] );
-        add_action( 'wp_ajax_dismiss_dokan_pro_survey_notice', [ $this, 'ajax_dismiss_dokan_pro_survey_notice' ] );
+        //add_filter( 'dokan_admin_promo_notices', [ $this, 'dokan_pro_survey_notice' ] );
+        //add_action( 'wp_ajax_dismiss_dokan_pro_survey_notice', [ $this, 'ajax_dismiss_dokan_pro_survey_notice' ] );
     }
 
     /**
@@ -57,17 +57,17 @@ class Manager {
         }
 
         $notices[] = [
-            'type'        => 'info',
-            'title'       => __( 'Would you mind spending 5-7 minutes to improve Dokan Pro by answering 7 simple questions?', 'dokan' ),
+            'type'              => 'info',
+            'title'             => __( 'Would you mind spending 5-7 minutes to improve Dokan Pro by answering 7 simple questions?', 'dokan' ),
             /* translators: %s permalink settings url */
-            'description' => '',
-            'priority'    => 1,
+            'description'       => '',
+            'priority'          => 1,
             'show_close_button' => true,
-            'ajax_data'   => [
+            'ajax_data'         => [
                 'action' => 'dismiss_dokan_pro_survey_notice',
                 'nonce'  => wp_create_nonce( 'dismiss_dokan_pro_survey_removed_nonce' ),
             ],
-            'actions'     => [
+            'actions'           => [
                 [
                     'type'   => 'primary',
                     'text'   => __( 'Take the Survey', 'dokan' ),
@@ -75,12 +75,12 @@ class Manager {
                     'target' => '_blank',
                 ],
                 [
-                    'type'   => 'secondary',
-                    'text'   => __( 'Already Participated', 'dokan' ),
+                    'type'           => 'secondary',
+                    'text'           => __( 'Already Participated', 'dokan' ),
                     'loading_text'   => __( 'Please wait...', 'dokan' ),
                     'completed_text' => __( 'Done', 'dokan' ),
                     'reload'         => true,
-                    'ajax_data'   => [
+                    'ajax_data'      => [
                         'action' => 'dismiss_dokan_pro_survey_notice',
                         'nonce'  => wp_create_nonce( 'dismiss_dokan_pro_survey_removed_nonce' ),
                     ],

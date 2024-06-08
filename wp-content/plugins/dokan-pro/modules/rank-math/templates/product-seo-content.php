@@ -21,7 +21,18 @@
         display: none !important;
     }
 </style>
-
+<script>
+    (function($) {
+        $(window).load(function() {
+            if ( typeof window.rankMathEditor === 'undefined' || ! window.rankMathEditor ) {
+                return;
+            }
+            // Here we are setting content and description field.
+            window.rankMathEditor.assessor.dataCollector.elemContent = $( '#post_content' );
+            window.rankMathEditor.assessor.dataCollector.elemDescription = $( '#post_excerpt' );
+        }); // End of window load.
+    })(jQuery);
+</script>
 <div class="dokan-edit-row dokan-clearfix dokan-border-top">
     <div class="dokan-section-heading">
         <h2><i class="fab fa-superpowers" aria-hidden="true"></i> <?php esc_html_e( 'Rank Math SEO', 'dokan' ); ?></h2>

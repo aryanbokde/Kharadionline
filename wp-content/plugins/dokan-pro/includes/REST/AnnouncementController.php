@@ -2,15 +2,21 @@
 
 namespace WeDevs\DokanPro\REST;
 
+use WeDevs\Dokan\Abstracts\DokanRESTController;
+use WeDevs\DokanPro\Announcement\Single;
 use WP_Error;
-use WP_Query;
-use WP_User_Query;
+use WP_HTTP_Response;
+use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
-use WeDevs\Dokan\Abstracts\DokanRESTController;
-use WeDevs\DokanPro\Admin\Announcement;
-use WeDevs\Dokan\Cache;
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly
+}
+
+/**
+ * REST API Announcement controller
+ */
 class AnnouncementController extends DokanRESTController {
 
     /**
@@ -22,6 +28,13 @@ class AnnouncementController extends DokanRESTController {
 
     /**
      * Route name
+     *
+     * @var string
+     */
+    protected $rest_base = 'announcement';
+
+    /**
+     * Rest route base.
      *
      * @var string
      */
@@ -39,10 +52,26 @@ class AnnouncementController extends DokanRESTController {
      *
      * @var string
      */
-    protected $post_status = array( 'publish' );
+    protected $post_status = [ 'publish' ];
 
     /**
-     * Register all announcement route
+     * Announcement manager
+     *
+     * @var \WeDevs\DokanPro\Announcement\Manager
+     */
+    protected $manager;
+
+    /**
+     * AnnouncementController constructor.
+     *
+     * @since 3.9.4
+     */
+    public function __construct() {
+        $this->manager = new \WeDevs\DokanPro\Announcement\Manager();
+    }
+
+    /**
+     * Register all announcement routes
      *
      * @since 2.8.2
      *
@@ -50,139 +79,258 @@ class AnnouncementController extends DokanRESTController {
      */
     public function register_routes() {
         register_rest_route(
-            $this->namespace, '/' . $this->base, array(
-                array(
+            $this->namespace, '/' . $this->rest_base, [
+                [
                     'methods'             => WP_REST_Server::READABLE,
-                    'callback'            => array( $this, 'get_announcements' ),
+                    'callback'            => [ $this, 'get_items' ],
                     'args'                => array_merge(
-                        $this->get_collection_params(), array(
-                            'status' => array(
+                        $this->get_collection_params(), [
+                            'vendor_id'   => [
+                                'description'       => __( 'If set, specified vendor announcement will be returned.', 'dokan' ),
+                                'type'              => 'integer',
+                                'sanitize_callback' => 'absint',
+                                'validate_callback' => 'dokan_rest_validate_store_id',
+                                'required'          => false,
+                            ],
+                            'status'      => [
                                 'type'        => 'string',
-                                'description' => __( 'Announcement status', 'dokan' ),
+                                'description' => __( 'Announcement status, this is a admin only feature', 'dokan' ),
                                 'required'    => false,
-                            ),
-                        )
+                                'enum'        => [ 'all', 'publish', 'pending', 'draft', 'future', 'trash' ],
+                                'default'     => 'all',
+                            ],
+                            'read_status' => [
+                                'type'        => 'string',
+                                'description' => __( 'Announcement read status, this is a vendor only feature', 'dokan' ),
+                                'required'    => false,
+                                'enum'        => [ 'read', 'trash', 'unread', 'all' ],
+                                'default'     => 'all',
+                            ],
+                            'from'        => [
+                                'type'        => 'string',
+                                'format'      => 'date-time',
+                                'description' => __( 'Announcement date time from', 'dokan' ),
+                                'required'    => false,
+                            ],
+                            'to'          => [
+                                'type'        => 'string',
+                                'format'      => 'date-time',
+                                'description' => __( 'Announcement date time to', 'dokan' ),
+                                'required'    => false,
+                            ],
+                        ]
                     ),
-                    'permission_callback' => array( $this, 'get_announcement_permissions_check' ),
-                ),
-                array(
+                    'permission_callback' => [ $this, 'get_items_permissions_check' ],
+                ],
+                [
                     'methods'             => WP_REST_Server::CREATABLE,
-                    'callback'            => array( $this, 'create_announcement' ),
+                    'callback'            => [ $this, 'create_item' ],
                     'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
-                    'permission_callback' => array( $this, 'create_announcement_permissions_check' ),
-                ),
-            )
+                    'permission_callback' => [ $this, 'create_item_permissions_check' ],
+                ],
+                'schema' => [ $this, 'get_public_item_schema' ],
+            ]
         );
 
         register_rest_route(
-            $this->namespace, '/' . $this->base . '/(?P<id>[\d]+)/', array(
-                'args' => array(
-                    'id' => array(
-                        'description' => __( 'Unique identifier for the object.', 'dokan' ),
-                        'type'        => 'integer',
-                    ),
-                ),
-
-                array(
+            $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)/', [
+                'args'   => [
+                    'id' => [
+                        'description'       => __( 'Unique identifier for the object.', 'dokan' ),
+                        'type'              => 'integer',
+                        'sanitize_callback' => 'absint',
+                        'validate_callback' => [ $this, 'rest_validate_announcement_id' ],
+                    ],
+                ],
+                [
                     'methods'             => WP_REST_Server::READABLE,
-                    'callback'            => array( $this, 'get_announcement' ),
-                    'permission_callback' => array( $this, 'get_announcement_permissions_check' ),
-                ),
+                    'callback'            => [ $this, 'get_item' ],
+                    'permission_callback' => [ $this, 'get_item_permissions_check' ],
+                ],
 
-                array(
+                [
                     'methods'             => WP_REST_Server::EDITABLE,
-                    'callback'            => array( $this, 'update_announcement' ),
-                    'permission_callback' => array( $this, 'get_announcement_permissions_check' ),
-                ),
+                    'callback'            => [ $this, 'update_item' ],
+                    'permission_callback' => [ $this, 'update_item_permissions_check' ],
+                ],
 
-                array(
+                [
                     'methods'             => WP_REST_Server::DELETABLE,
-                    'callback'            => array( $this, 'delete_announcement' ),
-                    'permission_callback' => array( $this, 'get_announcement_permissions_check' ),
-                ),
-
-            )
+                    'callback'            => [ $this, 'delete_announcement' ],
+                    'args'                => [
+                        'force' => [
+                            'description' => __( 'Force delete announcement.', 'dokan' ),
+                            'type'        => 'boolean',
+                            'default'     => false,
+                        ],
+                    ],
+                    'permission_callback' => [ $this, 'delete_item_permissions_check' ],
+                ],
+                'schema' => [ $this, 'get_public_item_schema' ],
+            ]
         );
 
         register_rest_route(
-            $this->namespace, '/' . $this->base . '/(?P<id>[\d]+)/restore', array(
-                'args' => array(
-                    'id' => array(
-                        'description' => __( 'Unique identifier for the object.', 'dokan' ),
-                        'type'        => 'integer',
-                    ),
-                ),
-
-                array(
+            $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)/restore', [
+                'args'   => [
+                    'id' => [
+                        'description'       => __( 'Unique identifier for the object.', 'dokan' ),
+                        'type'              => 'integer',
+                        'sanitize_callback' => 'absint',
+                        'validate_callback' => [ $this, 'rest_validate_announcement_id' ],
+                    ],
+                ],
+                [
                     'methods'             => WP_REST_Server::EDITABLE,
-                    'callback'            => array( $this, 'restore_announcement' ),
-                    'permission_callback' => array( $this, 'restore_announcement_permissions_check' ),
-                ),
-            )
+                    'callback'            => [ $this, 'restore_item' ],
+                    'permission_callback' => [ $this, 'restore_item_permissions_check' ],
+                ],
+                'schema' => [ $this, 'get_public_item_schema' ],
+            ]
         );
 
         register_rest_route(
-            $this->namespace, '/' . $this->base . '/batch', array(
-                array(
+            $this->namespace, '/' . $this->rest_base . '/batch', [
+                [
                     'methods'             => WP_REST_Server::EDITABLE,
-                    'callback'            => array( $this, 'batch_items' ),
-                    'permission_callback' => array( $this, 'batch_items_permissions_check' ),
-                    'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
-                ),
-            )
+                    'callback'            => [ $this, 'batch_items' ],
+                    'permission_callback' => [ $this, 'batch_items_permissions_check' ],
+                    'args'                => [
+                        'trash'   => [
+                            'description' => __( 'Batch trash announcements.', 'dokan' ),
+                            'type'        => 'array',
+                            'required'    => false,
+                            'context'     => [ 'edit' ],
+                            'items'       => [
+                                'type'              => 'integer',
+                                'sanitize_callback' => 'absint',
+                                'validate_callback' => [ $this, 'rest_validate_announcement_id' ],
+                            ],
+                        ],
+                        'delete'  => [
+                            'description' => __( 'Batch delete announcements.', 'dokan' ),
+                            'type'        => 'array',
+                            'required'    => false,
+                            'context'     => [ 'edit' ],
+                            'items'       => [
+                                'type'              => 'integer',
+                                'sanitize_callback' => 'absint',
+                                'validate_callback' => [ $this, 'rest_validate_announcement_id' ],
+                            ],
+                        ],
+                        'restore' => [
+                            'description' => __( 'Batch untrash announcements.', 'dokan' ),
+                            'type'        => 'array',
+                            'required'    => false,
+                            'context'     => [ 'edit' ],
+                            'items'       => [
+                                'type'              => 'integer',
+                                'sanitize_callback' => 'absint',
+                                'validate_callback' => [ $this, 'rest_validate_announcement_id' ],
+                            ],
+                        ],
+                    ],
+                ],
+                'schema' => [ $this, 'get_public_item_schema' ],
+            ]
+        );
+
+        register_rest_route(
+            $this->namespace,
+            '/' . $this->rest_base . '/notice/(?P<id>[\d]+)',
+            [
+                'args'   => [
+                    'id' => [
+                        'description'       => __( 'Unique identifier for the object.', 'dokan' ),
+                        'type'              => 'integer',
+                        'sanitize_callback' => 'absint',
+                        'validate_callback' => [ $this, 'rest_validate_notice_id' ],
+                    ],
+                ],
+                [
+                    'methods'             => WP_REST_Server::READABLE,
+                    'callback'            => [ $this, 'get_notice' ],
+                    'permission_callback' => [ $this, 'get_notice_permissions_check' ],
+                ],
+                [
+                    'methods'             => WP_REST_Server::EDITABLE,
+                    'callback'            => [ $this, 'update_read_status' ],
+                    'permission_callback' => [ $this, 'update_read_status_permissions_check' ],
+                    'args'                => [
+                        'read_status' => [
+                            'description' => __( 'Announcement read status', 'dokan' ),
+                            'type'        => 'string',
+                            'required'    => true,
+                            'enum'        => [ 'read', 'unread' ],
+                            'default'     => 'read',
+                        ],
+                    ],
+                ],
+                [
+                    'methods'             => WP_REST_Server::DELETABLE,
+                    'callback'            => [ $this, 'delete_notice' ],
+                    'permission_callback' => [ $this, 'delete_notice_permissions_check' ],
+                ],
+                'schema' => [ $this, 'get_public_item_schema' ],
+            ]
         );
     }
 
     /**
-     * Get single object
+     * Get a single announcement object
      *
      * @since 2.8.2
      *
-     * @return void
+     * @return WP_Error|Single
      */
     public function get_object( $id ) {
-        return get_post( $id );
+        return $this->manager->get_single_announcement( $id );
     }
 
     /**
-     * Get all announcement
+     * Get all announcements
      *
      * @since 2.8.2
      *
-     * @return void
+     * @return WP_REST_Response
      */
-    public function get_announcements( $request ) {
-        $status = ( empty( $request['status'] ) || $request['status'] === 'all' ) ? array( 'publish', 'pending', 'draft', 'future' ) : $request['status'];
-        $limit  = $request['per_page'];
-        $offset = ( $request['page'] - 1 ) * $request['page'];
+    public function get_items( $request ) {
+        $args = $request->get_params();
 
-        $args = array(
-            'post_type'      => $this->post_type,
-            'posts_per_page' => $limit,
-            'paged'          => $offset,
-            'post_status'    => $status,
-        );
-
-        $cache_group = 'announcements';
-        $cache_key   = 'announcements_' . md5( wp_json_encode( $args ) );
-        $query       = Cache::get( $cache_key, $cache_group );
-
-        if ( false === $query ) {
-            $query = new WP_Query( $args );
-
-            Cache::set( $cache_key, $query, $cache_group );
+        if ( ! current_user_can( dokan_admin_menu_capability() ) ) {
+            // request is comming from vendor dashboard
+            unset( $args['status'] );
+            $args['vendor_id'] = dokan_get_current_user_id();
         }
 
-        $data = array();
-        if ( $query->posts ) {
-            foreach ( $query->posts as $value ) {
-                $resp   = $this->prepare_response_for_object( $value, $request );
-                $data[] = $this->prepare_response_for_collection( $resp );
-            }
+        if ( ! empty( $args['vendor_id'] ) ) {
+            $args['vendor_id'] = current_user_can( dokan_admin_menu_capability() ) ? $args['vendor_id'] : dokan_get_current_user_id();
+        } else {
+            // request is coming from admin dashboard
+            unset( $args['read_status'] );
+            unset( $args['vendor_id'] );
         }
 
-        $response       = rest_ensure_response( $data );
-        $response_count = $query->found_posts;
+        $announcements = $this->manager->all( $args );
+        if ( is_wp_error( $announcements ) ) {
+            return rest_ensure_response( $announcements );
+        }
+
+        $pagination_data = $this->manager->get_pagination_data( $args );
+        $data            = [];
+
+
+        foreach ( $announcements as $announcement ) {
+            $response = $this->prepare_item_for_response( $announcement, $request );
+            $data[]   = $this->prepare_response_for_collection( $response );
+        }
+
+        $response = rest_ensure_response( $data );
+        $response = $this->format_collection_response( $response, $request, $pagination_data['total_count'] );
+
+        if ( ! current_user_can( dokan_admin_menu_capability() ) ) {
+            return $response;
+        }
 
         $count = wp_count_posts( 'dokan_announcement' );
 
@@ -193,7 +341,6 @@ class AnnouncementController extends DokanRESTController {
         $response->header( 'X-Status-Trash', $count->trash );
         $response->header( 'X-Status-Future', $count->future );
 
-        $response = $this->format_collection_response( $response, $request, $response_count );
         return $response;
     }
 
@@ -202,19 +349,14 @@ class AnnouncementController extends DokanRESTController {
      *
      * @since 2.8.2
      *
-     * @return void
+     * @return WP_Error|WP_REST_Response
      */
-    public function get_announcement( $request ) {
-        $announcement_id = $request['id'];
+    public function get_item( $request ) {
+        $announcement_id = $request->get_param( 'id' );
+        $announcement    = $this->get_object( $announcement_id );
+        $data            = $this->prepare_item_for_response( $announcement, $request );
 
-        if ( empty( $announcement_id ) ) {
-            return new WP_Error( 'no_announcement_found', __( 'No announcement found', 'dokan' ), array( 'status' => 404 ) );
-        }
-
-        $data     = $this->prepare_response_for_object( $this->get_object( $announcement_id ), $request );
-        $response = rest_ensure_response( $data );
-
-        return $response;
+        return rest_ensure_response( $data );
     }
 
     /**
@@ -222,17 +364,19 @@ class AnnouncementController extends DokanRESTController {
      *
      * @since 2.8.2
      *
-     * @return void
+     * @args  WP_Rest_Request $request
+     *
+     * @return WP_REST_Response
      */
-    public function create_announcement( $request ) {
-        $created_announcement = dokan_pro()->announcement->create_announcement( $request );
-
-        if ( is_wp_error( $created_announcement ) ) {
-            return new WP_Error( $created_announcement->get_error_code(), $created_announcement->get_error_message(), array( 'status' => 404 ) );
+    public function create_item( $request ) {
+        $announcement = $this->manager->create_announcement( $request->get_params() );
+        if ( is_wp_error( $announcement ) ) {
+            return rest_ensure_response( $announcement );
         }
-        $data = $this->prepare_response_for_object( $this->get_object( $created_announcement ), $request );
 
-        return rest_ensure_response( $data );
+        $announcement = $this->prepare_item_for_response( $this->get_object( $announcement ), $request );
+
+        return rest_ensure_response( $announcement );
     }
 
     /**
@@ -240,101 +384,19 @@ class AnnouncementController extends DokanRESTController {
      *
      * @since 2.8.2
      *
-     * @return void
+     * @args  WP_Rest_Request $request
+     *
+     * @return WP_REST_Response
      */
-    public function update_announcement( $request ) {
-        if ( empty( trim( $request['id'] ) ) ) {
-            return new WP_Error( 'no_id', __( 'No announcement id found', 'dokan' ), array( 'status' => 404 ) );
+    public function update_item( $request ) {
+        $announcement = $this->manager->create_announcement( $request->get_params(), true );
+        if ( is_wp_error( $announcement ) ) {
+            return rest_ensure_response( $announcement );
         }
 
-        if ( isset( $request['title'] ) && empty( trim( $request['title'] ) ) ) {
-            return new WP_Error( 'no_title', __( 'Announcement title must be required', 'dokan' ), array( 'status' => 404 ) );
-        }
+        $announcement = $this->prepare_item_for_response( $this->get_object( $announcement ), $request );
 
-        $status        = ! empty( $request['status'] ) ? $request['status'] : '';
-        $post_date     = ! empty( $request['post_date'] ) ? $request['post_date'] : '';
-
-        $data = array(
-            'ID'           => $request['id'],
-            'post_title'   => sanitize_text_field( $request['title'] ),
-            'post_content' => wp_kses_post( $request['content'] ),
-        );
-
-        if ( $status ) {
-            $data['post_status'] = $status;
-            $data['post_date']   = $post_date;
-        }
-
-        // if announcement is 'schedueld', but want to publish it now
-        // and set post_date_gmt to `0000-00-00 00:00:00`
-        $post_date_gmt = ! empty( $request['post_date_gmt'] ) ? $request['post_date_gmt'] : '';
-
-        if ( $post_date_gmt ) {
-            $data['post_date_gmt'] = $post_date_gmt;
-        }
-
-        $post_id = wp_update_post( $data );
-
-        update_post_meta( $post_id, '_announcement_type', $request['sender_type'] );
-        update_post_meta( $post_id, '_announcement_selected_user', $request['sender_ids'] );
-
-        /**
-         * @var $announcement Announcement
-         */
-        $announcement = dokan_pro()->announcement;
-
-        $assigned_sellers   = ! empty( $request['sender_ids'] ) ? $request['sender_ids'] : array();
-        $announcement_types = apply_filters( 'dokan_announcement_seller_types', [ 'all_seller', 'enabled_seller', 'disabled_seller', 'featured_seller' ] );
-
-        if ( 'selected_seller' === $request['sender_type'] ) {
-            $announcement->process_seller_announcement_data( $assigned_sellers, $post_id );
-        } elseif ( in_array( $request['sender_type'], $announcement_types, true ) ) {
-            $assigned_sellers = array();
-
-            $args = [
-                'role__in'   => [ 'seller', 'administrator' ],
-            ];
-
-            if ( 'enabled_seller' === $request['sender_type'] ) {
-                $args['meta_query'][] = [
-                    'key'     => 'dokan_enable_selling',
-                    'value'   => 'yes',
-                    'compare' => '=',
-                ];
-            }
-
-            if ( 'disabled_seller' === $request['sender_type'] ) {
-                $args['meta_query'][] = [
-                    'key'     => 'dokan_enable_selling',
-                    'value'   => 'no',
-                    'compare' => '=',
-                ];
-            }
-
-            if ( 'featured_seller' === $request['sender_type'] ) {
-                $args['meta_query'][] = [
-                    'key'     => 'dokan_feature_seller',
-                    'value'   => 'yes',
-                    'compare' => '=',
-                ];
-            }
-            $users   = new WP_User_Query( $args );
-            $sellers = $users->get_results();
-
-            if ( $sellers ) {
-                foreach ( $sellers as $user ) {
-                    $assigned_sellers[] = $user->ID;
-                }
-            }
-
-            $announcement->process_seller_announcement_data( $assigned_sellers, $post_id );
-        }
-
-        do_action( 'dokan_after_announcement_saved', $post_id, $assigned_sellers );
-
-        $data = $this->prepare_response_for_object( $this->get_object( $post_id ), $request );
-
-        return rest_ensure_response( $data );
+        return rest_ensure_response( $announcement );
     }
 
     /**
@@ -342,59 +404,21 @@ class AnnouncementController extends DokanRESTController {
      *
      * @since 2.8.2
      *
-     * @return void
+     * @args  WP_Rest_Request $request
+     *
+     * @return WP_REST_Response
      */
     public function delete_announcement( $request ) {
-        $post = $this->get_object( $request['id'] );
+        $announcement = $this->get_object( $request->get_param( 'id' ) );
 
-        if ( is_wp_error( $post ) ) {
-            return $post;
+        $data   = $this->prepare_item_for_response( $announcement, $request );
+        $result = $this->manager->delete_announcement( $announcement->get_id(), $request->get_param( 'force' ) );
+
+        if ( is_wp_error( $result ) ) {
+            return rest_ensure_response( $result );
         }
 
-        $id             = $post->ID;
-        $force          = (bool) $request['force'];
-        $supports_trash = ( EMPTY_TRASH_DAYS > 0 );
-        $supports_trash = apply_filters( "dokan_rest_{$this->post_type}_trashable", $supports_trash, $post );
-
-        // delete individual announcement cache
-        Announcement::delete_announcement_cache( [], $id );
-
-        // If we're forcing, then delete permanently.
-        if ( $force ) {
-            $previous = $this->prepare_response_for_object( $post, $request );
-            $result = wp_delete_post( $id, true );
-            $this->delete_announcement_data( $id );
-            $response = new WP_REST_Response();
-            $response->set_data(
-                array(
-                    'deleted' => true,
-                    'previous' => $previous->get_data(),
-                )
-            );
-        } else {
-            // If we don't support trashing for this type, error out.
-            if ( ! $supports_trash ) {
-                /* translators: %s: force=true */
-                return new WP_Error( 'rest_trash_not_supported', sprintf( __( "The post does not support trashing. Set '%s' to delete.", 'dokan' ), 'force=true' ), array( 'status' => 501 ) );
-            }
-
-            // Otherwise, only trash if we haven't already.
-            if ( 'trash' === $post->post_status ) {
-                return new WP_Error( 'rest_already_trashed', __( 'The post has already been deleted.', 'dokan' ), array( 'status' => 410 ) );
-            }
-
-            // (Note that internally this falls through to `wp_delete_post` if
-            // the trash is disabled.)
-            $result = wp_trash_post( $id );
-            $post = get_post( $id );
-            $response = $this->prepare_response_for_object( $post, $request );
-        }
-
-        if ( ! $result ) {
-            return new WP_Error( 'dokan_rest_cannot_delete', __( 'The announcement cannot be deleted.', 'dokan' ), array( 'status' => 500 ) );
-        }
-
-        return $response;
+        return rest_ensure_response( $data );
     }
 
     /**
@@ -402,22 +426,19 @@ class AnnouncementController extends DokanRESTController {
      *
      * @since 2.8.2
      *
-     * @return void
+     * @return WP_REST_Response
      */
-    public function restore_announcement( $request ) {
-        $post = $this->get_object( $request['id'] );
+    public function restore_item( $request ) {
+        $announcement = $this->get_object( $request->get_param( 'id' ) );
 
-        if ( is_wp_error( $post ) ) {
-            return $post;
+        $result = $this->manager->untrash_announcement( $announcement->get_id() );
+        if ( is_wp_error( $result ) ) {
+            return rest_ensure_response( $result );
         }
 
-        $post     = wp_untrash_post( $post->ID );
-        $response = $this->prepare_response_for_object( $post, $request );
+        $response = $this->prepare_item_for_response( $announcement, $request );
 
-        // delete individual announcement cache
-        Announcement::delete_announcement_cache( [], $post->ID );
-
-        return $response;
+        return rest_ensure_response( $response );
     }
 
     /**
@@ -438,84 +459,150 @@ class AnnouncementController extends DokanRESTController {
      *
      * @since 2.8.2
      *
-     * @return void
+     * @return WP_REST_Response
      */
     public function batch_items( $request ) {
-        global $wpdb;
-
         $params = $request->get_params();
 
         if ( empty( $params ) ) {
-            return new WP_Error( 'no_item_found', __( 'No items found for bulk updating', 'dokan' ), array( 'status' => 404 ) );
+            return rest_ensure_response(
+                new WP_Error( 'no_item_found', __( 'No items found for bulk actions.', 'dokan' ), [ 'status' => 404 ] )
+            );
         }
 
-        $allowed_status = array( 'trash', 'delete', 'restore' );
+        $allowed_status = [ 'trash', 'delete', 'restore' ];
 
         foreach ( $params as $status => $value ) {
             if ( in_array( $status, $allowed_status, true ) ) {
                 if ( 'delete' === $status ) {
                     foreach ( $value as $announcement_id ) {
                         // delete individual announcement cache
-                        Announcement::delete_announcement_cache( [], $announcement_id );
-                        $result = wp_delete_post( $announcement_id, true );
-                        $this->delete_announcement_data( $announcement_id );
+                        $this->manager->delete_announcement( $announcement_id, true );
                     }
                 } elseif ( 'trash' === $status ) {
                     foreach ( $value as $announcement_id ) {
-                        // delete individual announcement cache
-                        Announcement::delete_announcement_cache( [], $announcement_id );
-                        wp_trash_post( $announcement_id );
+                        // trash individual announcement cache
+                        $this->manager->delete_announcement( $announcement_id );
                     }
                 } elseif ( 'restore' === $status ) {
                     foreach ( $value as $announcement_id ) {
-                        // delete individual announcement cache
-                        Announcement::delete_announcement_cache( [], $announcement_id );
-                        wp_untrash_post( $announcement_id );
+                        // untrash individual announcement cache
+                        $this->manager->untrash_announcement( $announcement_id );
                     }
                 }
             }
         }
 
-        return true;
-    }
-
-
-    /**
-     * Delete announcement relational table data
-     *
-     * @since 2.8.2
-     *
-     * @return void
-     */
-    public function delete_announcement_data( $post_id ) {
-        global $wpdb;
-
-        $table_name = $wpdb->prefix . 'dokan_announcement';
-        $sql = "DELETE FROM {$table_name} WHERE `post_id` = $post_id";
-
-        $wpdb->query( $sql );
+        return rest_ensure_response( [ 'success' => true ] );
     }
 
     /**
-     * Get announcement permissions check
+     * Get a single notice
      *
-     * @since 2.8.2
+     * @since 3.9.4
      *
-     * @return void
+     * @param WP_REST_Request $request
+     *
+     * @return WP_REST_Response
      */
-    public function get_announcement_permissions_check() {
-        return current_user_can( 'manage_options' );
+    public function get_notice( $request ) {
+        $notice_id = $request->get_param( 'id' );
+
+        $notice = $this->manager->get_notice( $notice_id );
+
+        // update read status
+        if ( 'unread' === $notice->get_read_status() ) {
+            $this->manager->update_read_status( $notice_id, 'read' );
+            $notice = $notice->set_read_status( 'read' );
+        }
+
+        $response = $this->prepare_item_for_response( $notice, $request );
+
+        return rest_ensure_response( $response );
     }
 
     /**
-     * Get restore announcement permissions check
+     * Update read status for a notice
      *
-     * @since 2.8.2
+     * @since 3.9.4
      *
-     * @return void
+     * @param WP_REST_Request $request
+     *
+     * @return WP_REST_Response
      */
-    public function restore_announcement_permissions_check() {
-        return current_user_can( 'manage_options' );
+    public function update_read_status( $request ) {
+        $notice_id   = $request->get_param( 'id' );
+        $read_status = $request->get_param( 'read_status' );
+
+        $updated = $this->manager->update_read_status( $notice_id, $read_status );
+        if ( is_wp_error( $updated ) ) {
+            return rest_ensure_response( $updated );
+        }
+
+        $notice   = $this->manager->get_notice( $notice_id );
+        $response = $this->prepare_item_for_response( $notice, $request );
+
+        return rest_ensure_response( $response );
+    }
+
+    /**
+     * Delete a vendor notice
+     *
+     * @since 3.9.4
+     *
+     * @param WP_REST_Request $request
+     *
+     * @return WP_REST_Response
+     */
+    public function delete_notice( $request ) {
+        $notice_id = $request->get_param( 'id' );
+
+        $deleted = $this->manager->delete_notice( $notice_id );
+        if ( is_wp_error( $deleted ) ) {
+            return rest_ensure_response( $deleted );
+        }
+
+        return rest_ensure_response(
+            [
+                'success' => true,
+            ]
+        );
+    }
+
+    /**
+     * Get Items permission checking.
+     *
+     * @since 3.9.4
+     *
+     * @param WP_REST_Request $request Request object.
+     *
+     * @return bool|WP_Error
+     */
+    public function get_items_permissions_check( $request ) {
+        // phpcs:ignore WordPress.WP.Capabilities.Unknown
+        if ( current_user_can( dokan_admin_menu_capability() ) || current_user_can( 'dokandar' ) ) {
+            return true;
+        }
+
+        return new WP_Error( 'dokan_pro_permission_failure', esc_html__( 'You are not allowed to do this action.', 'dokan' ) );
+    }
+
+    /**
+     * Get Item permission checking.
+     *
+     * @since 3.9.4
+     *
+     * @param WP_REST_Request $request Request object.
+     *
+     * @return bool|WP_Error
+     */
+    public function get_item_permissions_check( $request ) {
+        // phpcs:ignore WordPress.WP.Capabilities.Unknown
+        if ( current_user_can( dokan_admin_menu_capability() ) ) {
+            return true;
+        }
+
+        return new WP_Error( 'dokan_pro_permission_failure', esc_html__( 'You are not allowed to do this action.', 'dokan' ) );
     }
 
     /**
@@ -523,10 +610,38 @@ class AnnouncementController extends DokanRESTController {
      *
      * @since 2.8.2
      *
-     * @return void
+     * @param WP_REST_Request $request
+     *
+     * @return bool
      */
-    public function create_announcement_permissions_check() {
-        return current_user_can( 'manage_options' );
+    public function create_item_permissions_check( $request ) {
+        return current_user_can( dokan_admin_menu_capability() );
+    }
+
+    /**
+     * Update announcement permissions check
+     *
+     * @since 2.8.2
+     *
+     * @param WP_REST_Request $request
+     *
+     * @return bool
+     */
+    public function update_item_permissions_check( $request ) {
+        return $this->create_item_permissions_check( $request );
+    }
+
+    /**
+     * Delete announcement permissions check
+     *
+     * @since 2.8.2
+     *
+     * @param WP_REST_Request $request
+     *
+     * @return bool
+     */
+    public function delete_item_permissions_check( $request ) {
+        return $this->get_item_permissions_check( $request );
     }
 
     /**
@@ -534,67 +649,374 @@ class AnnouncementController extends DokanRESTController {
      *
      * @since 2.8.0
      *
-     * @return void
+     * @return bool
      */
     public function batch_items_permissions_check() {
-        return current_user_can( 'manage_options' );
+        return current_user_can( dokan_admin_menu_capability() );
     }
 
     /**
-     * Prepare data for response
+     * Get restore announcement permissions check
      *
-     * @since 2.8.0
+     * @since 2.8.2
      *
-     * @return data
+     * @return bool
      */
-    public function prepare_response_for_object( $object, $request ) {
-        $data = array(
-            'id'           => $object->ID,
-            'title'        => $object->post_title,
-            'content'      => $object->post_content,
-            'status'       => $object->post_status,
-            'created_at'   => mysql_to_rfc3339( $object->post_date ),
-            'sender_type'  => get_post_meta( $object->ID, '_announcement_type', true ),
-            'sender_ids'   => array(),
-        );
+    public function restore_item_permissions_check() {
+        return current_user_can( dokan_admin_menu_capability() );
+    }
 
-        $sender_ids = get_post_meta( $object->ID, '_announcement_selected_user', true );
-
-        if ( ! empty( $sender_ids ) ) {
-            foreach ( $sender_ids as  $id ) {
-                $vendor = dokan()->vendor->get( $id );
-                $data['sender_ids'][] = array(
-                    'id'        => $id,
-                    'name'      => $vendor->get_shop_name() . '(' . $vendor->get_email() . ')',
-                    'shop_name' => $vendor->get_shop_name(),
-                );
-            }
+    /**
+     * Get a single notice permission check
+     *
+     * @since 3.9.4
+     *
+     * @param WP_REST_Request $request Request object.
+     *
+     * @return bool|WP_Error
+     */
+    public function get_notice_permissions_check( $request ) {
+        // phpcs:ignore WordPress.WP.Capabilities.Unknown
+        if ( current_user_can( 'dokandar' ) ) {
+            return true;
         }
 
-        $response = rest_ensure_response( $data );
-        $response->add_links( $this->prepare_links( $object, $request ) );
+        return new WP_Error( 'dokan_pro_permission_failure', esc_html__( 'You are not allowed to do this action.', 'dokan' ) );
+    }
 
-        return apply_filters( 'dokan_rest_prepare_announcement_object', $response, $object, $request );
+    /**
+     * Update read status permission check.
+     *
+     * @since 3.9.4
+     *
+     * @param WP_REST_Request $request Request object.
+     *
+     * @return bool|WP_Error
+     */
+    public function update_read_status_permissions_check( $request ) {
+        return $this->get_notice_permissions_check( $request );
+    }
+
+    /**
+     * Update read status permission check.
+     *
+     * @since 3.9.4
+     *
+     * @param WP_REST_Request $request Request object.
+     *
+     * @return bool|WP_Error
+     */
+    public function delete_notice_permissions_check( $request ) {
+        return $this->get_notice_permissions_check( $request );
+    }
+
+    /**
+     * Prepare Item for response.
+     *
+     * @since 3.9.4
+     *
+     * @param Single          $item    Item.
+     * @param WP_REST_Request $request Request object.
+     *
+     * @return WP_Error|WP_HTTP_Response|WP_REST_Response
+     */
+    public function prepare_item_for_response( $item, $request ) {
+        $data = $item->get_data();
+        if ( ! $item->get_vendor_id() ) {
+            // this is an admin request
+            $sender_ids = get_post_meta( $item->get_id(), '_announcement_selected_user', true );
+            if ( ! empty( $sender_ids ) ) {
+                foreach ( $sender_ids as $id ) {
+                    $vendor                         = dokan()->vendor->get( $id );
+                    $data['announcement_sellers'][] = [
+                        'id'        => $id,
+                        'name'      => $vendor->get_shop_name() . '(' . $vendor->get_email() . ')',
+                        'shop_name' => $vendor->get_shop_name(),
+                        'email'     => $vendor->get_email(),
+                    ];
+                }
+            }
+            $announcement_type         = get_post_meta( $item->get_id(), '_announcement_type', true );
+            $data['announcement_type'] = $announcement_type;
+        }
+
+        $context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+        $data     = $this->add_additional_fields_to_object( $data, $request );
+        $data     = $this->filter_response_by_context( $data, $context );
+        $response = rest_ensure_response( $data );
+        $response->add_links( $this->prepare_links( $item, $request ) );
+
+        return apply_filters( 'dokan_rest_prepare_announcement_object', $response, $item, $request );
     }
 
     /**
      * Prepare links for the request.
      *
-     * @param WC_Data         $object  Object data.
+     * @param Single          $item    Object data.
      * @param WP_REST_Request $request Request object.
      *
      * @return array                   Links for the given post.
      */
-    protected function prepare_links( $object, $request ) {
-        $links = array(
-            'self' => array(
-                'href' => rest_url( sprintf( '/%s/%s/%d', $this->namespace, $this->base, $object->ID ) ),
-            ),
-            'collection' => array(
-                'href' => rest_url( sprintf( '/%s/%s', $this->namespace, $this->base ) ),
-            ),
-        );
+    protected function prepare_links( $item, $request ) {
+        if ( $item->get_vendor_id() ) {
+            // this is coming from the frontend
+            $links = [
+                'self'       => [
+                    'href' => rest_url( sprintf( '/%s/%s/notice/%d', $this->namespace, $this->rest_base, $item->get_notice_id() ) ),
+                ],
+                'collection' => [
+                    'href' => rest_url( sprintf( '/%s/%s', $this->namespace, $this->rest_base ) ),
+                ],
+            ];
+        } else {
+            $links = [
+                'self'       => [
+                    'href' => rest_url( sprintf( '/%s/%s/%d', $this->namespace, $this->rest_base, $item->get_id() ) ),
+                ],
+                'collection' => [
+                    'href' => rest_url( sprintf( '/%s/%s', $this->namespace, $this->rest_base ) ),
+                ],
+            ];
+        }
+
 
         return $links;
+    }
+
+    /**
+     * This method will check if an announcement exists with given id
+     *
+     * @since 3.9.4
+     *
+     * @param $value
+     * @param $request WP_REST_Request
+     * @param $key
+     *
+     * @return bool|WP_Error
+     */
+    public function rest_validate_announcement_id( $value, $request, $key ) {
+        // permission check
+        $check_permission = $this->get_item_permissions_check( $request );
+        if ( ! is_user_logged_in() || is_wp_error( $check_permission) ) {
+            return new WP_Error( 'rest_invalid_param', __( 'You do not have permission to do this action.', 'dokan' ), [ 'status' => 400 ] );
+        }
+
+        $attributes = $request->get_attributes();
+
+        if ( isset( $attributes['args'][ $key ] ) ) {
+            $argument = $attributes['args'][ $key ];
+            // Check to make sure our argument is an int.
+            if ( 'integer' === $argument['type'] && ! is_numeric( $value ) ) {
+                // translators: 1) argument name, 2) argument value
+                return new WP_Error( 'rest_invalid_param', sprintf( esc_html__( '%1$s is not of type %2$s', 'dokan' ), $key, 'integer' ), [ 'status' => 400 ] );
+            }
+        } else {
+            // this code won't execute because we have specified this argument as required.
+            // if we reused this validation callback and did not have required args then this would fire.
+            // translators: 1) argument name
+            return new WP_Error( 'rest_invalid_param', sprintf( esc_html__( '%s was not registered as a request argument.', 'dokan' ), $key ), [ 'status' => 400 ] );
+        }
+
+        $announcement = $this->manager->get_single_announcement( intval( $value ) );
+        if ( $announcement instanceof Single ) {
+            return true;
+        }
+
+        // translators: 1) rest api endpoint key name
+        return new WP_Error( 'rest_invalid_param', sprintf( esc_html__( 'No announcement found with given id.', 'dokan' ), $key ), [ 'status' => 400 ] );
+    }
+
+    /**
+     * This method will check if a notice exists with given id
+     *
+     * @since 3.9.4
+     *
+     * @param $value
+     * @param $request WP_REST_Request
+     * @param $key
+     *
+     * @return bool|WP_Error
+     */
+    public function rest_validate_notice_id( $value, $request, $key ) {
+        if ( ! is_user_logged_in() ) {
+            return new WP_Error( 'rest_invalid_param', __( 'You do not have permission to do this action.', 'dokan' ), [ 'status' => 400 ] );
+        }
+
+        $attributes = $request->get_attributes();
+
+        if ( isset( $attributes['args'][ $key ] ) ) {
+            $argument = $attributes['args'][ $key ];
+            // Check to make sure our argument is an int.
+            if ( 'integer' === $argument['type'] && ! is_numeric( $value ) ) {
+                // translators: 1) argument name, 2) argument value
+                return new WP_Error( 'rest_invalid_param', sprintf( esc_html__( '%1$s is not of type %2$s', 'dokan' ), $key, 'integer' ), [ 'status' => 400 ] );
+            }
+        } else {
+            // this code won't execute because we have specified this argument as required.
+            // if we reused this validation callback and did not have required args then this would fire.
+            // translators: 1) argument name
+            return new WP_Error( 'rest_invalid_param', sprintf( esc_html__( '%s was not registered as a request argument.', 'dokan' ), $key ), [ 'status' => 400 ] );
+        }
+
+        $notice = $this->manager->get_notice( intval( $value ) );
+        if ( $notice instanceof Single && dokan_get_current_user_id() === $notice->get_vendor_id() ) {
+            return true;
+        }
+
+        // translators: 1) rest api endpoint key name
+        return new WP_Error( 'rest_invalid_param', sprintf( esc_html__( 'No notice found with given id.', 'dokan' ), $key ), [ 'status' => 400 ] );
+    }
+
+    /**
+     * Get Announcement schema.
+     *
+     * @since 3.9.4
+     *
+     * @return array
+     */
+    public function get_item_schema(): array {
+        if ( $this->schema ) {
+            // Since WordPress 5.3, the schema can be cached in the $schema property.
+            return $this->schema;
+        }
+
+        $this->schema = [
+            '$schema'    => 'http://json-schema.org/draft-04/schema#',
+            'title'      => 'announcement',
+            'type'       => 'object',
+            'properties' => [
+                'id'                   => [
+                    'description' => esc_html__( 'Unique identifier for the object.', 'dokan' ),
+                    'type'        => 'integer',
+                    'context'     => [ 'view', 'edit', 'embed' ],
+                    'readonly'    => true,
+                ],
+                'notice_id'            => [
+                    'description' => esc_html__( 'If returning a single notice, notice id will be available .', 'dokan' ),
+                    'type'        => 'integer',
+                    'context'     => [ 'view', 'embed' ],
+                ],
+                'vendor_id'            => [
+                    'description' => esc_html__( 'If returning a single notice, vendor id will be available .', 'dokan' ),
+                    'type'        => 'integer',
+                    'context'     => [ 'view' ],
+                    'readonly'    => true,
+                ],
+                'title'                => [
+                    'description' => __( 'Title of the Announcement', 'dokan' ),
+                    'type'        => 'string',
+                    'readonly'    => true,
+                    'context'     => [ 'view', 'edit' ],
+                ],
+                'content'              => [
+                    'description' => __( 'Content of the Announcement', 'dokan' ),
+                    'type'        => 'string',
+                    'format'      => 'text-area',
+                    'readonly'    => true,
+                    'context'     => [ 'view', 'edit' ],
+                ],
+                'status'               => [
+                    'description' => __( 'Status of the announcement', 'dokan' ),
+                    'type'        => 'string',
+                    'required'    => false,
+                    'context'     => [ 'view', 'edit' ],
+                    'enum'        => [
+                        'publish',
+                        'pending',
+                        'future',
+                        'draft',
+                    ],
+                ],
+                'date'                 => [
+                    'description' => __( 'Created date of the Announcement', 'dokan' ),
+                    'type'        => 'string',
+                    'readonly'    => true,
+                    'context'     => [ 'view', 'edit' ],
+                ],
+                'date_gmt'             => [
+                    'description' => __( 'Created date of the Announcement in GMT', 'dokan' ),
+                    'type'        => 'string',
+                    'readonly'    => true,
+                    'context'     => [ 'view', 'edit' ],
+                ],
+                'human_readable_date'  => [
+                    'description' => __( 'Human readable Created time', 'dokan' ),
+                    'type'        => 'string',
+                    'readonly'    => true,
+                    'context'     => [ 'view' ],
+                ],
+                'read_status'          => [
+                    'description' => __( 'Vendor read status of the single notice', 'dokan' ),
+                    'type'        => 'string',
+                    'required'    => false,
+                    'context'     => [ 'view', 'edit' ],
+                    'enum'        => [
+                        'read',
+                        'unread',
+                        'trash',
+                    ],
+                ],
+                'announcement_type'    => [
+                    'description' => __( 'Send announcement to: this is a admin only field', 'dokan' ),
+                    'type'        => 'string',
+                    'required'    => false,
+                    'context'     => [ 'view' ],
+                    'enum'        => [
+                        'all_seller',
+                        'selected_seller',
+                        'enabled_seller',
+                        'disabled_seller',
+                        'featured_seller',
+                    ],
+                ],
+                'announcement_sellers' => [
+                    'description' => __( 'Send announcement to: this is a admin only field', 'dokan' ),
+                    'type'        => 'array',
+                    'required'    => false,
+                    'context'     => [ 'view' ],
+                    'items'       => [
+                        'type'       => 'object',
+                        'properties' => [
+                            'id'        => [
+                                'description' => __( 'Vendor id', 'dokan' ),
+                                'type'        => 'integer',
+                            ],
+                            'name'      => [
+                                'description' => __( 'Vendor name', 'dokan' ),
+                                'type'        => 'string',
+                            ],
+                            'shop_name' => [
+                                'description' => __( 'Vendor shop name', 'dokan' ),
+                                'type'        => 'string',
+                            ],
+                            'email'     => [
+                                'description' => __( 'Vendor email address', 'dokan' ),
+                                'type'        => 'string',
+                            ],
+                        ],
+                    ],
+                ],
+                'sender_ids'           => [
+                    'description' => __( 'Send announcement to: this is a admin only field', 'dokan' ),
+                    'type'        => 'array',
+                    'required'    => false,
+                    'context'     => [ 'edit' ],
+                    'items'       => [
+                        'type' => 'integer',
+                    ],
+                ],
+                'exclude_seller_ids'   => [
+                    'description' => __( 'Exclude seller ids', 'dokan' ),
+                    'type'        => 'array',
+                    'required'    => false,
+                    'context'     => [ 'edit' ],
+                    'items'       => [
+                        'type' => 'integer',
+                    ],
+                ],
+            ],
+        ];
+
+        return $this->schema;
     }
 }

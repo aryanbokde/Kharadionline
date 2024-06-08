@@ -23,6 +23,8 @@ class Admin {
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_scripts' ], 20 );
         add_action( 'add_meta_boxes', [ $this, 'add_admin_delivery_time_meta_box' ], 10, 2 );
         add_action( 'save_post_shop_order', [ $this, 'save_admin_delivery_time_meta_box' ], 10, 1 );
+        // Active days for delivery
+        add_action( 'wp_ajax_dokan_get_delivery_days', [ $this, 'get_vendor_delivery_days' ] );
     }
 
     /**
@@ -56,15 +58,22 @@ class Admin {
      * @return void
      */
     public function add_admin_delivery_time_meta_box( $post_type, $post ) {
-        if ( $post_type !== 'shop_order' ) {
+        $screen = dokan_pro_is_hpos_enabled()
+            ? wc_get_page_screen_id( 'shop-order' )
+            : 'shop_order';
+
+        if ( $screen !== $post_type ) {
             return;
         }
 
-        $order_id      = $post->ID;
-        $order         = wc_get_order( $order_id );
-        $has_sub_order = get_post_meta( $order_id, 'has_sub_order', true );
+        $order_id = $post instanceof \WC_Abstract_Order ? $post->get_id() : $post->ID;
 
-        if ( $has_sub_order && $order_id !== $order->get_parent_id() ) {
+        $order = dokan()->order->get( $order_id );
+        if ( empty( $order ) ) {
+            return;
+        }
+
+        if ( $order->get_meta( 'has_sub_order' ) && $order_id !== $order->get_parent_id() ) {
             return;
         }
 
@@ -85,7 +94,7 @@ class Admin {
             'dokan_delivery_time_fields',
             $meta_box_title,
             [$this, 'render_delivery_time_meta_box'],
-            'shop_order',
+            $screen,
             'side',
             'core'
         );
@@ -100,9 +109,12 @@ class Admin {
      *
      * @return void
      */
-    public function render_delivery_time_meta_box( $post ) {
-        $order               = wc_get_order( $post->ID );
-        $order_id            = $post->ID;
+    public function render_delivery_time_meta_box( $post_object ) {
+        $order = ( $post_object instanceof \WP_Post ) ? wc_get_order( $post_object->ID ) : $post_object;
+        if ( empty( $order ) ) {
+            return;
+        }
+        $order_id            = $order->get_id();
         $vendor_id           = dokan_get_seller_id_by_order( $order_id );
         $order_delivery_info = Helper::get_order_delivery_info( $vendor_id, $order_id );
         // get vendor delivery time settings
@@ -179,16 +191,54 @@ class Admin {
             'vendor_selected_current_delivery_date_slot' => $vendor_selected_current_delivery_date_slot,
         ];
 
-        /**
-         * After admin update delivery data then trigger.
-         *
-         * @since 3.7.8
-         *
-         * @param int   $vendor_id
-         * @param array $data
-         */
-        do_action( 'dokan_after_admin_update_order_delivery_info', $vendor_id, $data );
+        if ( Helper::is_delivery_data_updated( $vendor_id, $order_id, $data ) ) {
+            /**
+             * After admin update delivery data then trigger.
+             *
+             * @since 3.7.8
+             *
+             * @param int   $vendor_id
+             * @param array $data
+             */
+            do_action( 'dokan_after_admin_update_order_delivery_info', $vendor_id, $data );
 
-        Helper::update_delivery_time_date_slot( $data );
+            Helper::update_delivery_time_date_slot( $data );
+        }
+    }
+
+    /**
+     * Sends json response for available and disabled weekdays for a specific vendor
+     *
+     * @since 3.9.4
+     *
+     * @return void
+     */
+    public function get_vendor_delivery_days() {
+        if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['nonce'] ) ), 'dokan_delivery_time' ) ) {
+            wp_send_json_error( __( 'Invalid nonce', 'dokan' ) );
+        }
+
+        $vendor_id = ! empty($_POST['vendor_id']) ? absint( $_POST['vendor_id'] ) : 0;
+        $date = ! empty( $_POST['date'] ) ? sanitize_text_field( wp_unslash( $_POST['date'] ) ) : '';
+
+        // Vendor & Admin Permission check
+        if ( ! is_a( dokan_get_vendor( $vendor_id ), 'Vendor' ) && ! current_user_can( 'manage_woocommerce' ) ) {
+            wp_send_json_error( __( 'Invalid vendor', 'dokan' ) );
+        }
+
+        $weekdays = dokan_get_translated_days();
+        $delivery_slot_settings = Helper::get_delivery_slot_settings( $vendor_id, $date );
+        $available_weekdays = array_keys( $delivery_slot_settings );
+        $disabled_weekdays = [];
+        foreach( $weekdays as $day_key => $day_string ) {
+            if( ! in_array( $day_key, $available_weekdays, true ) ) {
+                $disabled_weekdays[] = $day_key;
+            }
+        }
+
+        wp_send_json_success( [
+            'available_weekdays' => $available_weekdays,
+            'disabled_weekdays' => $disabled_weekdays,
+        ], 201 );
     }
 }

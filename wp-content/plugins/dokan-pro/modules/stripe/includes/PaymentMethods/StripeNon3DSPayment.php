@@ -200,7 +200,7 @@ class StripeNon3DSPayment extends StripeConnect implements Payable {
             }
 
             $charge_ids[ $seller_id ] = $charge->id;
-            update_post_meta( $tmp_order_id, $this->stripe_meta_key . $seller_id, $charge->id );
+            $tmp_order->update_meta_data( $this->stripe_meta_key . $seller_id, $charge->id );
 
             if ( $order->get_id() !== $tmp_order_id && $token ) {
                 $tmp_order->add_order_note(
@@ -224,11 +224,11 @@ class StripeNon3DSPayment extends StripeConnect implements Payable {
                 $fee            = Helper::format_gateway_balance_fee( $balance_transaction );
                 $vendor_earning = $vendor_earning - $fee;
 
-                update_post_meta( $tmp_order_id, 'dokan_gateway_stripe_fee', $fee );
+                $tmp_order->update_meta_data( 'dokan_gateway_stripe_fee', $fee );
                 $tmp_order->update_meta_data( 'dokan_gateway_fee_paid_by', 'seller' );
             }
 
-            $tmp_order->save_meta_data();
+            $tmp_order->save();
 
             // Only process withdraw request once vendor get paid.
             if ( ! empty( $token ) ) {
@@ -252,15 +252,17 @@ class StripeNon3DSPayment extends StripeConnect implements Payable {
             )
         );
 
-        $order->save_meta_data();
+        $order->save();
         $order->payment_complete();
         $this->insert_into_vendor_balance( $all_withdraws );
         $this->process_seller_withdraws( $all_withdraws );
 
         foreach ( $charge_ids as $seller_id => $charge_id ) {
             $meta_key = $this->stripe_meta_key . $seller_id;
-            update_post_meta( $order->get_id(), $meta_key, $charge_id );
+            $order->update_meta_data( $meta_key, $charge_id );
         }
+
+        $order->save();
 
         if ( ! empty( $added_source_id ) ) {
             $this->delete_source_from_customer( $prepared_source->customer, $added_source_id );

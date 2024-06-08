@@ -63,6 +63,11 @@
 
                         foreach ( $product_resources as $resource_id ) {
                             $resource            = get_post( $resource_id );
+
+                            if ( empty( $resource ) ) {
+                                continue;
+                            }
+
                             $resource_base_cost  = isset( $resource_base_costs[$resource_id] ) ? $resource_base_costs[$resource_id] : '';
                             $resource_block_cost = isset( $resource_block_costs[$resource_id] ) ? $resource_block_costs[$resource_id] : '';
 
@@ -77,11 +82,16 @@
             <?php if( $all_resources ) {?>
             <p class="toolbar">
                 <button type="button" class="button button-primary dokan-btn dokan-btn-theme add_resource"><?php _e( 'Add/link Resource', 'dokan' ); ?></button>
-                <select name="add_resource_id" class="add_resource_id">
-                    <!--<option value=""><?php // _e( 'New resource', 'dokan' ); ?></option>-->
+                <select name="add_resource_id" class="dokan-form-control add_resource_id">
+                    <option value=""><?php  _e( 'New Resource', 'dokan' ); ?></option>
                     <?php
                     if ( $all_resources ) {
                         foreach ( $all_resources as $resource ) {
+                            // If current resource already added on the product.
+                            if ( in_array( $resource->ID, $product_resources ) ) {
+                                continue;
+                            }
+
                             echo '<option value="' . esc_attr( $resource->ID ) . '">#' . $resource->ID . ' - ' . esc_html( $resource->post_title ) . '</option>';
                         }
                     }

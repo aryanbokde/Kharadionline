@@ -77,6 +77,9 @@ function dokan_rma_refund_reasons( $reason = '' ) {
 
     if ( ! empty( $reasons ) ) {
         $reasons = wp_list_pluck( $reasons, 'value', 'id' );
+        array_walk( $reasons, function ( &$value, $key ) {
+            $value = apply_filters( 'dokan_pro_rma_reason', $value );
+        });
     }
 
     if ( $reason ) {
@@ -611,10 +614,11 @@ function dokan_warranty_request_status_count() {
         $query = "SELECT status, COUNT( * ) AS num_request FROM {$request_table} WHERE `vendor_id` = '%s' GROUP BY status";
         $results = $wpdb->get_results( $wpdb->prepare( $query, $vendor_id ), ARRAY_A );
 
-        $total = 0;
+        $total  = 0;
+        $counts = [];
         foreach ( $results as $row ) {
-            $counts[ $row['status'] ] = (int) $row['num_request'];
-            $total += (int) $row['num_request'];
+            $counts[ $row['status'] ] = absint( $row['num_request'] );
+            $total += absint( $row['num_request'] );
         }
 
         $counts['total'] = $total;

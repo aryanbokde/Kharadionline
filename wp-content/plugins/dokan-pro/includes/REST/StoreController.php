@@ -2,19 +2,20 @@
 
 namespace WeDevs\DokanPro\REST;
 
-use http\Env\Response;
 use WC_Admin_Settings;
 use WP_Error;
+use WP_REST_Request;
+use WP_REST_Response;
 use WP_REST_Server;
 use WeDevs\Dokan\REST\StoreController as StoreControllerLite;
 
 /**
-* Store API Controller
-*
-* @package dokan
-*
-* @author weDevs <info@wedevs.com>
-*/
+ * Store API Controller
+ *
+ * @package dokan
+ *
+ * @author  weDevs <info@wedevs.com>
+ */
 class StoreController extends StoreControllerLite {
 
     /**
@@ -26,98 +27,104 @@ class StoreController extends StoreControllerLite {
         register_rest_route(
             $this->namespace,
             '/' . $this->base . '/(?P<id>[\d]+)/status',
-            array(
-                'args' => array(
-                    'id' => array(
-                        'description' => __( 'Unique identifier for the object.', 'dokan' ),
-                        'type'        => 'integer',
-                        'required'    => true,
-                    ),
-                    'status' => array(
+            [
+                'args' => [
+                    'id'     => [
+                        'description'       => __( 'Unique identifier for the object.', 'dokan' ),
+                        'type'              => 'integer',
+                        'required'          => true,
+                        'sanitize_callback' => 'absint',
+                        'validate_callback' => 'dokan_rest_validate_store_id',
+                    ],
+                    'status' => [
                         'description' => __( 'Status for the store object.', 'dokan' ),
                         'type'        => 'string',
                         'required'    => true,
-                    ),
-                ),
-                array(
-                    'methods'  => WP_REST_Server::EDITABLE,
-                    'callback' => array( $this, 'update_vendor_status' ),
-                    'permission_callback' => array( $this, 'permission_check_for_manageable_part' ),
-                ),
-            )
+                    ],
+                ],
+                [
+                    'methods'             => WP_REST_Server::EDITABLE,
+                    'callback'            => [ $this, 'update_vendor_status' ],
+                    'permission_callback' => [ $this, 'permission_check_for_manageable_part' ],
+                ],
+            ]
         );
 
         register_rest_route(
             $this->namespace,
             '/' . $this->base . '/batch',
-            array(
-                array(
-                    'methods'  => WP_REST_Server::EDITABLE,
-                    'callback' => array( $this, 'batch_update' ),
-                    'permission_callback' => array( $this, 'permission_check_for_manageable_part' ),
-                ),
-            )
+            [
+                [
+                    'methods'             => WP_REST_Server::EDITABLE,
+                    'callback'            => [ $this, 'batch_update' ],
+                    'permission_callback' => [ $this, 'permission_check_for_manageable_part' ],
+                ],
+            ]
         );
 
         register_rest_route(
             $this->namespace,
             '/' . $this->base . '/(?P<id>[\d]+)/stats',
-            array(
-                'args' => array(
-                    'id' => array(
-                        'description' => __( 'Unique identifier for the object.', 'dokan' ),
-                        'type'        => 'integer',
-                    ),
-                ),
-                array(
+            [
+                'args' => [
+                    'id' => [
+                        'description'       => __( 'Unique identifier for the object.', 'dokan' ),
+                        'type'              => 'integer',
+                        'sanitize_callback' => 'absint',
+                        'validate_callback' => 'dokan_rest_validate_store_id',
+                    ],
+                ],
+                [
                     'methods'             => WP_REST_Server::READABLE,
-                    'callback'            => array( $this, 'get_store_stats' ),
+                    'callback'            => [ $this, 'get_store_stats' ],
                     'args'                => $this->get_collection_params(),
-                    'permission_callback' => array( $this, 'permission_check_for_stats' ),
-                ),
-            )
+                    'permission_callback' => [ $this, 'permission_check_for_stats' ],
+                ],
+            ]
         );
 
         register_rest_route(
             $this->namespace,
             '/' . $this->base . '/(?P<id>[\d]+)/email',
-            array(
-                'args' => array(
-                    'id' => array(
-                        'description' => __( 'Unique identifier for the object.', 'dokan' ),
-                        'type'        => 'integer',
-                    ),
-                    'subject' => array(
+            [
+                'args' => [
+                    'id'      => [
+                        'description'       => __( 'Unique identifier for the object.', 'dokan' ),
+                        'type'              => 'integer',
+                        'sanitize_callback' => 'absint',
+                        'validate_callback' => 'dokan_rest_validate_store_id',
+                    ],
+                    'subject' => [
                         'description' => __( 'Subject of the email.', 'dokan' ),
                         'type'        => 'string',
                         'required'    => true,
-                    ),
-                    'body' => array(
+                    ],
+                    'body'    => [
                         'description' => __( 'Body of the email.', 'dokan' ),
                         'type'        => 'string',
                         'required'    => true,
-                    ),
-                ),
-                array(
+                    ],
+                ],
+                [
                     'methods'             => WP_REST_Server::CREATABLE,
-                    'callback'            => array( $this, 'send_email' ),
+                    'callback'            => [ $this, 'send_email' ],
                     'args'                => $this->get_collection_params(),
-                    'permission_callback' => array( $this, 'permission_check_for_manageable_part' ),
-                ),
-            )
+                    'permission_callback' => [ $this, 'permission_check_for_manageable_part' ],
+                ],
+            ]
         );
 
         register_rest_route(
             $this->namespace, '/' . $this->base . '/current-visitor',
-            array(
-                'args' => array(),
-                array(
+            [
+                'args' => [],
+                [
                     'methods'             => WP_REST_Server::READABLE,
-                    'callback'            => array( $this, 'get_current_visitor_information' ),
+                    'callback'            => [ $this, 'get_current_visitor_information' ],
                     'args'                => $this->get_collection_params(),
-                    'permission_callback' => array( $this, 'permission_check_for_manageable_part' ),
-                ),
-            )
+                    'permission_callback' => [ $this, 'permission_check_for_manageable_part' ],
+                ],
+            ]
         );
     }
 
@@ -126,17 +133,23 @@ class StoreController extends StoreControllerLite {
      *
      * @since 1.0.0
      *
-     * @return mixed
+     * @param WP_REST_Request $request
+     *
+     * @return WP_REST_Response
      */
     public function update_vendor_status( $request ) {
-        if ( ! in_array( $request['status'], array( 'active', 'inactive' ), true ) ) {
-            return new WP_Error( 'no_valid_status', __( 'Status parameter must be active or inactive', 'dokan' ), array( 'status' => 400 ) );
+        if ( ! in_array( $request['status'], [ 'active', 'inactive' ], true ) ) {
+            return rest_ensure_response(
+                new WP_Error( 'no_valid_status', __( 'Status parameter must be active or inactive', 'dokan' ), [ 'status' => 400 ] )
+            );
         }
 
         $store_id = ! empty( $request['id'] ) ? $request['id'] : 0;
 
         if ( empty( $store_id ) ) {
-            return new WP_Error( 'no_vendor_found', __( 'No vendor found for updating status', 'dokan' ), array( 'status' => 400 ) );
+            return rest_ensure_response(
+                new WP_Error( 'no_vendor_found', __( 'No vendor found for updating status', 'dokan' ), [ 'status' => 400 ] )
+            );
         }
 
         if ( 'active' === $request['status'] ) {
@@ -147,6 +160,7 @@ class StoreController extends StoreControllerLite {
 
         $response = rest_ensure_response( $user );
         $response->add_links( $this->prepare_links( $user, $request ) );
+
         return $response;
     }
 
@@ -155,18 +169,22 @@ class StoreController extends StoreControllerLite {
      *
      * @since 2.8.0
      *
-     * @return array $response
+     * @param WP_REST_Request $request
+     *
+     * @return WP_REST_Response
      */
     public function batch_update( $request ) {
         $params = $request->get_params();
 
         if ( empty( $params ) ) {
-            return new WP_Error( 'no_item_found', __( 'No items found for bulk updating', 'dokan' ), array( 'status' => 404 ) );
+            return rest_ensure_response(
+                new WP_Error( 'no_item_found', __( 'No items found for bulk updating', 'dokan' ), [ 'status' => 404 ] )
+            );
         }
 
-        $allowed_status = array( 'approved', 'pending', 'delete' );
+        $allowed_status = [ 'approved', 'pending', 'delete' ];
 
-        $response = array();
+        $response = [];
 
         foreach ( $params as $status => $value ) {
             if ( in_array( $status, $allowed_status, true ) ) {
@@ -191,7 +209,7 @@ class StoreController extends StoreControllerLite {
             }
         }
 
-        return $response;
+        return rest_ensure_response( $response );
     }
 
     /**
@@ -208,7 +226,7 @@ class StoreController extends StoreControllerLite {
     /**
      * Get stats for the vendor
      *
-     * @param  WP_REST_Request $request
+     * @param WP_REST_Request $request
      *
      * @return boolean
      */
@@ -227,55 +245,72 @@ class StoreController extends StoreControllerLite {
     /**
      * Fetch stats for the store
      *
-     * @param  WP_REST_Request $request
+     * @param WP_REST_Request $request
      *
      * @return WP_REST_Response
      */
     public function get_store_stats( $request ) {
-        $store_id    = (int) $request['id'];
-        $vendor      = dokan()->vendor->get( $store_id );
+        $store_id = (int) $request['id'];
+        $vendor   = dokan()->vendor->get( $store_id );
+
+        // get report manager class
+        $report_manager = new \WeDevs\DokanPro\Reports\Manager();
 
         $products    = dokan_count_posts( 'product', $store_id );
         $orders      = dokan_count_orders( $store_id );
         $reviews     = dokan_count_comments( 'product', $store_id );
         $total_items = absint(
-            dokan_get_order_report_data(
-                array(
-                    'data' => array(
-                        '_qty' => array(
+            $report_manager->get_order_report_data(
+                [
+                    'data'         => [
+                        '_qty' => [
                             'type'            => 'order_item_meta',
                             'order_item_type' => 'line_item',
                             'function'        => 'SUM',
                             'name'            => 'order_item_qty',
-                        ),
-                    ),
+                        ],
+                    ],
+                    'where'        => [
+                        [
+                            'key'      => 'order_items.order_item_type',
+                            'value'    => 'line_item',
+                            'operator' => '=',
+                        ],
+                    ],
+                    'where_meta'   => [
+                        [
+                            'meta_key'   => '_dokan_vendor_id',
+                            'meta_value' => $vendor->get_id(),
+                            'operator'   => '=',
+                        ],
+                    ],
                     'query_type'   => 'get_var',
                     'filter_range' => false,
-                ),
-                false,
-                false, $store_id
+                    'order_types'  => wc_get_order_types( 'order-count' ),
+                    'order_status' => [ 'completed', 'processing', 'on-hold', 'refunded' ],
+                ]
             )
         );
 
-        $response = array(
-            'products' => array(
+        $response = [
+            'products' => [
                 'total'   => $products->publish,
                 'sold'    => $total_items,
                 'visitor' => $vendor->get_product_views(),
-            ),
-            'revenue'  => array(
+            ],
+            'revenue'  => [
                 'orders'  => $orders->{'wc-processing'} + $orders->{'wc-completed'},
                 'sales'   => $vendor->get_total_sales(),
                 'earning' => dokan_get_seller_earnings( $store_id, false ),
-            ),
-            'others'   => array(
+            ],
+            'others'   => [
                 'commission_rate' => dokan()->commission->get_vendor_wise_rate( $store_id ),
                 'additional_fee'  => dokan()->commission->get_vendor_wise_additional_fee( $store_id ),
                 'commission_type' => dokan()->commission->get_vendor_wise_type( $store_id ),
                 'balance'         => $vendor->get_balance( false ),
                 'reviews'         => $reviews->{'approved'},
-            ),
-        );
+            ],
+        ];
 
         return rest_ensure_response( $response );
     }
@@ -283,23 +318,23 @@ class StoreController extends StoreControllerLite {
     /**
      * Send email to the vendor
      *
-     * @param  \WP_REST_Request $request
+     * @param WP_REST_Request $request
      *
-     * @return WP_Error|\WP_HTTP_Response|\WP_REST_Response
+     * @return WP_REST_Response
      */
     public function send_email( $request ) {
-        $response  = array( 'success' => true );
+        $response  = [];
         $vendor_id = $request['id'];
         $vendor    = dokan()->vendor->get( $vendor_id );
 
-        $from_name = WC_Admin_Settings::get_option( 'woocommerce_email_from_name' );
-        $from_mail = WC_Admin_Settings::get_option( 'woocommerce_email_from_address' );
-        $subject   = $request['subject'];
-        $body      = $request['body'];
-        $headers   = array(
+        $from_name           = WC_Admin_Settings::get_option( 'woocommerce_email_from_name' );
+        $from_mail           = WC_Admin_Settings::get_option( 'woocommerce_email_from_address' );
+        $subject             = $request['subject'];
+        $body                = $request['body'];
+        $headers             = [
             "From: {$from_name} <{$from_mail}>",
             "Reply-To: {$request['replyto']}",
-        );
+        ];
         $response['success'] = wp_mail( $vendor->get_email(), $subject, $body, $headers );
 
         return rest_ensure_response( $response );
@@ -311,19 +346,20 @@ class StoreController extends StoreControllerLite {
      *
      * @since 3.2.1
      *
-     * @return WP_Error|\WP_HTTP_Response|\WP_REST_Response
+     * @return WP_REST_Response
      */
     public function get_current_visitor_information() {
-        $user = wp_get_current_user();
-        $response  = array(
-            'user' => array(
-                'user_login' => $user->user_login,
-                'email' => $user->user_email,
-                'first_name' => $user->first_name,
-                'last_name' => $user->last_name,
+        $user     = wp_get_current_user();
+        $response = [
+            'user' => [
+                'user_login'   => $user->user_login,
+                'email'        => $user->user_email,
+                'first_name'   => $user->first_name,
+                'last_name'    => $user->last_name,
                 'display_name' => $user->display_name,
-            ),
-        );
+            ],
+        ];
+
         return rest_ensure_response( $response );
     }
 }

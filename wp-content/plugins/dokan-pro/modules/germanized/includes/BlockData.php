@@ -4,6 +4,7 @@ namespace WeDevs\DokanPro\Modules\Germanized;
 
 use WC_Product;
 use \WeDevs\DokanPro\Modules\Germanized\Helper;
+use WP_REST_Request;
 
 defined( 'ABSPATH' ) || exit;
 

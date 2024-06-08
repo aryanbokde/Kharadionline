@@ -146,6 +146,9 @@ abstract class StripePaymentGateway extends WC_Payment_Gateway_CC {
             return '';
         }
 
+        // getting a client issue: https://github.com/getdokan/client-issue/issues/93
+        Helper::bootstrap_stripe();
+
         try {
             $source_object = Source::retrieve( $source_id );
         } catch ( Exception $e ) {
@@ -703,16 +706,8 @@ abstract class StripePaymentGateway extends WC_Payment_Gateway_CC {
         $all_orders   = [];
 
         if ( $has_suborder ) {
-            $sub_order_ids = get_children(
-                [
-                    'post_parent' => $order->get_id(),
-                    'post_type' => 'shop_order',
-                    'fields' => 'ids',
-                ]
-            );
-
-            foreach ( $sub_order_ids as $sub_order_id ) {
-                $sub_order    = wc_get_order( $sub_order_id );
+            $sub_orders = dokan()->order->get_child_orders( $order->get_id() );
+            foreach ( $sub_orders as $sub_order ) {
                 $all_orders[] = $sub_order;
             }
         } else {
@@ -818,14 +813,17 @@ abstract class StripePaymentGateway extends WC_Payment_Gateway_CC {
      * @param int $order_id subscription renewal order id.
      */
     public function ensure_subscription_has_customer_id( $order_id ) {
+        $order = wc_get_order( $order_id );
         $subscriptions_ids = wcs_get_subscriptions_for_order( $order_id, array( 'order_type' => 'any' ) );
         foreach ( $subscriptions_ids as $subscription_id => $subscription ) {
-            if ( ! metadata_exists( 'post', $subscription_id, '_stripe_customer_id' ) ) {
+            if ( ! $subscription->get_meta( '_stripe_customer_id' ) ) {
                 $stripe_customer = new Customer( $subscription->get_user_id() );
-                update_post_meta( $subscription_id, '_stripe_customer_id', $stripe_customer->get_id() );
-                update_post_meta( $order_id, '_stripe_customer_id', $stripe_customer->get_id() );
+                $subscription->update_meta_data( '_stripe_customer_id', $stripe_customer->get_id() );
+                $order->update_meta_data( '_stripe_customer_id', $stripe_customer->get_id() );
+                $subscription->save();
             }
         }
+        $order->save();
     }
 
 }

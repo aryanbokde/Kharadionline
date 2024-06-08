@@ -218,7 +218,7 @@ class OrderController {
 
             // Store captured payment id in order meta.
             $order->update_meta_data( '_dokan_razorpay_payment_capture_id', $razorpay_payment->id );
-            $order->save_meta_data();
+            $order->save();
 
             /* translators: 1: Razorpay generated Order ID  */
             $order->add_order_note( sprintf( __( 'Razorpay Transaction ID: %s.', 'dokan' ), $razorpay_order_id ) );
@@ -272,6 +272,7 @@ class OrderController {
         // Add gateway fee to order meta.
         $order->update_meta_data( 'dokan_razorpay_gateway_fee', $razorpay_fee );
         $order->update_meta_data( 'dokan_gateway_fee', $razorpay_fee );
+        $order->save();
 
         /* translators: 1: Gateway fee */
         $order->add_order_note( sprintf( __( 'Payment gateway processing fee %s', 'dokan' ), wc_price( $razorpay_fee, [ 'currency' => $currency ] ) ) );
@@ -326,7 +327,7 @@ class OrderController {
             );
 
             // Save the order meta data.
-            $tmp_order->save_meta_data();
+            $tmp_order->save();
 
             // Transfer amount to vendor razorpay account.
             $is_transferred = $this->transfer( $razorpay_payment_id, $transfers, $tmp_order, $vendor_earning );
@@ -415,8 +416,6 @@ class OrderController {
 
             $all_withdraws[] = $withdraw_data;
         }
-
-        $order->save_meta_data();
 
         // Finally Process vendor withdraws and update balance.
         OrderManager::handle_vendor_balance( $all_withdraws );

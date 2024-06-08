@@ -4,7 +4,12 @@
             <strong><?php esc_html_e( 'Shipment', 'dokan' ); ?> #<?php echo esc_html( $incre ); ?> </strong>
         </h4>
         <p class="shippments-tracking-status">
-            <strong class="<?php echo esc_attr( $shipping_status ); ?> status_label_<?php echo esc_attr( $shipment_id ); ?>"><?php echo esc_html( $status ); ?> </strong>
+            <strong class="<?php echo esc_attr( $shipping_status ); ?> status_label_<?php echo esc_attr( $shipment_id ); ?>">
+                <?php
+                $status = apply_filters( 'dokan_pro_shipping_status', $status );
+                echo esc_html( $status );
+                ?>
+            </strong>
 
             <span class="shipment-item-details-tab-toggle" data-shipment_id="<?php echo esc_attr( $shipment_id ); ?>">
                 <span class="fa fa-chevron-down details-tab-toggle-sort-desc"></span>

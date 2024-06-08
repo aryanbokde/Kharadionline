@@ -505,7 +505,7 @@ class ApplePay extends PaymentGateway {
      */
     public function show_verification_status( $notices ) {
         if ( ! $this->should_show_verification_status() ) {
-            return;
+            return $notices;
         }
 
         $notice = $this->get_domain_verification_notice();

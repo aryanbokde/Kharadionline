@@ -220,6 +220,42 @@ div.dokan-booking-wrapper input.dokan-btn{
 #wc-bookings-booking-form div.form-field.form-field-wide > div {
     flex-wrap: wrap;
 }
+
+.dokan-dashboard #bookings_resources select.add_resource_id {
+    max-width: 160px;
+}
+
 .dokan-dashboard .select2-container--open .select2-dropdown.select2-dropdown--below {
     margin-top: 0 !important;
-  }
+}
+
+@media only screen and (max-width: 550px) {
+    .dokan-booking-range-table {
+        overflow: scroll;
+        display: block;
+    }
+
+    .dokan-booking-range-table tr{
+        display: flex;
+    }
+
+    .dokan-booking-range-table tr th{
+        width: 150px;
+    }
+
+    .dokan-booking-range-table tfoot th {
+        width: 100%;
+    }
+
+    .dokan-booking-day-restriction {
+        overflow: scroll;
+    }
+
+    div.woocommerce_booking_person {
+        overflow: scroll;
+    }
+
+    div.woocommerce_booking_resource {
+        overflow: scroll;
+    }
+}

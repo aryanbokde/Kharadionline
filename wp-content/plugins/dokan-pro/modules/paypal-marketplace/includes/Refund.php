@@ -183,10 +183,11 @@ class Refund {
         if ( ! in_array( $paypal_refund['id'], $refund_ids, true ) ) {
             $refund_ids[] = $paypal_refund['id'];
         }
-        update_post_meta( $order->get_id(), '_dokan_paypal_refund_id', $refund_ids );
-
+        $order->update_meta_data( '_dokan_paypal_refund_id', $refund_ids );
         // store last refund debug id
-        update_post_meta( $order->get_id(), '_dokan_paypal_refund_debug_id', $paypal_refund['paypal_debug_id'] );
+        $order->update_meta_data( '_dokan_paypal_refund_debug_id', $paypal_refund['paypal_debug_id'] );
+        // save metadata
+        $order->save();
 
         // prepare data for further process this request
         $args = [
@@ -231,7 +232,7 @@ class Refund {
         }
 
         $order = wc_get_order( $refund->get_order_id() );
-        $dokan_gateway_fee = (float) get_post_meta( $order->get_id(), '_dokan_paypal_payment_processing_fee', true );
+        $dokan_gateway_fee = (float) $order->get_meta( '_dokan_paypal_payment_processing_fee', true );
 
         if ( $args['reversed_gateway_fee'] > 0 ) {
             $dokan_gateway_fee -= $args['reversed_gateway_fee'];
@@ -246,7 +247,7 @@ class Refund {
         }
 
         $order->update_meta_data( 'dokan_gateway_fee', $dokan_gateway_fee );
-        $order->save_meta_data();
+        $order->save();
     }
 
     /**

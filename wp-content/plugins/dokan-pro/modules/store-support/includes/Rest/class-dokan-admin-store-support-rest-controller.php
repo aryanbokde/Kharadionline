@@ -538,12 +538,12 @@ if ( ! class_exists( 'AdminStoreSupportTicketController' ) ) :
             $notification = $request['notification'];
             $enabled      = $notification ? __( 'enabled', 'dokan' ) : __( 'disabled', 'dokan' ); // true means admin wants to enable notification or disable notification.
 
-            $global_settings = dokan_get_option( 'dokan_admin_email_notification', 'dokan_store_support_setting', 'off' );
+            $global_settings = StoreSupportHelper::is_email_notification_enabled( 'DokanNewSupportTicketForAdmin' );
             $type            = 'warn';
             $message         =  $notification ? __( 'Can not enable email notification, because global settings is off', 'dokan' ) : '';
 
             // If global setting is 'on' admin can any settings in specific settings if 'off' then topic specific settings can be set on.
-            if ( 'on' === $global_settings || ( 'off' === $global_settings && ! $notification ) ) {
+            if ( true === $global_settings || ( ! $global_settings && ! $notification ) ) {
                 update_post_meta( $topic_id, 'dokan_admin_email_notification', $notification ? 'on' : 'off' );
 
                 /* translators: %s: enabled / disabled */

@@ -5,9 +5,9 @@ namespace WeDevs\DokanPro\Shipping;
 use Automattic\WooCommerce\Utilities\NumberUtil;
 use WC_Countries;
 use WC_Coupon;
+use WC_Shipping_Free_Shipping;
 use WeDevs\DokanPro\Shipping\Methods\ProductShipping;
 use WeDevs\DokanPro\Shipping\Methods\VendorShipping;
-use WeDevs\DokanPro\Shipping\ShippingZone;
 
 /**
  * Dokan Shipping Class
@@ -25,7 +25,8 @@ class Hooks {
      */
     public function __construct() {
         add_action( 'woocommerce_shipping_methods', array( $this, 'register_shipping' ) );
-        add_filter( 'dokan_settings_selling_option_vendor_capability', array( $this, 'add_settings_shipping_tab' ), 20 );
+        add_filter( 'dokan_settings_selling_option_vendor_capability', array( $this, 'add_settings_shipping_tab' ), 10 );
+        add_action( 'wp_footer', [ $this, 'set_shipping_asset_in_cart_checkout_page' ] );
         add_action( 'woocommerce_product_tabs', array( $this, 'register_product_tab' ) );
         add_action( 'woocommerce_after_checkout_validation', array( $this, 'validate_country' ) );
         add_action( 'template_redirect', array( $this, 'handle_shipping' ) );
@@ -34,6 +35,8 @@ class Hooks {
         add_action( 'woocommerce_delete_shipping_zone', array( $this, 'delete_shipping_zone_data' ), 35, 1 );
         add_action( 'woocommerce_after_shipping_zone_object_save', array( $this, 'vendor_zone_data_sync' ), 10, 2 );
         add_filter( 'woocommerce_shipping_free_shipping_is_available', array( $this, 'handle_free_shipping_validity' ), 10, 3 );
+        add_filter( 'dokan_shipping_package_name', array( $this, 'display_free_shipping_remaining_amount' ), 10, 3 );
+        add_filter( 'dokan_shipping_package_name', array( $this, 'display_free_shipping_remaining_amount_for_vendor_shipping' ), 10, 3 );
     }
 
     /**
@@ -53,6 +56,7 @@ class Hooks {
             'type'               => 'switcher',
             'default'            => 'off',
             'refresh_after_save' => true,
+            'is_lite'            => false,
         ];
 
         return $settings_fields;
@@ -76,6 +80,53 @@ class Hooks {
         $methods['dokan_vendor_shipping']  = VendorShipping::class;
 
         return $methods;
+    }
+
+    /**
+     * Set cart page title fix script in cart checkout page.
+     *
+     * @since 3.10.1
+     *
+     * @return void
+     */
+    public function set_shipping_asset_in_cart_checkout_page() {
+        if ( ! ( is_cart() || is_checkout() ) ) {
+            return;
+        }
+        ob_start();
+        ?>
+        <script>
+            (function($){
+                $(document).ready(function(){
+                    function format_html() {
+                        // Fix Free shipping remaining amount html display issue on mobile screen.
+                        let shippingTdElements = $( 'tr.woocommerce-shipping-totals.shipping td' );
+                        let discountTdElements = $( 'tr.cart-discount td' );
+                        let tdElements = $.merge(  shippingTdElements, discountTdElements );
+
+                        tdElements.each( function ( index ) {
+                            let title = $(this).data('title');
+
+                            if ( typeof title === 'undefined' ) {
+                                return;
+                            }
+
+                            let html = $.parseHTML(title);
+                            let text = $(html).text();
+
+                            $(this).attr( 'data-title', text );
+                        } );
+                    }
+                    // run initially.
+                    format_html();
+                    // run on added to cart and removed from cart.
+                    $(document.body).on('added_to_cart removed_from_cart updated_cart_totals', format_html );
+                });
+
+            })(jQuery);
+        </script>
+        <?php
+        echo ob_get_clean();
     }
 
     /**
@@ -628,10 +679,10 @@ class Hooks {
                 'zone'              => $zone,
                 'zone_locations'    => $zone_locations,
             ];
-            dokan_pro()->bg_sync_vendor_zone_data->push_to_queue( $args );
+            dokan_pro()->bg_process->sync_vendor_zone_data->push_to_queue( $args );
         }
 
-        dokan_pro()->bg_sync_vendor_zone_data->save()->dispatch();
+        dokan_pro()->bg_process->sync_vendor_zone_data->save()->dispatch();
     }
 
     /**
@@ -641,26 +692,49 @@ class Hooks {
      *
      * @param bool $is_available Is available.
      * @param array $package Package to check with.
-     * @param \WC_Shipping_Free_Shipping $shipping_instance Shipping instance.
+     * @param WC_Shipping_Free_Shipping $shipping_instance Shipping instance.
      *
      * @return bool
      */
-    public function handle_free_shipping_validity( bool $is_available, array $package, \WC_Shipping_Free_Shipping $shipping_instance ): bool {
+    public function handle_free_shipping_validity( bool $is_available, array $package, WC_Shipping_Free_Shipping $shipping_instance ): bool {
         if ( ! $is_available ) {
             return false;
         }
 
+        list( $method_is_available ) = $this->free_shipping_availability_check( $shipping_instance, $package );
+
+        return $method_is_available;
+    }
+
+    /**
+     * Free shipping availability check.
+     *
+     * @since 3.7.27
+     *
+     * @param WC_Shipping_Free_Shipping $shipping_instance Shipping instance.
+     * @param array                      $package Package.
+     *
+     * @return array [ $is_available, $remaining, $only_coupon ].
+     */
+    public function free_shipping_availability_check( WC_Shipping_Free_Shipping $shipping_instance, array $package ): array {
         $has_coupon         = false;
         $has_met_min_amount = false;
+        $remaining          = 0.0;
+
+        $coupon_needed_for_availability = false;
 
         if ( in_array( $shipping_instance->requires, array( 'coupon', 'either', 'both' ), true ) ) {
             $coupons = $package['applied_coupons'];
 
             if ( $coupons ) {
                 foreach ( $coupons as $code ) {
-                    $coupon = new WC_Coupon( $code );
+                    $coupon    = new WC_Coupon( $code );
                     $discounts = new \WC_Discounts( WC()->cart );
-                    $valid     = $discounts->is_coupon_valid( $coupon );
+                    try {
+                        $valid = $discounts->is_coupon_valid( $coupon );
+                    } catch ( \Exception $exception ) {
+                        $valid = false;
+                    }
                     if ( ! is_wp_error( $valid ) && $valid && $coupon->get_free_shipping() ) {
                         $has_coupon = true;
                         break;
@@ -693,6 +767,8 @@ class Hooks {
             if ( $total >= $shipping_instance->min_amount ) {
                 $has_met_min_amount = true;
             }
+
+            $remaining = abs( $shipping_instance->min_amount - $total );
         }
 
         switch ( $shipping_instance->requires ) {
@@ -700,19 +776,132 @@ class Hooks {
                 $is_available = $has_met_min_amount;
                 break;
             case 'coupon':
-                $is_available = $has_coupon;
+                $is_available                   = $has_coupon;
+                $coupon_needed_for_availability = true;
                 break;
             case 'both':
-                $is_available = $has_met_min_amount && $has_coupon;
+                $is_available                   = $has_met_min_amount && $has_coupon;
+                $coupon_needed_for_availability = $has_met_min_amount;
                 break;
             case 'either':
-                $is_available = $has_met_min_amount || $has_coupon;
+                $is_available                   = $has_met_min_amount || $has_coupon;
+                $coupon_needed_for_availability = $has_coupon;
                 break;
             default:
                 $is_available = true;
                 break;
         }
 
-        return $is_available;
+        return [ $is_available, $remaining, $coupon_needed_for_availability ];
+    }
+
+
+    /**
+     * Display Free shipping information.
+     *
+     * @since 3.7.27
+     *
+     * @param string $shipping_label Existing shipping label.
+     * @param int $i Index.
+     * @param array $package Package.
+     *
+     * @return string
+     */
+    public function display_free_shipping_remaining_amount( $shipping_label, $i, $package ): string {
+		$shipping_methods        = \WC_Shipping_Zones::get_zone_matching_package( $package )->get_shipping_methods( true );
+        $free_shipping_instance  = null;
+        $free_shipping_available = false;
+
+        foreach ( $shipping_methods as $shipping_method ) {
+            if ( 'free_shipping' === $shipping_method->id ) {
+                $free_shipping_instance = $shipping_method;
+                break;
+            }
+        }
+
+        // Verify the free shipping label if free shipping is not available for this vendor
+        // Or no free shipping method found.
+        if ( empty( $free_shipping_instance ) || ! isset( $package['rates'] ) ) {
+            return $shipping_label;
+        }
+
+        foreach ( $package['rates'] as $method ) {
+            if ( 'free_shipping' === explode( ':', $method->id )[0] ) {
+                $free_shipping_available = true;
+                break;
+            }
+        }
+
+        if ( $free_shipping_available || ! is_a( $free_shipping_instance, WC_Shipping_Free_Shipping::class ) ) {
+            return $shipping_label;
+        }
+
+        list( $is_available, $remains, $needs_coupon_only ) = $this->free_shipping_availability_check( $free_shipping_instance, $package );
+
+        if ( $is_available || $needs_coupon_only ) {
+            return $shipping_label;
+        }
+
+        // translators: 1. Original Shipping title, 2. Remaining amount to avail free shipping, 3. Free shipping method display title.
+        return sprintf( __( '%1$s <br /><small>(Only %2$s away from <strong>%3$s</strong>)</small>', 'dokan' ), $shipping_label, wc_price( $remains ), $free_shipping_instance->get_title() );
+    }
+
+    /**
+     * Display Free shipping information for vendor shipping.
+     *
+     * @since 3.7.27
+     *
+     * @param string $shipping_label Existing shipping label.
+     * @param int $i Index.
+     * @param array $package Package.
+     *
+     * @return string
+     */
+    public function display_free_shipping_remaining_amount_for_vendor_shipping( $shipping_label, $i, $package ): string {
+        if ( empty( $package['seller_id'] ) ) {
+            return $shipping_label;
+        }
+
+        $shipping_methods        = ShippingZone::get_shipping_methods( ShippingZone::get_zone_matching_package( $package )->get_id(), $package['seller_id'] );
+        $free_shipping_instance  = null;
+        $free_shipping_available = false;
+
+        foreach ( $shipping_methods as $shipping_method ) {
+            if ( 'yes' !== $shipping_method['enabled'] ) {
+                continue;
+            }
+
+            if ( 'free_shipping' === $shipping_method['id'] ) {
+                $free_shipping_instance = $shipping_method;
+                break;
+            }
+        }
+
+        // Verify the free shipping label if free shipping is not available for this vendor
+        // Or no free shipping method found.
+        if ( empty( $free_shipping_instance ) || ! isset( $package['rates'] ) ) {
+            return $shipping_label;
+        }
+
+        foreach ( $package['rates'] as $method ) {
+            if ( 'free_shipping_dokan_vendor_shipping' === ( explode( ':', $method->id )[0] . '_' . $method->method_id ) ) {
+                $free_shipping_available = true;
+
+                break;
+            }
+        }
+
+        if ( $free_shipping_available ) {
+            return $shipping_label;
+        }
+
+        list( $is_available, $remains ) = VendorShipping::free_shipping_availability_check( $free_shipping_instance, $package['contents'] );
+
+        if ( $is_available ) {
+            return $shipping_label;
+        }
+
+        // translators: 1. Original Shipping title, 2. Remaining amount to avail free shipping, 3. Free shipping method display title.
+        return sprintf( __( '%1$s <br /><small>(Only %2$s away from <strong>%3$s</strong>)</small>', 'dokan' ), $shipping_label, wc_price( $remains ), $free_shipping_instance['title'] );
     }
 }

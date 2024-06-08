@@ -124,7 +124,9 @@ $current_reasons        = array();
                 <label for=""><?php esc_html_e( 'Select reason to request for warranty', 'dokan' ); ?></label>
                 <select name="reasons" id="reasons">
                     <?php foreach ( $default_reasons as $key => $reason ) : ?>
-                        <?php if ( in_array( $key, $store_warranty, true ) ) : ?>
+                        <?php if ( in_array( $key, $store_warranty, true ) ) :
+                            $reason = apply_filters( 'dokan_pro_rma_reason', $reason );
+                            ?>
                             <option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $reason ); ?></option>
                         <?php endif ?>
                     <?php endforeach ?>

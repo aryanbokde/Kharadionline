@@ -16,7 +16,7 @@ use WeDevs\DokanPro\Modules\StripeExpress\Support\UserMeta;
 /**
  * Class for processing orders.
  *
- * @since 3.6.1
+ * @since   3.6.1
  *
  * @package WeDevs\DokanPro\Modules\StripeExpress\Processors
  */
@@ -65,7 +65,7 @@ class User {
      *
      * @return void
      */
-    private function __construct() {}
+    private function __construct() { }
 
     /**
      * Sets required data.
@@ -73,7 +73,7 @@ class User {
      * @since 3.7.8
      *
      * @param int|string $user_id
-     * @param array      $args    (Optional)
+     * @param array      $args (Optional)
      *
      * @return static
      */
@@ -120,12 +120,17 @@ class User {
             unset( $args['country'] );
         }
 
-        $self = self::set( $user->ID );
-
+        $account_id = $trashed_account_id ? $trashed_account_id : UserMeta::get_stripe_account_id( $user->ID );
         try {
-            if ( empty( $self->get_account_id() ) ) {
+            if ( empty( $account_id ) ) {
                 $account_data = [
-                    'email' => $user->user_email,
+                    'email'    => $user->user_email,
+                    'metadata' => [
+                        'user_id'  => $user->ID,
+                        'platform' => 'dokan',
+                        'version'  => DOKAN_PRO_PLUGIN_VERSION,
+                        'gateway'  => Helper::get_gateway_title(),
+                    ],
                 ];
 
                 if (
@@ -136,14 +141,15 @@ class User {
                     $account_data['country'] = $args['country'];
                 }
 
-                $response = Account::create( $account_data );
-
-                UserMeta::update_stripe_account_id( $self->get_user_id(), $response->id );
-            } else {
-                $response = $self->get_data();
+                $stripe_account = Account::create( $account_data );
+                UserMeta::update_stripe_account_info( $user->ID, $stripe_account );
+                $account_id = $stripe_account->id;
             }
 
-            $account_id   = $response->id;
+            //possibly update account data, don't wait for webhook response
+            $stripe_account = Account::get( $account_id );
+            UserMeta::update_stripe_account_info( $user->ID, $stripe_account );
+
             $redirect_url = Helper::get_payment_settings_url();
             $refresh_url  = add_query_arg(
                 [
@@ -158,8 +164,8 @@ class User {
             if ( ! empty( $args['url_args'] ) && false !== strpos( $args['url_args'], 'page=dokan-seller-setup' ) ) {
                 $redirect_url = add_query_arg(
                     [
-                        'page' => 'dokan-seller-setup',
-                        'step' => 'payment',
+                        'page'            => 'dokan-seller-setup',
+                        'step'            => 'payment',
                         '_admin_sw_nonce' => wp_create_nonce( 'dokan_admin_setup_wizard_nonce' ),
                     ],
                     home_url( '/' )
@@ -186,17 +192,18 @@ class User {
              * and try to create a new account to ignore the inconsistency.
              */
             if ( ErrorObject::CODE_ACCOUNT_INVALID === $e->get_error_code() ) {
-                UserMeta::delete_stripe_account_id( $self->get_user_id(), true );
-                return self::onboard( $self->get_user_id(), $args );
-            }
+                UserMeta::delete_stripe_account_id( $user->ID, true );
 
-            if ( 'dokan-stripe-express-invalid-request-error' === $e->get_error_code() ) {
-                return new WP_Error( 'dokan-stripe-express-onboard-error', $e->get_message() );
+                return self::onboard( $user->ID, $args );
             }
 
             return new WP_Error(
                 'dokan-stripe-express-onboard-error',
-                __( 'Something went wrong! Account could not be created. Please try again later.', 'dokan' )
+                sprintf(
+                    // translators: error message
+                    __( 'Something went wrong! Account could not be created. Error: %s', 'dokan' ),
+                    $e->get_message()
+                )
             );
         }
     }
@@ -206,13 +213,13 @@ class User {
      *
      * @since 3.7.18
      *
-     * @param int  $user_id    The user ID to be dosconnected.
-     * @param bool $skip_trash Indicates whether the id should be trashed or not.
+     * @param int  $user_id      The user ID to be dosconnected.
+     * @param bool $force_delete Indicates whether the id should be trashed or not.
      *
      * @return bool
      */
-    public static function disconnect( $user_id, $skip_trash = false ) {
-        $disconnected = UserMeta::delete_stripe_account_id( $user_id, $skip_trash );
+    public static function disconnect( $user_id, $force_delete = false ) {
+        $disconnected = UserMeta::delete_stripe_account_id( $user_id, $force_delete );
 
         if ( ! $disconnected ) {
             return false;
@@ -249,6 +256,7 @@ class User {
 
             $args         = wp_parse_args( $args, $defaults );
             $stripe_login = Account::create_login_link( $this->get_account_id(), $args );
+
             return $stripe_login->url;
         } catch ( DokanException $e ) {
             return false;
@@ -298,7 +306,7 @@ class User {
      * @return string|false
      */
     public function get_account_id() {
-        return ! empty( $this->stripe_account->id ) ? $this->stripe_account->id : false;
+        return ! empty( $this->stripe_account->account_id ) ? $this->stripe_account->account_id : false;
     }
 
     /**
@@ -311,20 +319,13 @@ class User {
      * @return void
      */
     protected function set_account( $args = [] ) {
-        try {
-            $account_id = UserMeta::get_stripe_account_id( $this->user_id );
-
-            if ( empty( $account_id ) ) {
-                $this->stripe_account = false;
-                $this->trashed_account_id = UserMeta::get_trashed_stripe_account_id( $this->user_id );
-            } else {
-                $this->stripe_account = Account::get( $account_id, $args );
-            }
-        } catch ( DokanException $e ) {
-            if ( ErrorObject::CODE_ACCOUNT_INVALID === $e->get_error_code() ) {
-                static::disconnect( $this->user_id, true );
-            }
-            $this->stripe_account = false;
+        // check if account info is saved in user meta
+        $account_id = UserMeta::get_stripe_account_id( $this->user_id );
+        if ( ! empty( $account_id ) ) {
+            $this->stripe_account = (object) UserMeta::get_stripe_account_info( $this->user_id );
+        } else {
+            $this->trashed_account_id = UserMeta::get_trashed_stripe_account_id( $this->user_id );
+            $this->stripe_account     = false;
         }
     }
 

@@ -27,7 +27,20 @@
 
                     <?php if ( current_user_can( 'dokan_add_auction_product' ) ) { ?>
                         <span class="dokan-add-product-link">
-                            <a href="<?php echo dokan_get_navigation_url( 'new-auction-product' ); ?>" class="dokan-btn dokan-btn-theme dokan-right"><i class="fas fa-briefcase">&nbsp;</i> <?php esc_html_e( 'Add New Auction Product', 'dokan' ); ?></a>
+                            <?php
+                            $one_step_product_create = 'on' === dokan_get_option( 'one_step_product_create', 'dokan_selling', 'on' );
+                            $new_product_url         = dokan_get_navigation_url( 'new-auction-product' );
+                            if ( $one_step_product_create ) {
+                                $new_product_url = add_query_arg(
+                                    [
+                                        'product_id' => 0,
+                                        'action' => 'edit',
+                                    ],
+                                    dokan_get_navigation_url( 'auction' )
+                                );
+                            }
+                            ?>
+                            <a href="<?php echo esc_url( $new_product_url ); ?>" class="dokan-btn dokan-btn-theme dokan-right"><i class="fas fa-briefcase">&nbsp;</i> <?php esc_html_e( 'Add New Auction Product', 'dokan' ); ?></a>
                         </span>
                         <span class="button-ml">
                             <a href="<?php echo esc_url( dokan_get_navigation_url( 'auction-activity' ) ); ?>" class="dokan-btn dokan-right"><i class="fa fa-gavel">&nbsp;</i> <?php esc_html_e( 'Auctions Activity', 'dokan' ); ?></a>
@@ -56,9 +69,9 @@
                     </div>
 
                     <div class="dokan-form-group">
-                        <input autocomplete="off" id="auction_date_range" type="text" class="dokan-form-control" placeholder="<?php esc_attr_e( 'Select Date Range', 'dokan' ); ?>" value="<?php echo esc_attr( $localized_date ); ?>">
-                        <input autocomplete="off" name="start_date" type="hidden" class="dokan-form-input" value="<?php echo esc_attr( $start_date ); ?>">
-                        <input autocomplete="off" name="end_date" type="hidden" class="dokan-form-input" value="<?php echo esc_attr( $end_date ); ?>">
+                        <input autocomplete="off" id="auction_date_range" type="text" class="dokan-form-control dokan-daterangepicker" placeholder="<?php esc_attr_e( 'Select Date Range', 'dokan' ); ?>" value="<?php echo esc_attr( $localized_date ); ?>">
+                        <input autocomplete="off" name="start_date" type="hidden" class="dokan-form-input dokan-daterangepicker-start-date" value="<?php echo esc_attr( $start_date ); ?>">
+                        <input autocomplete="off" name="end_date" type="hidden" class="dokan-form-input dokan-daterangepicker-end-date" value="<?php echo esc_attr( $end_date ); ?>">
                     </div>
 
                     <div class="dokan-form-group">
@@ -67,12 +80,15 @@
                     </div>
                 </form>
 
-                <table class="dokan-table table-striped product-listing-table">
+                <table class="dokan-table table-striped product-listing-table" id="dokan-product-list-table">
                     <thead>
                         <tr>
                             <th><?php esc_html_e( 'Image', 'dokan' ); ?></th>
                             <th><?php esc_html_e( 'Name', 'dokan' ); ?></th>
                             <th><?php esc_html_e( 'Status', 'dokan' ); ?></th>
+
+                            <?php do_action( 'dokan_auction_product_list_table_after_status_table_header' ); ?>
+
                             <th><?php esc_html_e( 'SKU', 'dokan' ); ?></th>
                             <th><?php esc_html_e( 'Stock', 'dokan' ); ?></th>
                             <th><?php esc_html_e( 'Price', 'dokan' ); ?></th>
@@ -87,7 +103,7 @@
 
                         $pagenum = isset( $_GET['pagenum'] ) ? absint( $_GET['pagenum'] ) : 1; // phpcs:ignore WordPress.Security.NonceVerification
                         $limit   = 20;
-                        $args    = [ // $args not for query but for cache
+                        $args    = [
                             'post_status'         => array_keys( $post_statuses ),
                             'ignore_sticky_posts' => 1,
                             'orderby'             => 'post_date',
@@ -103,116 +119,49 @@
                             ],
                             'auction_archive'     => true,
                             'show_past_auctions'  => true,
+                            'paginate'            => true,
+                            'fields'              =>'ids',
                             'paged'               => $pagenum,
                         ];
-
-                        $auction_taxonomy_ids = $wpdb->get_col(
-                            "SELECT t.term_id
-                                    FROM {$wpdb->prefix}terms AS t
-                                             INNER JOIN {$wpdb->prefix}term_taxonomy AS tt
-                                                        ON t.term_id = tt.term_id
-                                    WHERE tt.taxonomy IN ('product_type') AND t.slug IN ('auction')"
-                        );
-
-                        $sql = "SELECT SQL_CALC_FOUND_ROWS posts.ID
-                                FROM {$wpdb->prefix}posts AS posts
-                                         LEFT JOIN {$wpdb->prefix}term_relationships AS term_rel
-                                                   ON (posts.ID = term_rel.object_id)
-                                         LEFT JOIN {$wpdb->prefix}posts AS p2
-                                                   ON (posts.post_parent = p2.ID)
-                                         LEFT JOIN {$wpdb->prefix}wc_product_meta_lookup wc_product_meta_lookup
-                                                   ON posts.ID = wc_product_meta_lookup.product_id
-                                         LEFT JOIN {$wpdb->prefix}wc_product_meta_lookup parent_wc_product_meta_lookup
-                                                   ON posts.post_type = 'product_variation' AND parent_wc_product_meta_lookup.product_id = posts.post_parent
-                                WHERE posts.post_type IN ('product','product_variation')\n";
-
-                        $sql .= ' AND term_rel.term_taxonomy_id IN ( ';
-
-                        $auction_taxonomy_ids = join(
-                            ', ',
-                            array_map(
-                                function ( $id ) use ( $wpdb ) {
-                                    return $wpdb->prepare( '%d', $id );
-                                },
-                                $auction_taxonomy_ids
-                            )
-                        );
-
-                        $sql .= $auction_taxonomy_ids . " )\n";
-
-                        $sql .= $wpdb->prepare( " AND posts.post_author IN ( %d )\n", get_current_user_id() );
 
                         if ( isset( $_GET['post_status'] ) && in_array( $_GET['post_status'], array_keys( $post_statuses ) ) ) {
                             $status = sanitize_text_field( wp_unslash( $_GET['post_status'] ) );
 
                             $args['post_status'] = $status;
-
-                            $sql .= $wpdb->prepare(
-                                'AND ( posts.post_status = "%s" OR ( posts.post_status = \'inherit\' AND p2.post_status = "%s" ) )',
-                                $status, $status
-                            );
-                        } else {
-                            $sql .= ' AND ( posts.post_status IN ( ';
-
-                            $statuses = join(
-                                ', ',
-                                array_map(
-                                    function( $status_key ) use ( $wpdb ) {
-                                        return $wpdb->prepare( '"%s"', $status_key );
-                                    },
-                                    array_keys( $post_statuses )
-                                )
-                            );
-
-                            $sql .= $statuses . ' ) OR ( posts.post_status = \'inherit\' AND ( p2.post_status IN ( ';
-                            $sql .= $statuses . ") ) ) )\n";
                         }
 
                         if ( ! empty( $_GET['search'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-                            $keyword = '%' . $wpdb->esc_like( sanitize_text_field( wp_unslash( $_GET['search'] ) ) ) . '%'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                            $keyword = $wpdb->esc_like( sanitize_text_field( wp_unslash( $_GET['search'] ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
                             $args['s'] = $keyword;
-
-                            $sql .= $wpdb->prepare(
-                                " AND ( ( posts.post_title LIKE \"%s\" )
-                                        OR ( posts.post_excerpt LIKE \"%s\" )
-                                        OR ( posts.post_content LIKE \"%s\" )
-                                        OR ( wc_product_meta_lookup.sku LIKE \"%s\" )
-                                        OR ( wc_product_meta_lookup.sku = '' AND parent_wc_product_meta_lookup.sku LIKE \"%s\" ) )\n",
-                                $keyword, $keyword, $keyword, $keyword, $keyword
-                            );
                         }
 
                         $date_regex = '/^[\d]{4}-(([0]\d)|([1][1|2]))-[0-3]{1}\d{1}$/m';
 
                         if ( ! empty( $start_date ) && preg_match( $date_regex, $start_date ) ) {
-                            $sql .= $wpdb->prepare( " AND ( posts.post_date >= \"%s\" )\n", $start_date . ' 00.00.00' );
-
-                            $args['start_date'] = $start_date;
+                            $args['date_query'][] = [
+                                'after'     => $start_date,
+                                'inclusive' => true,
+                            ];
                         }
 
-                        if ( ! empty( $end_date ) ) {
-                            $sql .= $wpdb->prepare( " AND ( posts.post_date <= \"%s\" )\n", $end_date .  ' 23:59:59' );
-
-                            $args['end_date'] = $end_date;
+                        if ( ! empty( $end_date ) && preg_match( $date_regex, $end_date ) ) {
+                            if ( empty( $args['date_query'] ) ) {
+                                $args['date_query'][] = [
+                                    'inclusive' => true,
+                                ];
+                            }
+                            $args['date_query'][0]['before'] = $end_date;
                         }
 
-                        $sql .= $wpdb->prepare( "\nLIMIT %d, %d\n", ( $pagenum - 1 ) * $limit, $limit );
+                        $product_query = dokan()->product->all( $args );
+                        $products      = $product_query->get_posts();
 
-                        $cache_group   = "auction_products_{$args['author']}";
-                        $cache_key     = 'products_' . md5( wp_json_encode( $args ) );
-                        $product_query = WeDevs\Dokan\Cache::get( $cache_key, $cache_group );
-
-                        if ( false === $product_query ) {
-                            $product_query = $wpdb->get_results( $sql );
-                            $total_rows    = $wpdb->get_var( 'SELECT FOUND_ROWS();' );
-                            WeDevs\Dokan\Cache::set( $cache_key, $product_query, $cache_group );
-                        }
-
-                        if ( count( $product_query ) > 0 ) {
-                            foreach ( $product_query as $product_id ) {
+                        if ( count( $products ) > 0 ) {
+                            foreach ( $products as $product_id ) {
                                 $product_post = get_post( $product_id );
                                 $product  = dokan_wc_get_product( $product_id );
+
 
                                 $tr_class = ( 'pending' === $product->get_status() ) ? ' class="danger"' : '';
                                 $edit_url = add_query_arg(
@@ -261,7 +210,23 @@
                                                                         "><?php esc_html_e( 'Delete Permanently', 'dokan' ); ?></a> | </span>
                                             <?php } ?>
 
-                                            <span class="view"><a href="<?php echo get_permalink( $product->get_id() ); ?>" rel="permalink"><?php esc_html_e( 'View', 'dokan' ); ?></a></span>
+                                            <span class="view"><a href="<?php echo get_permalink( $product->get_id() ); ?>" rel="permalink"><?php esc_html_e( 'View', 'dokan' ); ?></a> | </span>
+                                            <span class="duplicate">
+                                                <a href="<?php
+                                                    echo esc_attr(
+                                                        wp_nonce_url(
+                                                            add_query_arg(
+                                                                [
+                                                                    'product_id' => $product->get_id(),
+                                                                ],
+                                                                dokan_get_navigation_url( 'auction' )
+                                                            ),
+                                                            'dokan-duplicate-auction-product-' . $product->get_id(),
+                                                            'dokan-duplicate-auction-product-nonce'
+                                                        )
+                                                    )
+                                                ?>"><?php esc_html_e( 'Duplicate', 'dokan' ); ?></a>
+                                            </span>
                                         </div>
 
                                         <button type="button" class="toggle-row"></button>
@@ -270,6 +235,8 @@
                                     <td class="post-status" data-title="<?php esc_attr_e( 'Status', 'dokan' ); ?>">
                                     <label class="dokan-label <?php echo esc_attr( dokan_get_post_status_label_class( $product->get_status() ) ); ?>"><?php echo esc_html( dokan_get_post_status( $product->get_status() ) ); ?></label>
                                     </td>
+
+                                    <?php do_action( 'dokan_auction_product_list_table_after_status_table_data', get_post( $product->get_id() ), $product ); ?>
 
                                     <td data-title="<?php esc_attr_e( 'SKU', 'dokan' ); ?>">
                                         <?php
@@ -399,7 +366,7 @@
                 <?php
                 $pagenum = isset( $_GET['pagenum'] ) ? absint( $_GET['pagenum'] ) : 1;
 
-                $max_num_pages = ceil( $total_rows / $limit );
+                $max_num_pages = $product_query->max_num_pages;
 
                 if ( $max_num_pages > 1 ) {
                     echo '<div class="pagination-wrap">';
@@ -455,33 +422,6 @@
             $( '#auction-clear-filter-button' ).on( 'click', function () {
                 window.location = window.location.href.split("?")[0];
             } );
-
-            let localeData = {
-                format : dokan_get_daterange_picker_format(),
-                ...dokan_helper.daterange_picker_local
-            };
-
-            const auction_date_range = $('#auction_date_range');
-
-            auction_date_range.daterangepicker({
-                autoUpdateInput : false,
-                locale          : localeData,
-            });
-
-            // Set the value for date range field to show frontend.
-            auction_date_range.on( 'apply.daterangepicker', function( ev, picker ) {
-                $( this ).val( picker.startDate.format( localeData.format ) + ' - ' + picker.endDate.format( localeData.format ) );
-                // Set the value for date range fields to send backend
-                $('input[name="start_date"]').val(picker.startDate.format('YYYY-MM-DD'));
-                $('input[name="end_date"]').val(picker.endDate.format('YYYY-MM-DD'));
-            });
-
-            // Clear the data
-            auction_date_range.on( 'cancel.daterangepicker', function( ev, picker ) {
-                $( this ).val( '' );
-                $('input[name="start_date"]').val('');
-                $('input[name="end_date"]').val('');
-            });
         });
     })(jQuery)
 </script>

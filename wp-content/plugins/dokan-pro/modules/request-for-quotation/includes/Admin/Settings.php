@@ -38,7 +38,7 @@ class Settings {
             'title'                => __( 'Quote Settings', 'dokan' ),
             'icon_url'             => DOKAN_RAQ_ASSETS_DIR . '/images/quote.svg',
             'description'          => __( 'Configure Quote Settings ', 'dokan' ),
-            'document_link'        => 'https://wedevs.com/docs/dokan/modules/dokan-request-for-quotation-module/',
+            'document_link'        => 'https://dokan.co/docs/wordpress/modules/dokan-request-for-quotation-module/',
             'settings_title'       => __( 'Quote Settings', 'dokan' ),
             'settings_description' => __( 'You can configure your site to allow customers to send customized quotes on the selected products.', 'dokan' ),
         ];
@@ -96,7 +96,7 @@ class Settings {
                 'label'   => __( 'Decrease Offered Price', 'dokan' ),
                 'type'    => 'number',
                 'default' => 0,
-                'desc'    => esc_html__( 'Enter number in percent to decrease the offered price from standard price of product. Leave empty for standard price. Note: offered price will be display according to settings of cart. (eg: including/excluding tax)', 'dokan' ),
+                'desc'    => esc_html__( 'Enter number in percent to decrease the offered price from standard price of product. Set zero (0) for standard price. Note: offered price will be display according to settings of cart. (eg: including/excluding tax)', 'dokan' ),
             ],
             'enable_convert_to_order'        => [
                 'name'    => 'enable_convert_to_order',

@@ -108,24 +108,25 @@ class Installer {
      * @return void
      * */
     public function maybe_activate_modules() {
-        global $wpdb;
-
         if ( ! function_exists( 'WC' ) || ! function_exists( 'dokan' ) ) {
             return;
         }
 
         $modules = ! empty( dokan_pro()->module ) ? dokan_pro()->module : new \WeDevs\DokanPro\Module();
+        if ( ! property_exists( dokan_pro(), 'license' ) ) {
+            dokan_pro()->init_updater();
+        }
 
         $installed_modules = get_option( $modules::ACTIVE_MODULES_DB_KEY );
         // if some modules are previously installed and active, reactivate them
         if ( is_array( $installed_modules ) && ! empty( $installed_modules ) ) {
-            $modules->activate_modules( $installed_modules );
+            $modules->activate_modules( $installed_modules, true );
             return;
         } elseif ( is_array( $installed_modules ) ) {
             return; // user deliberately left all modules deactive, so ignore that
         }
         // this is fresh installation, activate all available modules
-        $modules->activate_modules( $modules->get_available_modules() );
+        $modules->activate_modules( $modules->get_available_modules(), true );
     }
 
     /**

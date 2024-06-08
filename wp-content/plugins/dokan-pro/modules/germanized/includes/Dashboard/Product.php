@@ -35,6 +35,7 @@ class Product {
         add_action( 'dokan_product_after_variable_attributes', [ $this, 'load_variable_product_template' ], 10, 3 );
 
         //save product data
+        add_action( 'dokan_new_product_added', [ $this, 'save_simple_product_data' ], 99, 1 );
         add_action( 'dokan_product_updated', [ $this, 'save_simple_product_data' ], 99, 1 );
         add_action( 'woocommerce_save_product_variation', [ $this, 'save_variation_product_data' ], 99, 2 );
     }

@@ -226,20 +226,24 @@ th.column-booking_status {
   padding: 0;
   margin: 0; }
 
-#woocommerce-customer-data .inside {
-  padding-bottom: 0; }
-
-#woocommerce-customer-data .booking-customer-details {
-  width: 100%; }
-  #woocommerce-customer-data .booking-customer-details td, #woocommerce-customer-data .booking-customer-details th {
+.dokan-booking-wrapper .booking-customer-details {
+    width: 100%;
+}
+.dokan-booking-wrapper .booking-customer-details td, #woocommerce-customer-data .booking-customer-details th {
     vertical-align: top;
-    text-align: left; }
-  #woocommerce-customer-data .booking-customer-details th {
-    padding: 0 6px 6px 0; }
-  #woocommerce-customer-data .booking-customer-details td {
-    padding: 0 0 6px; }
-  #woocommerce-customer-data .booking-customer-details .view td {
-    padding-bottom: 12px; }
+    text-align: left;
+}
+.dokan-booking-wrapper .booking-customer-details th {
+    padding: 0 6px 6px 0;
+    background-color: transparent;
+}
+.dokan-booking-wrapper .booking-customer-details td {
+    padding: 0 0 6px;
+    overflow-wrap: anywhere;
+}
+.dokan-booking-wrapper .booking-customer-details .view td {
+    padding-bottom: 12px;
+}
 
 #booking_data {
   padding: 23px 24px;

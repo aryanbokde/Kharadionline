@@ -5,6 +5,9 @@
     <div class="dokan-panel-body" id="dokan-order-shipping-status-tracking-panel">
         <div id="dokan-order-shipping-status-tracking-shippments">
             <?php
+            /**
+             * @var WC_Order $order Order.
+             */
             $incre        = 1;
             $s_line_items = [];
             if ( $shipment_info ) :
@@ -103,7 +106,10 @@
                         <select name="shipping_status" id="shipping_status" class="dokan-form-control" style="width:50%;">
                             <option value=""><?php esc_html_e( 'Select', 'dokan' ); ?></option>
                             <?php if ( ! empty( $status_list ) ) : ?>
-                                <?php foreach ( $status_list as $s_status ) : ?>
+                                <?php
+                                foreach ( $status_list as $s_status ) :
+                                    $s_status['value'] = apply_filters( 'dokan_pro_shipping_status', $s_status['value'] );
+                                    ?>
                                     <option value="<?php echo esc_attr( $s_status['id'] ); ?>"><?php echo esc_html( $s_status['value'] ); ?></option>
                                 <?php endforeach; ?>
                             <?php endif; ?>
@@ -125,7 +131,9 @@
                     </div>
                     <div class="dokan-form-group shipped-status-date">
                         <label class="dokan-control-label"><?php esc_html_e( 'Date Shipped', 'dokan' ); ?></label>
-                        <input type="text" name="shipped_status_date" id="shipped_status_date" class="dokan-form-control shipped_status_date" value="" autocomplete="off" placeholder="<?php esc_attr_e( 'Select date', 'dokan' ); ?>">
+                        <input type="text" data-ordered-date="<?php echo esc_attr( $order->get_date_created() ); ?>"
+                            name="shipped_status_date" id="shipped_status_date" class="dokan-form-control shipped_status_date"
+                            value="" autocomplete="off" placeholder="<?php esc_attr_e( 'Select date', 'dokan' ); ?>" />
                     </div>
                     <div class="dokan-form-group">
                         <label class="dokan-control-label tracking-status-number-label"><?php esc_html_e( 'Tracking Number', 'dokan' ); ?></label>

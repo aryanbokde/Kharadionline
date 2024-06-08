@@ -162,7 +162,7 @@ class IntentController extends StripePaymentGateway {
         }
 
         // A webhook might have modified or locked the order while the intent was retreived. This ensures we are reading the right status.
-        clean_post_cache( $order->get_id() );
+        wc_delete_shop_order_transients( $order );
         $order = wc_get_order( $order->get_id() );
 
         if ( ! $order->has_status( [ 'pending', 'failed' ] ) ) {
@@ -313,13 +313,13 @@ class IntentController extends StripePaymentGateway {
             if ( ! $connected_vendor_id ) {
                 // old order note for reference: Vendor's payment will be transferred to admin account since the vendor had not connected to Stripe.
                 $tmp_order->add_order_note( sprintf( __( 'Vendor payment will be transferred to the admin account since the vendor had not connected to Stripe.', 'dokan' ) ) );
-                $tmp_order->save_meta_data();
+                $tmp_order->save();
                 continue;
             }
 
             if ( $vendor_earning < 1 ) {
                 $tmp_order->add_order_note( sprintf( __( 'Transfer to the vendor stripe account skipped due to a negative balance: %1$s %2$s', 'dokan' ), $vendor_raw_earning, $currency ) );
-                $tmp_order->save_meta_data();
+                $tmp_order->save();
                 continue;
             }
 
@@ -353,7 +353,7 @@ class IntentController extends StripePaymentGateway {
                 dokan_log( 'Could not transfer amount to connected vendor account via 3ds. Order ID: ' . $tmp_order->get_id() . ', Amount tried to transfer: ' . $vendor_raw_earning . " $currency" );
                 $tmp_order->add_order_note( sprintf( __( 'Transfer failed to vendor account (%s)', 'dokan' ), $e->getMessage() ) );
                 $tmp_order->add_order_note( __( 'Vendor payment will be transferred to the admin account since the transfer to the vendor stripe account had failed.', 'dokan' ) );
-                $tmp_order->save_meta_data();
+                $tmp_order->save();
                 continue;
             }
 
@@ -391,7 +391,7 @@ class IntentController extends StripePaymentGateway {
             $tmp_order->update_meta_data( '_stripe_intent_id', $intent->id );
             $tmp_order->update_meta_data( '_stripe_charge_captured', 'yes' );
 
-            $tmp_order->save_meta_data();
+            $tmp_order->save();
 
             // set transaction id
             $tmp_order->set_transaction_id( $intent->charges->first()->id );
@@ -417,7 +417,7 @@ class IntentController extends StripePaymentGateway {
             )
         );
 
-        $order->save_meta_data();
+        $order->save();
         dokan()->commission->calculate_gateway_fee( $order->get_id() );
     }
 

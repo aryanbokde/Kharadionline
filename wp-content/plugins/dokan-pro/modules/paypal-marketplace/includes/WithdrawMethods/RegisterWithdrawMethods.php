@@ -2,7 +2,6 @@
 
 namespace WeDevs\DokanPro\Modules\PayPalMarketplace\WithdrawMethods;
 
-use WeDevs\DokanPro\Admin\Announcement;
 use WeDevs\DokanPro\Modules\PayPalMarketplace\Helper;
 use WeDevs\DokanPro\Modules\PayPalMarketplace\Utilities\Processor;
 
@@ -39,6 +38,28 @@ class RegisterWithdrawMethods {
         add_filter( 'dokan_withdraw_method_icon', [ $this, 'get_icon' ], 10, 2 );
         add_filter( 'dokan_is_seller_connected_to_payment_method', [ $this, 'is_seller_connected' ], 10, 3 );
         add_filter( 'dokan_profile_completion_progress_for_payment_methods', [ $this, 'calculate_profile_progress' ] );
+        add_filter( 'dokan_vendor_to_array', [ $this, 'add_paypal_marketplace_to_vendor_profile_data' ] );
+    }
+
+    /**
+     * Returns true if venddor enabled paypal marketplace payment getway.
+     *
+     * @since 3.9.1
+     *
+     * @param $data
+     *
+     * @return array
+     */
+    public function add_paypal_marketplace_to_vendor_profile_data( $data ) {
+        $vendor_id = ! empty( $data['id'] ) ? absint( $data['id'] ) : 0;
+
+        if ( ! current_user_can( 'manage_woocommerce' ) && $vendor_id !== dokan_get_current_user_id() ) {
+            return $data;
+        }
+
+        $data['payment']['dokan-paypal-marketplace'] = $this->is_seller_connected( false, 'dokan-paypal-marketplace', $vendor_id );
+
+        return $data;
     }
 
     /**
@@ -163,7 +184,10 @@ class RegisterWithdrawMethods {
         $dokan_settings = get_user_meta( $user_id, 'dokan_profile_settings', true );
 
         //get paypal product type based on seller country
-        $product_type = apply_filters( 'dokan_paypal_marketplace_product_type', Helper::get_product_type( $dokan_settings['address']['country'] ) );
+        $product_type = '';
+        if ( is_array( $dokan_settings ) && isset( $dokan_settings['address']['country'] ) ) {
+            $product_type = apply_filters( 'dokan_paypal_marketplace_product_type', Helper::get_product_type( $dokan_settings['address']['country'] ) );
+        }
 
         if ( ! $product_type ) {
             wp_send_json_error(
@@ -428,16 +452,13 @@ class RegisterWithdrawMethods {
         }
 
         if ( false === get_transient( "dokan_paypal_mp_notice_intervals_$seller_id" ) ) {
-            /**
-             * @var $announcement Announcement
-             */
-            $announcement = dokan_pro()->announcement;
-            // sent announcement message
+            $announcement = dokan_pro()->announcement->manager;
+            // sent an announcement message
             $args = [
-                'title'         => $this->connect_messsage(),
-                'sender_type'   => 'selected_seller',
-                'sender_ids'    => [ $seller_id ],
-                'status'        => 'publish',
+                'title'             => $this->connect_messsage(),
+                'announcement_type' => 'selected_seller',
+                'sender_ids'        => [ $seller_id ],
+                'status'            => 'publish',
             ];
             $notice = $announcement->create_announcement( $args );
 

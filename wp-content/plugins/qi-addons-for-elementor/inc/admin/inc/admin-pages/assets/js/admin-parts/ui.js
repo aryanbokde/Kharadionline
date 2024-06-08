@@ -60,8 +60,6 @@
 					'scroll load',
 					function () {
 						if ( qodefFramework.scroll >= qodefAdminOptionsPanel.adminHeaderTopPosition ) {
-							console.log( wpContentMarginLeft );
-							console.log( wpContentPaddingLeft );
 							qodefAdminOptionsPanel.adminHeader.addClass( 'qodef-fixed' ).css(
 								{
 									'top': parseInt( qodefAdminOptionsPanel.adminBarHeight ),
@@ -158,7 +156,6 @@
 						);
 					}
 				);
-
 			}
 		},
 		resetSearchView: function () {
@@ -233,42 +230,41 @@
 		},
 		switchWidgetValueBySectionClick: function ( $adminPage ) {
 			this.optionsForm = $adminPage.find( '#qi_addons_for_elementor_widgets_framework_ajax_form' );
-			
+
 			var $sections = $adminPage.find( '.qodef-widgets-section' );
-			
+
 			$sections.each(
 				function () {
-					var $section          = $( this ),
-						$sections   = $section.find( '.qodef-widgets-item' );
-					
+					var $section  = $( this ),
+						$sections = $section.find( '.qodef-widgets-item' );
+
 					$sections.each(
 						function () {
-							var $section = $( this ),
+							var $section      = $( this ),
 								$sectionLinks = $section.find( 'a' );
-							
-							if( $sectionLinks.length ) {
-								$sectionLinks.each( function() {
-									$(this).on( 'click', function( e ) {
-										e.stopPropagation();
-									} )
-								} )
+
+							if ( $sectionLinks.length ) {
+								$sectionLinks.each(
+									function () {
+										$( this ).on(
+											'click',
+											function ( e ) {
+												e.stopPropagation();
+											}
+										);
+									}
+								);
 							}
-							
+
 							$section.on(
 								'click',
 								function ( e ) {
 									var $sectionCheckbox = $section.find( 'input:checkbox' );
-									
+
 									if ( $sectionCheckbox.is( ':checked' ) ) {
-										$sectionCheckbox.prop(
-											'checked',
-											false
-										);
+										$sectionCheckbox.prop( 'checked', false );
 									} else {
-										$sectionCheckbox.prop(
-											'checked',
-											true
-										);
+										$sectionCheckbox.prop( 'checked', true );
 									}
 								}
 							);
@@ -299,7 +295,6 @@
 					);
 				}
 			);
-
 		},
 		switchControlerValuesByWidget: function ( $adminPage ) {
 			this.optionsForm = $adminPage.find( '#qi_addons_for_elementor_widgets_framework_ajax_form' );
@@ -319,29 +314,18 @@
 							$widget.on(
 								'click',
 								function ( e ) {
-									// if( ! $widget.is(':checked') ){
-									// $sectionControler.prop('checked', false);
-									// }
 
 									if ( $sectionWidgets.find( 'input:checkbox' ).not( ':checked' ).length > 0 ) {
-										$sectionControler.prop(
-											'checked',
-											false
-										);
+										$sectionControler.prop( 'checked', false );
 									} else {
-										$sectionControler.prop(
-											'checked',
-											true
-										);
+										$sectionControler.prop( 'checked', true );
 									}
 								}
 							);
-
 						}
 					);
 				}
 			);
-
 		},
 		allWidgetsEnabled: function ( $section ) {
 			var $sectionWidgets = $section.find( '.qodef-widgets-item input:checkbox' );
@@ -357,9 +341,7 @@
 			);
 
 			return true;
-
 		}
-
 	};
 
 	var qodefNavTabs = {

@@ -60,6 +60,7 @@ class Manager {
         add_action( 'dokan_store_profile_saved', [ $this, 'save_skrill_progress' ], 10, 2 );
         add_filter( 'dokan_payment_settings_required_fields', [ $this, 'map_required_fields' ], 10, 3 );
         add_filter( 'dokan_withdraw_withdrawable_payment_methods', [ $this, 'include_skrill_to_payment_methods' ] );
+        add_filter( 'dokan_withdraw_method_additional_info', [ $this, 'mask_custom_withdraw_method' ], 10, 2 );
     }
 
     /**
@@ -73,8 +74,9 @@ class Manager {
      */
     public function load_withdraw_method( $methods ) {
         $methods['skrill'] = [
-            'title'    => __( 'Skrill', 'dokan' ),
-            'callback' => [ $this, 'dokan_withdraw_method_skrill' ],
+            'title'        => __( 'Skrill', 'dokan' ),
+            'callback'     => [ $this, 'dokan_withdraw_method_skrill' ],
+            'apply_charge' => true,
         ];
 
         return $methods;
@@ -341,6 +343,8 @@ class Manager {
             ];
         }
 
+        $active_methods = array_intersect( dokan_get_seller_active_withdraw_methods(), dokan_withdraw_get_active_methods() );
+
         $schedule_data = [
             'enabled'                  => $enabled,
             'selected_schedule'        => Helper::get_selected_schedule(),
@@ -349,8 +353,9 @@ class Manager {
             'minimum_amount_selected'  => Helper::get_selected_minimum_withdraw_amount(),
             'reserve_balance_list'     => Helper::get_minimum_reserve_balance_list(),
             'reserve_balance_selected' => Helper::get_selected_reserve_balance(),
-            'active_methods'           => dokan_withdraw_get_withdrawable_active_methods(),
+            'active_methods'           => $active_methods,
             'default_method'           => dokan_withdraw_get_default_method(),
+            'is_setup_payment_methods' => ! empty( $active_methods ),
         ];
 
         return $schedule_data;
@@ -906,19 +911,22 @@ class Manager {
             return;
         }
 
-        $data = [
+        $data    = [
             'user_id' => $user_id,
             'amount'  => $withdraw_amount,
             'status'  => dokan()->withdraw->get_status_code( 'pending' ),
             'method'  => $default_withdraw_method,
             'ip'      => 'UNKNOWN',
             'note'    => '',
+            'date'    => dokan_current_datetime()->format( 'Y-m-d H:i:s' ),
         ];
-
         $withdraw = dokan()->withdraw->create( $data );
+
         if ( is_wp_error( $withdraw ) ) {
             return $withdraw;
         }
+
+        do_action( 'dokan_after_withdraw_request', $user_id, $withdraw->get_amount(), $withdraw->get_method() );
 
         /**
          * Action hook `dokan_withdraw_disbursement_after_request_create`
@@ -963,15 +971,15 @@ class Manager {
         }
 
         $args = [
-            'title'       => __( 'Withdraw method disabled', 'dokan' ),
-            'status'      => 'publish',
-            'author'      => $admin_id,
-            'sender_type' => 'selected_seller',
-            'sender_ids'  => $user_query->get_results(),
-            'content'     => __( 'The withdraw method you have set as default is disabled by admin.', 'dokan' ),
+            'title'             => __( 'Withdraw method disabled', 'dokan' ),
+            'status'            => 'publish',
+            'author'            => $admin_id,
+            'announcement_type' => 'selected_seller',
+            'sender_ids'        => $user_query->get_results(),
+            'content'           => __( 'The withdraw method you have set as default is disabled by admin.', 'dokan' ),
         ];
 
-        dokan_pro()->announcement->create_announcement( $args );
+        dokan_pro()->announcement->manager->create_announcement( $args );
     }
 
     /**
@@ -1007,15 +1015,15 @@ class Manager {
         }
 
         $args = [
-            'title'       => __( 'Your preferred withdrawal schedule is disabled.', 'dokan' ),
-            'status'      => 'publish',
-            'author'      => $admin_id,
-            'sender_type' => 'selected_seller',
-            'sender_ids'  => $user_query->get_results(),
-            'content'     => __( "The admin has disabled the withdrawal schedule that you had set as your preferred payment schedule. Please reschedule it from the vendor dashboard's withdrawal page.", 'dokan' ),
+            'title'             => __( 'Your preferred withdrawal schedule is disabled.', 'dokan' ),
+            'status'            => 'publish',
+            'author'            => $admin_id,
+            'announcement_type' => 'selected_seller',
+            'sender_ids'        => $user_query->get_results(),
+            'content'           => __( "The admin has disabled the withdrawal schedule that you had set as your preferred payment schedule. Please reschedule it from the vendor dashboard's withdrawal page.", 'dokan' ),
         ];
 
-        dokan_pro()->announcement->create_announcement( $args );
+        dokan_pro()->announcement->manager->create_announcement( $args );
     }
 
     /**
@@ -1336,5 +1344,28 @@ class Manager {
         $payment_methods[] = 'skrill';
 
         return $payment_methods;
+    }
+
+    /**
+     * Mask custom withdraw payment method.
+     *
+     * @since 3.7.27
+     *
+     * @param string $method_info Withdraw method information
+     * @param string $method_key  Withdraw Method key
+     *
+     * @return string
+     */
+    public function mask_custom_withdraw_method( $method_info, $method_key ) {
+        $no_information   = __( 'No information found.', 'dokan' );
+        $profile_settings = get_user_meta( dokan_get_current_user_id(), 'dokan_profile_settings' );
+        $payment_methods  = ! empty( $profile_settings[0]['payment'] ) ? $profile_settings[0]['payment'] : [];
+
+        if ( 'dokan_custom' === $method_key ) {
+            // translators: 1: custom payment for withdraw method.
+            $method_info = empty( $payment_methods[ $method_key ]['value'] ) ? $no_information : sprintf( __( '( %1$s )', 'dokan' ), dokan_mask_string( $payment_methods[ $method_key ]['value'] ) );
+        }
+
+        return $method_info;
     }
 }

@@ -2,10 +2,13 @@
 
 namespace WeDevs\DokanPro\Admin;
 
+use WeDevs\DokanPro\Modules\TableRate\DokanGoogleDistanceMatrixAPI;
+use WeDevs\DokanPro\Storage\Session;
+
 /**
  * Ajax handling for Dokan in Admin area
  *
- * @since 2.2
+ * @since  2.2
  *
  * @author weDevs <info@wedevs.com>
  */
@@ -15,71 +18,42 @@ class Ajax {
      * Load automatically all actions
      */
     public function __construct() {
-        add_action( 'wp_ajax_regen_sync_table', array( $this, 'regen_sync_order_table' ) );
-        add_action( 'wp_ajax_check_duplicate_suborders', array( $this, 'check_duplicate_suborders' ) );
+        add_action( 'wp_ajax_regenerate_order_commission', [ $this, 'regenerate_order_commission' ] );
+        add_action( 'wp_ajax_check_duplicate_suborders', [ $this, 'check_duplicate_suborders' ] );
         add_action( 'wp_ajax_rewrite_product_variations_author', [ $this, 'rewrite_product_variations_author' ] );
-        add_action( 'wp_ajax_dokan_get_distance_btwn_address', [ $this, 'get_address_btwn_address' ] );
+        add_action( 'wp_ajax_dokan_get_distance_btwn_address', [ $this, 'get_distance_btwn_address' ] );
     }
 
     /**
-     * Handle sync order table via ajax
+     * Regenerate order commission data.
      *
-     * @return json success|error|data
+     * @since 3.9.3
+     *
+     * @return void
      */
-    public function regen_sync_order_table() {
-        if ( ! current_user_can( 'manage_woocommerce' ) ) {
-            return wp_send_json_error( __( 'You don\'t have enough permission', 'dokan', '403' ) );
+    public function regenerate_order_commission() {
+        if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'dokan_admin' ) ) {
+            wp_send_json_error( __( 'Nonce verification failed', 'dokan' ), 403 );
         }
 
-        global $wpdb;
-
-        $limit        = isset( $_POST['limit'] ) ? $_POST['limit'] : 0;
-        $offset       = isset( $_POST['offset'] ) ? $_POST['offset'] : 0;
-        $total_orders = isset( $_POST['total_orders'] ) ? $_POST['total_orders'] : 0;
-
-        if ( $offset == 0 ) {
-            $wpdb->query( 'TRUNCATE TABLE ' . $wpdb->dokan_orders );
-
-            $total_orders = $wpdb->get_var( "SELECT count(ID)
-                FROM $wpdb->posts
-                WHERE post_type = 'shop_order'" );
-
-            $parent_orders = $wpdb->get_var( "SELECT count(ID)
-                FROM {$wpdb->posts} as p
-                LEFT JOIN {$wpdb->postmeta} as m ON p.ID = m.post_id
-                WHERE m.meta_key = 'has_sub_order' and p.post_type = 'shop_order' " );
-            $total_orders = $total_orders - $parent_orders;
+        if ( ! current_user_can( 'manage_woocommerce' ) ) { // phpcs:ignore
+            wp_send_json_error( __( 'You don\'t have enough permission', 'dokan' ), 403 );
         }
 
-        $sql = "SELECT ID FROM $wpdb->posts
-                WHERE post_type = 'shop_order'
-                LIMIT %d,%d";
+        $bg_processor = dokan_pro()->bg_process->regenerate_order_commission;
 
-        $orders = $wpdb->get_results( $wpdb->prepare($sql, $offset * $limit, $limit ) );
+        $args = [
+            'paged' => 1,
+        ];
 
-        if ( $orders ) {
-            foreach ( $orders as $order) {
-                dokan_sync_order_table( $order->ID );
-            }
+        $bg_processor->push_to_queue( $args )->save()->dispatch();
 
-            $sql       = "SELECT * FROM " . $wpdb->dokan_orders;
-            $generated = $wpdb->get_results( $sql );
-            $done      = count( $generated );
-
-            wp_send_json_success( array(
-                'offset'       => $offset + 1,
-                'total_orders' => $total_orders,
-                'done'         => $done,
-                'message'      => sprintf( __( '%d orders sync completed out of %d', 'dokan' ), $done, $total_orders )
-            ) );
-        } else {
-            $dashboard_link = sprintf( '<a href="%s">%s</a>', admin_url( 'admin.php?page=dokan' ), __( 'Go to Dashboard &rarr;', 'dokan' ) );
-            wp_send_json_success( array(
-                'offset'  => 0,
-                'done'    => 'All',
-                'message' => sprintf( __( 'All orders has been synchronized. %s', 'dokan' ), $dashboard_link )
-            ) );
-        }
+        wp_send_json_success(
+            [
+                'process' => 'running',
+                'message' => __( 'Your orders have been successfully queued for processing. You will be notified once the task has been completed.', 'dokan' ),
+            ]
+        );
     }
 
     /**
@@ -87,87 +61,96 @@ class Ajax {
      *
      * @since 2.4.4
      *
-     * @return json success|error|data
+     * @return void
      */
-    public function check_duplicate_suborders(){
-
-        if ( ! isset( $_POST['action'] ) || $_POST['action'] !== 'check_duplicate_suborders' ) {
-            return wp_send_json_error( __( 'You don\'t have enough permission', 'dokan', '403' ) );
+    public function check_duplicate_suborders() {
+        if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'dokan_admin' ) ) {
+            wp_send_json_error( __( 'Nonce verification failed', 'dokan' ), 403 );
         }
 
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
-            return wp_send_json_error( __( 'You don\'t have enough permission', 'dokan', '403' ) );
+            wp_send_json_error( __( 'You don\'t have enough permission', 'dokan' ), 403 );
         }
 
-        if ( session_id() == '' ) {
-            session_start();
+        // get session object
+        $session = new Session( 'duplicate_suborders' );
+
+        $limit        = isset( $_POST['limit'] ) ? absint( $_POST['limit'] ) : 0;
+        $offset       = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
+        $prev_done    = isset( $_POST['done'] ) ? absint( $_POST['done'] ) : 0;
+        $total_orders = isset( $_POST['total_orders'] ) ? absint( $_POST['total_orders'] ) : 0;
+
+        $query_args = [
+            'meta_query' => [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+                [
+                    'key'     => 'has_sub_order',
+                    'value'   => '1',
+                    'compare' => '=',
+                    'type'    => 'NUMERIC',
+                ],
+            ],
+        ];
+
+        if ( $offset === 0 ) {
+            $session->forget_session();
+            $query_args['return'] = 'count';
+            unset( $query_args['limit'] );
+            unset( $query_args['offset'] );
+            $total_orders = dokan()->order->all( $query_args );
         }
 
-        global $wpdb;
+        $query_args['return'] = 'ids';
+        $query_args['limit'] = $limit;
+        $query_args['paged'] = $offset + 1;
 
-        $limit        = isset( $_POST['limit'] ) ? $_POST['limit'] : 0;
-        $offset       = isset( $_POST['offset'] ) ? $_POST['offset'] : 0;
-        $prev_done    = isset( $_POST['done'] ) ? $_POST['done'] : 0;
-        $total_orders = isset( $_POST['total_orders'] ) ? $_POST['total_orders'] : 0;
+        $orders           = dokan()->order->all( $query_args );
+        $duplicate_orders = null !== $session->get( 'dokan_duplicate_order_ids' ) ? $session->get( 'dokan_duplicate_order_ids' ) : [];
 
-        if ( $offset == 0 ) {
-            unset( $_SESSION['dokan_duplicate_order_ids'] );
-            $total_orders = $wpdb->get_var( "SELECT count(ID) FROM $wpdb->posts AS p
-                LEFT JOIN $wpdb->postmeta AS m ON p.ID = m.post_id
-                WHERE post_type = 'shop_order' AND m.meta_key = 'has_sub_order'" );
-        }
+        if ( empty( $orders ) ) {
+            $dashboard_link = sprintf( '<a href="%s">%s</a>', admin_url( 'admin.php?page=dokan' ), __( 'Go to Dashboard &rarr;', 'dokan' ) );
+            $message        = count( $duplicate_orders ) ?
+                // translators: %s: dashboard link
+                sprintf( __( 'All orders are checked and we found some duplicate orders. %s', 'dokan' ), $dashboard_link ) :
+                // translators: %s: dashboard link
+                sprintf( __( 'All orders are checked and no duplicate was found. %s', 'dokan' ), $dashboard_link );
 
-        $sql = "SELECT ID FROM $wpdb->posts AS p
-        LEFT JOIN $wpdb->postmeta AS m ON p.ID = m.post_id
-        WHERE post_type = 'shop_order' AND m.meta_key = 'has_sub_order'
-        LIMIT %d,%d";
+            $data = [
+                'offset'  => 0,
+                'done'    => 'All',
+                'message' => $message,
+            ];
 
-        $orders           = $wpdb->get_results( $wpdb->prepare( $sql, $offset * $limit, $limit ) );
-        $duplicate_orders = isset( $_SESSION['dokan_duplicate_order_ids'] ) ? $_SESSION['dokan_duplicate_order_ids'] : array();
+            if ( count( $duplicate_orders ) ) {
+                $data['duplicate'] = true;
+            }
 
-        if ( $orders ) {
-            foreach ( $orders as $order ) {
-
-                $sellers_count = count( dokan_get_sellers_by( $order->ID ) );
-                $sub_order_ids = dokan_get_suborder_ids_by( $order->ID );
+            wp_send_json_success( $data, 200 );
+        } else {
+            foreach ( $orders as $order_id ) {
+                $sellers_count = count( dokan_get_sellers_by( $order_id ) );
+                $sub_order_ids = dokan_get_suborder_ids_by( $order_id );
 
                 if ( $sellers_count < count( $sub_order_ids ) ) {
                     $duplicate_orders = array_merge( array_slice( $sub_order_ids, $sellers_count ), $duplicate_orders );
                 }
             }
+        }
 
-            if ( count( $duplicate_orders ) ) {
-                $_SESSION['dokan_duplicate_order_ids'] = $duplicate_orders;
-            }
+        if ( count( $duplicate_orders ) ) {
+            $session->set( 'dokan_duplicate_order_ids', $duplicate_orders );
+        }
 
-            $done = $prev_done + count($orders);
+        $done = $prev_done + count( $orders );
 
-            wp_send_json_success( array(
+        wp_send_json_success(
+            [
                 'offset'       => $offset + 1,
                 'total_orders' => $total_orders,
                 'done'         => $done,
-                'message'      => sprintf( __( '%d orders checked out of %d', 'dokan' ), $done, $total_orders )
-            ) );
-
-        } else {
-
-            if( count( $duplicate_orders ) ) {
-               wp_send_json_success( array(
-                    'offset'  => 0,
-                    'done'    => 'All',
-                    'message' => sprintf( __( 'All orders are checked and we found some duplicate orders', 'dokan' ) ),
-                    'duplicate' => true
-                ) );
-            }
-
-            $dashboard_link = sprintf( '<a href="%s">%s</a>', admin_url( 'admin.php?page=dokan' ), __( 'Go to Dashboard &rarr;', 'dokan' ) );
-
-            wp_send_json_success( array(
-                    'offset'  => 0,
-                    'done'    => 'All',
-                    'message' => sprintf( __( 'All orders are checked and no duplicate was found. %s', 'dokan' ), $dashboard_link )
-            ) );
-        }
+                // translators: %1$d: done orders, %2$d: total orders
+                'message'      => sprintf( __( '%1$d orders checked out of %2$d', 'dokan' ), $done, $total_orders ),
+            ]
+        );
     }
 
     /**
@@ -179,14 +162,14 @@ class Ajax {
      */
     public function rewrite_product_variations_author() {
         if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'dokan_admin' ) ) {
-            return wp_send_json_error( __( 'Nonce verification failed', 'dokan' ), 403 );
+            wp_send_json_error( __( 'Nonce verification failed', 'dokan' ), 403 );
         }
 
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
-            return wp_send_json_error( __( 'You don\'t have enough permission', 'dokan' ), 403 );
+            wp_send_json_error( __( 'You don\'t have enough permission', 'dokan' ), 403 );
         }
 
-        $page         = ! empty( $_POST['page'] ) ? absint( wp_unslash( $_POST['page'] ) ) : 1;
+        $page         = ! empty( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
         $bg_processor = dokan()->bg_process->rewrite_variable_products_author;
 
         $args = [
@@ -211,13 +194,18 @@ class Ajax {
      *
      * @return void
      */
-    public function get_address_btwn_address() {
+    public function get_distance_btwn_address() {
         if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'dokan_admin' ) ) {
             wp_send_json_error( __( 'Nonce verification failed', 'dokan' ), 403 );
         }
 
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
             wp_send_json_error( __( 'You don\'t have enough permission', 'dokan' ), 403 );
+        }
+
+        // check if module active
+        if ( ! dokan_pro()->module->is_active( 'table_rate_shipping' ) ) {
+            wp_send_json_error( __( 'Table Rate Shipping module is not active', 'dokan' ), 403 );
         }
 
         $address1 = isset( $_POST['address1'] ) ? sanitize_text_field( wp_unslash( $_POST['address1'] ) ) : '';
@@ -237,7 +225,7 @@ class Ajax {
             wp_send_json_error( __( 'Google Map API key is not set', 'dokan' ), 403 );
         }
 
-        $api = new \WeDevs\DokanPro\Modules\TableRate\DokanGoogleDistanceMatrixAPI( $gmap_api_key, false );
+        $api      = new DokanGoogleDistanceMatrixAPI( $gmap_api_key, false );
         $distance = $api->get_distance(
             $address1,
             $address2,

@@ -41,11 +41,18 @@ class Hooks {
 
         add_filter( 'dokan_settings_fields', [ AdminSettings::class, 'add_admin_settings_fields' ], 11, 2 );
         add_action( 'dokan_new_product_after_product_tags', [ FormFields::class, 'new_product_form_field' ] );
+        add_action( 'dokan_auction_new_product_after_product_tags', [ FormFields::class, 'new_product_form_field' ] );
         add_action( 'dokan_product_edit_after_product_tags', [ FormFields::class, 'product_edit_form_field' ], 10, 2 );
+        add_action( 'dokan_auction_before_general_options', [ $this, 'add_brand_option_in_auction_edit_form' ], 10, 2 );
         add_action( 'dokan_new_product_added', [ FormFields::class, 'set_product_brands' ], 10, 2 );
         add_action( 'dokan_product_updated', [ FormFields::class, 'set_product_brands' ], 10, 2 );
         add_action( 'dokan_product_duplicate_after_save', [ $this, 'set_duplicate_product_brands' ], 10, 2 );
         add_action( 'dokan_spmv_create_clone_product', [ $this, 'set_spmv_duplicate_product_brands' ], 10, 2 );
+
+        // Add YITH brand plugin support in dokan booking product
+        add_action( 'dokan_booking_new_product_after_product_tags', [ FormFields::class, 'new_product_form_field' ] );
+        add_action( 'dokan_booking_edit_product_after_product_tags', [ FormFields::class, 'product_edit_form_field' ], 10, 2 );
+        add_action( 'dokan_booking_after_product_data_saved', [ FormFields::class, 'set_product_brands' ], 10, 2 );
     }
 
     /**
@@ -84,5 +91,16 @@ class Hooks {
 
             wp_set_object_terms( $clone_product_id, $brands_ids, dokan_pro()->brands->get_taxonomy() );
         }
+    }
+
+    /**
+     * Add brand input in auction product edit form.
+     *
+     * @param $post_id
+     *
+     * @return void
+     */
+    public function add_brand_option_in_auction_edit_form( $post_id ) {
+        FormFields::product_edit_form_field( get_post( $post_id ), $post_id );
     }
 }

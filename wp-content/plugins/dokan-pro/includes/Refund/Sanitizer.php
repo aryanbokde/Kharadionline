@@ -2,6 +2,10 @@
 
 namespace WeDevs\DokanPro\Refund;
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly
+}
+
 class Sanitizer {
 
     /**
@@ -14,7 +18,7 @@ class Sanitizer {
      * @return string
      */
     protected static function sanitize_amount( $amount ) {
-        return wc_format_decimal( sanitize_text_field( $amount ), wc_get_rounding_precision() );
+        return wc_format_decimal( sanitize_text_field( $amount ), '' );
     }
 
     /**
@@ -79,13 +83,19 @@ class Sanitizer {
      * @return array
      */
     public static function sanitize_item_qtys( $item_qtys ) {
-        $item_qtys = isset( $item_qtys ) ? $item_qtys : [];
+        $item_qtys = $item_qtys ?? [];
         $item_qtys = is_array( $item_qtys ) ? $item_qtys : json_decode( $item_qtys, true );
 
         $sanitized_qtys = [];
 
         foreach ( $item_qtys as $item_id => $item_qty ) {
-            $sanitized_qtys[ absint( $item_id ) ] = absint( $item_qty );
+            $item_qty = absint( $item_qty );
+
+            if ( ! $item_qty ) {
+                continue;
+            }
+
+            $sanitized_qtys[ absint( $item_id ) ] = $item_qty;
         }
 
         $item_qtys = $sanitized_qtys;
@@ -103,7 +113,7 @@ class Sanitizer {
      * @return array
      */
     public static function sanitize_item_totals( $item_totals ) {
-        $item_totals = isset( $item_totals ) ? $item_totals : [];
+        $item_totals = $item_totals ?? [];
         $item_totals = is_array( $item_totals ) ? $item_totals : json_decode( $item_totals, true );
 
         $sanitize_totals = [];
@@ -122,7 +132,7 @@ class Sanitizer {
      *
      * @since 3.0.0
      *
-     * @param string|array $item_tax_totals
+     * @param mixed $item_tax_totals
      *
      * @return array
      */
@@ -135,12 +145,18 @@ class Sanitizer {
      *
      * @since 3.0.0
      *
-     * @param array $restock_items
+     * @param mixed $restock_items
      *
-     * @return string
+     * @return array|null|mixed
      */
     public static function sanitize_restock_items( $restock_items ) {
-        return is_array( $restock_items ) ? $restock_items : json_decode( $restock_items, true );
+        if ( is_array( $restock_items ) ) {
+            return $restock_items;
+        } elseif ( ! empty( $restock_items ) ) {
+            return json_decode( $restock_items, true );
+        } else {
+            return '';
+        }
     }
 
     /**
@@ -163,7 +179,7 @@ class Sanitizer {
      *
      * @param string $status
      *
-     * @return string
+     * @return int
      */
     public static function sanitize_status( $status ) {
         $status = absint( $status );

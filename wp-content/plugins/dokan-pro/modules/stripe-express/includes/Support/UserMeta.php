@@ -2,21 +2,44 @@
 
 namespace WeDevs\DokanPro\Modules\StripeExpress\Support;
 
+use WeDevs\DokanPro\Modules\StripeExpress\Api\Account;
+
 defined( 'ABSPATH' ) || exit; // Exit if called directly
 
 /**
  * User meta data handler class for Stripe gateway.
  *
- * @since 3.6.1
+ * @since   3.6.1
  *
  * @package WeDevs\DokanPro\Modules\StripeExpress\Support
  */
 class UserMeta {
 
     /**
+     * Retrieves stripe account information from user meta.
+     *
+     * @since 3.9.7
+     *
+     * @param int|string $user_id
+     *
+     * @return \Stripe\Account|false
+     */
+    private static function get_account_information_from_stripe( $user_id ) {
+        try {
+            $account_id = get_user_meta( $user_id, self::stripe_account_id_key(), true );
+
+            return Account::get( $account_id, [] );
+        } catch ( \Exception $e ) {
+            return false;
+        }
+    }
+
+    /**
      * Generates meta key for stripe account id.
      *
-     * @since 3.6.1
+     * @since      3.6.1
+     *
+     * @deprecated 3.9.7
      *
      * @return string
      */
@@ -40,11 +63,39 @@ class UserMeta {
      * @return string|false
      */
     public static function get_stripe_account_id( $user_id ) {
-        return get_user_meta( $user_id, self::stripe_account_id_key(), true );
+        $account_info = self::get_stripe_account_info( $user_id );
+        $account_id   = is_array( $account_info ) && isset( $account_info['account_id'] ) ? $account_info['account_id'] : '';
+        if ( ! empty( $account_id ) ) {
+            return $account_id;
+        }
+
+        // backward compatibility code
+        if ( ! metadata_exists( 'user', $user_id, static::stripe_account_id_key() ) ) {
+            return false;
+        }
+
+        // metadata exists, so update data to new system
+        try {
+            // try to get account id from meta
+            $stripe_account = static::get_account_information_from_stripe( $user_id );
+            if ( $stripe_account ) {
+                // store it to the new system
+                UserMeta::update_stripe_account_info( $user_id, $stripe_account );
+            }
+
+            // delete old meta
+            delete_user_meta( $user_id, static::stripe_account_id_key() );
+            delete_user_meta( $user_id, static::stripe_account_id_key() . '_trash' );
+
+            // return new account id
+            return $stripe_account->id;
+        } catch ( \Exception $e ) {
+            return false;
+        }
     }
 
     /**
-     * Updates stripe account id for a user.
+     * Updates a stripe account id for a user.
      *
      * @since 3.6.1
      *
@@ -54,9 +105,104 @@ class UserMeta {
      * @return int|boolean
      */
     public static function update_stripe_account_id( $user_id, $account_id ) {
-        $meta_key = self::stripe_account_id_key();
-        delete_user_meta( $user_id, "{$meta_key}_trash" );
-        return update_user_meta( $user_id, $meta_key, $account_id );
+        $account_info = self::get_stripe_account_info( $user_id );
+
+        $account_info['account_id']         = $account_id;
+        $account_info['trashed_account_id'] = '';
+
+        return update_user_meta( $user_id, self::get_stripe_account_info_key(), $account_info );
+    }
+
+    /**
+     * Generates meta key for stripe account information.
+     *
+     * @since 3.9.7
+     *
+     * @return string
+     */
+    public static function get_stripe_account_info_key() {
+        $key = 'account_info';
+
+        if ( Settings::is_test_mode() ) {
+            $key = "test_$key";
+        }
+
+        return Helper::meta_key( $key );
+    }
+
+    /**
+     * Retrieves stripe account info of a user.
+     *
+     * @since 3.9.7
+     *
+     * @param int|string $user_id
+     *
+     * @return array|false
+     */
+    public static function get_stripe_account_info( $user_id ) {
+        $account_info = get_user_meta( $user_id, self::get_stripe_account_info_key(), true );
+
+        return empty( $account_info ) || ! is_array( $account_info ) ? [] : $account_info;
+    }
+
+    /**
+     * Updates stripe account info for a user.
+     *
+     * @since 3.6.1
+     *
+     * @param int|string      $user_id
+     * @param \Stripe\Account $account
+     *
+     * @return int|boolean
+     */
+    public static function update_stripe_account_info( $user_id, \Stripe\Account $account ) {
+        $account_info       = self::get_stripe_account_info( $user_id );
+        $trashed_account_id = $account_info['trashed_account_id'] ?? '';
+
+        /**
+         * @property string                    $id                Unique identifier for the object.
+         * @property null|\Stripe\StripeObject $business_profile  Business information about the account.
+         * @property null|string               $business_type     The business type.
+         * @property \Stripe\StripeObject      $capabilities
+         * @property bool                      $charges_enabled   Whether the account can create live charges.
+         * @property string                    $country           The account's country.
+         * @property int                       $created           Time at which the account was connected. Measured in seconds since the Unix epoch.
+         * @property string                    $default_currency  Three-letter ISO currency code representing the default currency for the account. This must be a currency that <a href="https://stripe.com/docs/payouts">Stripe supports in the account's country</a>.
+         * @property bool                      $details_submitted Whether account details have been submitted. Standard accounts cannot receive payouts before this is true.
+         * @property null|string               $email             An email address associated with the account. You can treat this as metadata: it is not used for authentication or messaging account holders.
+         * @property \Stripe\StripeObject      $future_requirements
+         * @property \Stripe\Person            $individual        <p>This is an object representing a person associated with a Stripe account.</p><p>A platform cannot access a Standard or Express account's persons after the account starts onboarding, such as after generating an account link for the account. See the <a href="https://stripe.com/docs/connect/standard-accounts">Standard onboarding</a> or <a href="https://stripe.com/docs/connect/express-accounts">Express onboarding documentation</a> for information about platform pre-filling and account onboarding steps.</p><p>Related guide: <a href="https://stripe.com/docs/connect/identity-verification-api#person-information">Handling Identity Verification with the API</a>.</p>
+         * @property \Stripe\StripeObject      $metadata          Set of <a href="https://stripe.com/docs/api/metadata">key-value pairs</a> that you can attach to an object. This can be useful for storing additional information about the object in a structured format.
+         * @property bool                      $payouts_enabled   Whether Stripe can send payouts to this account.
+         * @property \Stripe\StripeObject      $requirements
+         * @property \Stripe\StripeObject      $tos_acceptance
+         * @property string                    $type              The Stripe account type. Can be <code>standard</code>, <code>express</code>, or <code>custom</code>.
+         */
+        $account_data = [
+            'account_id'          => $trashed_account_id ? '' : $account->id, // do not update an account id if it was previously trashed
+            'trashed_account_id'  => $trashed_account_id,
+            'capabilities'        => $account->capabilities ?? [],
+            'charges_enabled'     => $account->charges_enabled ?? false,
+            'country'             => $account->country ?? '',
+            'created'             => $account->created ?? 0,
+            'default_currency'    => $account->default_currency ?? '',
+            'details_submitted'   => $account->details_submitted ?? false,
+            'email'               => $account->email ?? '',
+            'metadata'            => $account->metadata ?? [],
+            'tos_acceptance'      => $account->tos_acceptance ?? [],
+            'type'                => $account->type ?? '',
+            'business_profile'    => $account->business_profile ?? [],
+            'business_type'       => $account->business_type ?? '',
+            'requirements'        => $account->requirements ?? [],
+            'future_requirements' => $account->future_requirements ?? [],
+            'individual'          => $account->individual ?? [],
+            'payouts_enabled'     => $account->payouts_enabled ?? false,
+            'transfers_enabled'   => $account->transfers_enabled ?? false,
+        ];
+
+        $meta_key = self::get_stripe_account_info_key();
+
+        return update_user_meta( $user_id, $meta_key, $account_data );
     }
 
     /**
@@ -70,16 +216,24 @@ class UserMeta {
      * @return boolean
      */
     public static function delete_stripe_account_id( $user_id, $force = false ) {
-        $meta_key = self::stripe_account_id_key();
+        $account_info = [
+            'account_id'         => '',
+            'trashed_account_id' => '',
+        ];
 
-        if ( ! $force ) {
-            $account_id = get_user_meta( $user_id, $meta_key, true );
-            update_user_meta( $user_id, "{$meta_key}_trash", $account_id );
+        $account_id = static::get_stripe_account_id( $user_id );
+        if ( empty( $account_id ) ) {
+            $account_id = static::get_trashed_stripe_account_id( $user_id );
         } else {
-            delete_user_meta( $user_id, "{$meta_key}_trash" );
+            $account_info['trashed_account_id'] = $account_id;
         }
 
-        return delete_user_meta( $user_id, $meta_key );
+        if ( $force ) {
+            $account_info['trashed_account_id'] = '';
+            do_action( 'dokan_stripe_express_is_vendor_stripe_account_deleted_from_remote', $account_id );
+        }
+
+        return update_user_meta( $user_id, self::get_stripe_account_info_key(), $account_info );
     }
 
     /**
@@ -92,7 +246,37 @@ class UserMeta {
      * @return string|false
      */
     public static function get_trashed_stripe_account_id( $user_id ) {
-        return get_user_meta( $user_id, self::stripe_account_id_key() . '_trash', true );
+        $account_info     = self::get_stripe_account_info( $user_id );
+        $trash_account_id = $account_info['trashed_account_id'] ?? '';
+        $trash_meta_key   = self::stripe_account_id_key() . '_trash';
+
+        if ( empty( $trash_account_id ) && metadata_exists( 'user', $user_id, $trash_meta_key ) ) {
+            // backward compatibility
+            $trash_account_id = get_user_meta( $user_id, self::stripe_account_id_key(), true );
+        }
+
+        return ! empty( $trash_account_id ) ? $trash_account_id : false;
+    }
+
+    /**
+     * Retrieves user id by stripe account id.
+     *
+     * @since 3.9.7
+     *
+     * @param string $account_id
+     *
+     * @return int|false
+     */
+    public static function get_user_id_by_stripe_account_id( string $account_id ) {
+        global $wpdb;
+
+        $sql = $wpdb->prepare(
+            "SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s AND meta_value LIKE %s",
+            self::get_stripe_account_info_key(),
+            '%' . $wpdb->esc_like( $account_id ) . '%'
+        );
+
+        return $wpdb->get_var( $sql );
     }
 
     /**
@@ -201,6 +385,57 @@ class UserMeta {
      */
     public static function delete_stripe_subscription_id( $user_id ) {
         return delete_user_meta( $user_id, self::stripe_subscription_id_key() );
+    }
+
+    /**
+     * Retrieve meta key for temporary stripe subscription id for vendor subscription checkout.
+     *
+     * @since 3.8.3
+     *
+     * @return string
+     */
+    public static function stripe_temp_subscription_id_key() {
+        return Helper::meta_key( 'dps_temp_subscription_id' );
+    }
+
+    /**
+     * Retrieves temporary stripe subscription id for vendor subscription checkout.
+     *
+     * @since 3.8.3
+     *
+     * @param int|string $user_id
+     *
+     * @return string|false
+     */
+    public static function get_stripe_temp_subscription_id( $user_id ) {
+        return get_user_meta( $user_id, self::stripe_temp_subscription_id_key(), true );
+    }
+
+    /**
+     * Updates stripe temporary subscription id.
+     *
+     * @since 3.8.3
+     *
+     * @param int|string $user_id
+     * @param string     $subscription_id
+     *
+     * @return int|bool
+     */
+    public static function update_stripe_temp_subscription_id( $user_id, $subscription_id ) {
+        return update_user_meta( $user_id, self::stripe_temp_subscription_id_key(), $subscription_id );
+    }
+
+    /**
+     * Deletes stripe temporary subscription id.
+     *
+     * @since 3.7.8
+     *
+     * @param int|string $user_id
+     *
+     * @return bool
+     */
+    public static function delete_stripe_temp_subscription_id( $user_id ) {
+        return delete_user_meta( $user_id, self::stripe_temp_subscription_id_key() );
     }
 
     /**
@@ -517,8 +752,8 @@ class UserMeta {
      *
      * @since 3.7.8
      *
-     * @param int|string  $user_id
-     * @param boolean     $status
+     * @param int|string $user_id
+     * @param boolean    $status
      *
      * @return boolean|string
      */

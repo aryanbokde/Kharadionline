@@ -97,7 +97,7 @@ class Kyc extends Processor {
      * @since 3.5.0
      *
      * @param int|string $user_id
-     * @param object     $kyc_document
+     * @param KycDocument     $kyc_document
      *
      * @return KycDocument|\WP_Error
      */

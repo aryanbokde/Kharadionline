@@ -7,6 +7,10 @@ use WP_Error;
 use WeDevs\Dokan\Exceptions\DokanException;
 use WeDevs\Dokan\Traits\AjaxResponseError;
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly
+}
+
 class Ajax {
 
     use AjaxResponseError;
@@ -18,7 +22,9 @@ class Ajax {
      *
      * @param array $data
      *
-     * @return array
+     * @throws DokanException
+     *
+     * @return Refund|WP_Error
      */
     public static function create_refund_request( $data ) {
         $map_params = [
@@ -77,13 +83,14 @@ class Ajax {
         check_ajax_referer( 'order-item', 'security' );
 
         try {
-            $post = wp_unslash( $_POST );
+            $post = wp_unslash( $_POST ); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
             $refund = self::create_refund_request( $post );
 
             $message = apply_filters( 'dokan_pro_refund_ajax_refund_request_message', __( 'Refund request submitted.', 'dokan' ) );
 
-            do_action( 'dokan_refund_requested', $refund->get_order_id() );
+            do_action( 'dokan_refund_requested', $refund->get_order_id(), $refund );
+            do_action( 'dokan_refund_requested_amount', $refund->get_order_id(), $refund->get_refund_amount(), $refund );
 
             wp_send_json_success(
                 [

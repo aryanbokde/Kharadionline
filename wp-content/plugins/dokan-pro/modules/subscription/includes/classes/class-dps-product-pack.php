@@ -13,6 +13,10 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
  * @subpackage  Subscription
  */
 class WC_Product_Product_pack extends WC_Product {
+    /**
+     * @var string
+     */
+    protected $product_type;
 
     /**
      * __construct function.

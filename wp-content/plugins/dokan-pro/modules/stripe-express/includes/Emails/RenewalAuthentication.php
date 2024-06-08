@@ -69,7 +69,7 @@ class RenewalAuthentication extends AuthenticationEmail {
      *
      * @since 3.7.8
      *
-     * @param WC_Order              $order
+     * @param \WC_Order              $order
      * @param \Stripe\PaymentIntent $intent (Optional)
      *
      * @return void
@@ -113,7 +113,7 @@ class RenewalAuthentication extends AuthenticationEmail {
      * @return array
      */
     public function prevent_retry_notification_email( $rule_array, $retry_number, $order_id ) {
-        if ( wcs_get_objects_property( $this->object, 'id' ) === $order_id ) {
+        if ( $this->object->get_id() === $order_id ) {
             $rule_array['email_template_customer'] = '';
         }
 
@@ -133,7 +133,7 @@ class RenewalAuthentication extends AuthenticationEmail {
      */
     public function set_store_owner_custom_email( $rule_array, $retry_number, $order_id ) {
         if (
-            wcs_get_objects_property( $this->object, 'id' ) === $order_id &&
+            $this->object->get_id() === $order_id &&
             '' !== $rule_array['email_template_admin'] // Only send our email if a retry admin email was already going to be sent.
         ) {
             $rule_array['email_template_admin'] = '\WeDevs\DokanPro\Modules\StripeExpress\Emails\RenewalAuthenticationRetry';

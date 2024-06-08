@@ -28,7 +28,7 @@ class Transfer extends Processor {
      *
      * @param int|string $transfer_id
      *
-     * @return object|false
+     * @return \MangoPay\Transfer|false
      */
     public static function get( $transfer_id ) {
         try {
@@ -60,7 +60,7 @@ class Transfer extends Processor {
      * @param int|float  $fees
      * @param string     $currency
      *
-     * @return object
+     * @return \MangoPay\Transfer|WP_Error
      */
     public static function create( $order_id, $transaction_id, $customer_id, $vendor_id, $amount, $fees, $currency ) {
         try {

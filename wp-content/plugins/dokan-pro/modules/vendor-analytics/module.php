@@ -192,13 +192,15 @@ class Module {
      * @return array $urls
      */
     public function add_analytics_page( $urls ) {
+        $menu = [
+            'title' => __( 'Analytics', 'dokan' ),
+            'icon'  => '<i class="fas fa-chart-area"></i>',
+            'url'   => dokan_get_navigation_url( 'analytics' ),
+            'pos'   => 182,
+        ];
+
         if ( dokan_is_seller_enabled( get_current_user_id() ) && current_user_can( 'dokandar' ) ) {
-            $urls['analytics'] = array(
-                'title' => __( 'Analytics', 'dokan' ),
-                'icon'  => '<i class="fas fa-chart-area"></i>',
-                'url'   => dokan_get_navigation_url( 'analytics' ),
-                'pos'   => 181,
-            );
+            $urls['analytics'] = $menu;
         }
 
         return $urls;
@@ -239,6 +241,7 @@ class Module {
     public function enqueue_scripts() {
         if ( dokan_is_seller_dashboard() && false !== get_query_var( 'analytics', false ) ) {
             wp_enqueue_script( 'dokan-flot' );
+            wp_enqueue_style( 'dokan-date-range-picker' );
         }
     }
 

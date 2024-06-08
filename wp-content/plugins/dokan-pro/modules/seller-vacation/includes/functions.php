@@ -48,42 +48,6 @@ function dokan_seller_vacation_get_vacation_schedules( $profile_info ) {
 }
 
 /**
- * Trigger background process to change product status
- *
- * @since 2.9.10
- *
- * @param array $vendors
- * @param bool  $cancel_all_process
- *
- * @return void
- */
-function dokan_seller_vacation_update_product_status( $vendors = array(), $cancel_all_process = true ) {
-    global $dokan_pro_sv_update_seller_product_status;
-
-    if ( $cancel_all_process ) {
-        $dokan_pro_sv_update_seller_product_status->kill_process();
-    }
-
-    if ( empty( $vendors ) ) {
-        $vendors = dokan()->vendor->all( [ 'fields' => 'ID' ] );
-    }
-
-    foreach ( $vendors as $vendor ) {
-        if ( $vendor instanceof \WeDevs\Dokan\Vendor\Vendor ) {
-            $vendor = $vendor->get_id();
-        }
-        if ( intval( $vendor ) ) {
-            $dokan_pro_sv_update_seller_product_status->push_to_queue(
-                [
-                    'vendor_id' => intval( $vendor ),
-                ]
-            );
-        }
-    }
-    $dokan_pro_sv_update_seller_product_status->save()->dispatch();
-}
-
-/**
  * Check if seller is on vacation
  *
  * @since 2.9.10

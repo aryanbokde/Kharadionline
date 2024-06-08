@@ -151,7 +151,7 @@ class Module {
 
             if ( dokan_is_seller_dashboard() && isset( $get['product_id'] ) ) {
                 $post_id = intval( $get['product_id'] );
-                $product = wc_get_product( $post_id );
+                $product = wc_get_product( $post_id ) || new \WC_Product();
             }
 
             if ( $product && ! dokan_is_store_listing() && ! dokan_is_store_page() ) {

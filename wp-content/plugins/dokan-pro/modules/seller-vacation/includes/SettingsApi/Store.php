@@ -37,7 +37,7 @@ class Store {
             'info'      => [
                 [
                     'text' => __( 'Docs', 'dokan-lite' ),
-                    'url'  => 'https://wedevs.com/docs/dokan/modules/dokan-vendor-vacation/',
+                    'url'  => 'https://dokan.co/docs/wordpress/modules/dokan-vendor-vacation/',
                     'icon' => 'dokan-icon-doc',
                 ],
             ],

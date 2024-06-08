@@ -558,7 +558,7 @@ class User extends Processor {
      *
      * @param int|string $wp_user_id
      *
-     * @return void
+     * @return int|object|WP_Error
      */
     public static function sync_account_data( $wp_user_id ) {
         $wp_userdata 			 = get_userdata( $wp_user_id );

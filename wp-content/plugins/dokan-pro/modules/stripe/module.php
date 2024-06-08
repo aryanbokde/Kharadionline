@@ -2,12 +2,12 @@
 
 namespace WeDevs\DokanPro\Modules\Stripe;
 
+use Stripe\Account;
 use WeDevs\Dokan\Traits\ChainableContainer;
-use WeDevs\DokanPro\Admin\Announcement;
+use WeDevs\DokanPro\Announcement\Announcement;
 use WeDevs\DokanPro\Modules\Stripe\Gateways\RegisterGateways;
 use WeDevs\DokanPro\Modules\Stripe\Subscriptions\ProductSubscription;
 use WeDevs\DokanPro\Modules\Stripe\WithdrawMethods\RegisterWithdrawMethods;
-use Stripe\Account;
 
 class Module {
 
@@ -121,21 +121,18 @@ class Module {
             return;
         }
 
-        // check vendor is connected to stripe account
+        // check vendor is connected to a stripe account
         $access_token = get_user_meta( $seller_id, 'dokan_connected_vendor_id', true );
-        /**
-         * @var $announcement Announcement
-         */
-        $announcement = dokan_pro()->announcement;
+        $announcement = dokan_pro()->announcement->manager;
 
         if ( empty( $access_token ) ) {
             if ( Helper::display_notice_to_non_connected_sellers() && false === get_transient( "non_connected_sellers_notice_intervals_$seller_id" ) ) {
-                // sent announcement message
+                // sent an announcement message
                 $args   = [
-                    'title'       => __( 'Your account is not connected with Stripe. Connect your Stripe account to receive automatic payouts.', 'dokan' ),
-                    'sender_type' => 'selected_seller',
-                    'sender_ids'  => [ $seller_id ],
-                    'status'      => 'publish',
+                    'title'             => __( 'Your account is not connected with Stripe. Connect your Stripe account to receive automatic payouts.', 'dokan' ),
+                    'announcement_type' => 'selected_seller',
+                    'sender_ids'        => [ $seller_id ],
+                    'status'            => 'publish',
                 ];
                 $notice = $announcement->create_announcement( $args );
 
@@ -152,7 +149,7 @@ class Module {
             return;
         }
 
-        // check transient, we will check send notification once in a week
+        // check transient; we will check send notification once in a week
         if ( false !== get_transient( "dokan_check_stripe_access_key_valid_$seller_id" ) ) {
             return;
         }
@@ -165,10 +162,10 @@ class Module {
             if ( Helper::is_3d_secure_enabled() && $account->default_currency !== strtolower( get_woocommerce_currency() ) ) {
                 $args   = [
                     /* translators: 1) Three-letter ISO currency code 2) Three-letter ISO currency code */
-                    'title'       => sprintf( __( 'Your connected Stripe account currency (%1$s) is different from platform default currency (%2$s). Automatic transfer is not possible.', 'dokan' ), strtoupper( $account->default_currency ), get_woocommerce_currency() ),
-                    'sender_type' => 'selected_seller',
-                    'sender_ids'  => [ $seller_id ],
-                    'status'      => 'publish',
+                    'title'             => sprintf( __( 'Your connected Stripe account currency (%1$s) is different from platform default currency (%2$s). Automatic transfer is not possible.', 'dokan' ), strtoupper( $account->default_currency ), get_woocommerce_currency() ),
+                    'announcement_type' => 'selected_seller',
+                    'sender_ids'        => [ $seller_id ],
+                    'status'            => 'publish',
                 ];
                 $notice = $announcement->create_announcement( $args );
 
@@ -201,11 +198,11 @@ class Module {
             delete_user_meta( $seller_id, 'dokan_connected_vendor_id' );
 
             $args   = [
-                'title'       => __( 'Your Dokan Stripe Connect access key is invalid or has been expired, hence it has been revoked. You need to reconnect your Stripe account to receive automatic payouts.', 'dokan' ),
-                'sender_type' => 'selected_seller',
-                'sender_ids'  => [ $seller_id ],
-                'status'      => 'publish',
-                'content'     => $e->getMessage(),
+                'title'             => __( 'Your Dokan Stripe Connect access key is invalid or has been expired, hence it has been revoked. You need to reconnect your Stripe account to receive automatic payouts.', 'dokan' ),
+                'announcement_type' => 'selected_seller',
+                'sender_ids'        => [ $seller_id ],
+                'status'            => 'publish',
+                'content'           => $e->getMessage(),
             ];
             $notice = $announcement->create_announcement( $args );
 
@@ -217,7 +214,7 @@ class Module {
             // notice is sent, now store transient
             set_transient( "dokan_check_stripe_access_key_valid_$seller_id", 'sent', WEEK_IN_SECONDS );
 
-            // we need to set this transient so that vendor doesn't receive non connect account notification immediately
+            // we need to set this transient so that vendor doesn't receive non-connect account notification immediately
             set_transient( "non_connected_sellers_notice_intervals_$seller_id", 'sent', DAY_IN_SECONDS * Helper::non_connected_sellers_display_notice_intervals() );
         } catch ( \Exception $e ) {
             dokan_log( sprintf( 'Error Retrieving Vendor Stripe Account Information: (%1$s)', $e->getMessage() ) );

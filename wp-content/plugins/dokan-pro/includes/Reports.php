@@ -192,10 +192,8 @@ class Reports {
                         'message' => __( 'You have no permission to view review page', 'dokan' ),
                     ]
                 );
-                return;
             } else {
                 dokan_get_template_part( 'report/reports', '', array( 'pro' => true ) );
-                return;
             }
         }
     }
@@ -217,9 +215,7 @@ class Reports {
      * @return void
      */
     public function render_review_content() {
-        global $woocommerce;
-
-        $charts  = dokan_get_reports_charts();
+        $charts  = $this->get_reports_charts();
         $link    = dokan_get_navigation_url( 'reports' );
         $current = isset( $_GET['chart'] ) ? sanitize_text_field( wp_unslash( $_GET['chart'] ) ) : 'overview'; // phpcs:ignore
 
@@ -231,6 +227,54 @@ class Reports {
                 'current' => $current,
             ]
         );
+    }
+
+    /**
+     * Returns the definitions for the reports and charts
+     *
+     * @since 1.0
+     *
+     * @return array
+     */
+    protected function get_reports_charts() {
+        $charts = [
+            'title'  => __( 'Sales', 'dokan' ),
+            'charts' => [
+                'overview'        => [
+                    'title'       => __( 'Overview', 'dokan' ),
+                    'description' => '',
+                    'hide_title'  => true,
+                    'function'    => 'dokan_sales_overview',
+                    'permission'  => 'dokan_view_overview_report',
+                ],
+                'sales_by_day'    => [
+                    'title'       => __( 'Sales by day', 'dokan' ),
+                    'description' => '',
+                    'function'    => 'dokan_daily_sales',
+                    'permission'  => 'dokan_view_daily_sale_report',
+                ],
+                'top_sellers'     => [
+                    'title'       => __( 'Top selling', 'dokan' ),
+                    'description' => '',
+                    'function'    => 'dokan_top_sellers',
+                    'permission'  => 'dokan_view_top_selling_report',
+                ],
+                'top_earners'     => [
+                    'title'       => __( 'Top earning', 'dokan' ),
+                    'description' => '',
+                    'function'    => 'dokan_top_earners',
+                    'permission'  => 'dokan_view_top_earning_report',
+                ],
+                'sales_statement' => [
+                    'title'       => __( 'Statement', 'dokan' ),
+                    'description' => '',
+                    'function'    => 'dokan_seller_sales_statement',
+                    'permission'  => 'dokan_view_statement_report',
+                ],
+            ],
+        ];
+
+        return apply_filters( 'dokan_reports_charts', $charts );
     }
 
     /**

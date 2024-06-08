@@ -27,9 +27,12 @@ if ( 'store-pickup' === $delivery_type ) {
 
 $current_date = dokan_current_datetime();
 
+// get order
+$order = wc_get_order( $order_id );
+
 // Delivery time
-$delivery_time_date = get_post_meta( $order_id, 'dokan_delivery_time_date', true ) ? $current_date->modify( get_post_meta( $order_id, 'dokan_delivery_time_date', true ) )->format( 'F j, Y' ) : null;
-$delivery_time_slot = get_post_meta( $order_id, 'dokan_delivery_time_slot', true ) ? get_post_meta( $order_id, 'dokan_delivery_time_slot', true ) : null;
+$delivery_time_date = $order->get_meta( 'dokan_delivery_time_date', true ) ? $current_date->modify( $order->get_meta( 'dokan_delivery_time_date', true ) )->format( 'F j, Y' ) : null;
+$delivery_time_slot = $order->get_meta( 'dokan_delivery_time_slot', true ) ? $order->get_meta( 'dokan_delivery_time_slot', true ) : null;
 
 $vendor_info = isset( $vendor_info ) ? $vendor_info : null;
 

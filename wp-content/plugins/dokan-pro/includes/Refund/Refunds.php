@@ -2,6 +2,10 @@
 
 namespace WeDevs\DokanPro\Refund;
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly
+}
+
 class Refunds {
 
     /**
@@ -68,7 +72,7 @@ class Refunds {
      *
      * @since 3.0.0
      *
-     * @return \WeDevs\Dokan\Refund\Refunds
+     * @return $this
      */
     public function query() {
         global $wpdb;
@@ -76,13 +80,13 @@ class Refunds {
         $args = $this->args;
 
         // @note: empty variables may use in future
-        $fields = '*';
-        $join = '';
-        $where = '';
-        $groupby = '';
-        $orderby = '';
-        $order = 'asc';
-        $limits = '';
+        $fields     = '*';
+        $join       = '';
+        $where      = '';
+        $groupby    = '';
+        $orderby    = '';
+        $order      = 'asc';
+        $limits     = '';
         $query_args = [ 1, 1 ];
 
         if ( isset( $args['ids'] ) && is_array( $args['ids'] ) ) {
@@ -92,49 +96,49 @@ class Refunds {
             $placeholders = [];
             foreach ( $ids as $id ) {
                 $placeholders[] = '%d';
-                $query_args[] = $id;
+                $query_args[]   = $id;
             }
 
             $where .= ' and id in ( ' . implode( ',', $placeholders ) . ' )';
         }
 
         if ( isset( $args['order_id'] ) ) {
-            $where       .= ' and order_id = %d';
+            $where        .= ' and order_id = %d';
             $query_args[] = $args['order_id'];
         }
 
         if ( isset( $args['seller_id'] ) ) {
-            $where       .= ' and seller_id = %d';
+            $where        .= ' and seller_id = %d';
             $query_args[] = $args['seller_id'];
         }
 
         if ( isset( $args['refund_amount'] ) ) {
-            $where       .= ' and refund_amount = %s';
+            $where        .= ' and refund_amount = %s';
             $query_args[] = $args['refund_amount'];
         }
 
         if ( isset( $args['refund_reason'] ) ) {
-            $where .= ' and refund_reason = %s';
+            $where        .= ' and refund_reason = %s';
             $query_args[] = $args['refund_reason'];
         }
 
         if ( isset( $args['date'] ) ) {
-            $where .= ' and date = %s';
+            $where        .= ' and date = %s';
             $query_args[] = $args['date'];
         }
 
         if ( isset( $args['status'] ) ) {
-            $where .= ' and status = %d';
+            $where        .= ' and status = %d';
             $query_args[] = $args['status'];
         }
 
         if ( isset( $args['search'] ) ) {
-            $like = '%' . $wpdb->esc_like( $args['search'] ) . '%';
-            $join = " LEFT JOIN {$wpdb->usermeta} um ON {$wpdb->dokan_refund}.seller_id = um.user_id AND um.meta_key = 'dokan_store_name'";
-            $where .= ' AND (order_id = %d OR um.meta_value LIKE %s)';
+            $like         = '%' . $wpdb->esc_like( $args['search'] ) . '%';
+            $join         = " LEFT JOIN {$wpdb->usermeta} um ON {$wpdb->dokan_refund}.seller_id = um.user_id AND um.meta_key = 'dokan_store_name'";
+            $where        .= ' AND (order_id = %d OR um.meta_value LIKE %s)';
             $query_args[] = is_numeric( $args['search'] ) ? absint( $args['search'] ) : 0;
             $query_args[] = $like;
-            $groupby = "group by {$wpdb->dokan_refund}.id";
+            $groupby      = "group by {$wpdb->dokan_refund}.id";
         }
 
         if ( isset( $args['order'] ) && in_array( strtolower( $args['order'] ), [ 'asc', 'desc' ], true ) ) {
@@ -161,10 +165,12 @@ class Refunds {
             $found_rows = 'SQL_CALC_FOUND_ROWS';
         }
 
+        // phpcs:disable
         $refunds = $wpdb->get_results( $wpdb->prepare(
             "SELECT $found_rows $fields FROM {$wpdb->dokan_refund} $join WHERE %d=%d $where $groupby $orderby $limits",
             ...$query_args
         ), ARRAY_A );
+        // phpcs:enable
 
         if ( ! empty( $refunds ) ) {
             foreach ( $refunds as $refund ) {
@@ -186,7 +192,7 @@ class Refunds {
         global $wpdb;
 
         if ( ! isset( $this->total ) ) {
-            $this->total = absint( $wpdb->get_var( "SELECT FOUND_ROWS()" ) );
+            $this->total = absint( $wpdb->get_var( 'SELECT FOUND_ROWS()' ) );
         }
 
         return $this->total;
@@ -203,7 +209,7 @@ class Refunds {
         $total = $this->get_total();
 
         if ( ! $this->max_num_pages && $total && ! empty( $this->args['limit'] ) ) {
-            $limit = absint( $this->args['limit'] );
+            $limit               = absint( $this->args['limit'] );
             $this->max_num_pages = ceil( $total / $limit );
         }
 

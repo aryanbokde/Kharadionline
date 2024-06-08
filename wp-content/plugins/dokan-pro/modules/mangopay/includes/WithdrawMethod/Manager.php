@@ -4,14 +4,14 @@ namespace WeDevs\DokanPro\Modules\MangoPay\WithdrawMethod;
 
 defined( 'ABSPATH' ) || exit; // Exit if called directly
 
-use WeDevs\DokanPro\Admin\Announcement;
-use WeDevs\DokanPro\Modules\MangoPay\Support\Meta;
-use WeDevs\DokanPro\Modules\MangoPay\Support\Helper;
+use WeDevs\DokanPro\Announcement\Announcement;
+use WeDevs\DokanPro\Modules\MangoPay\Processor\BankAccount;
+use WeDevs\DokanPro\Modules\MangoPay\Processor\PayOut;
 use WeDevs\DokanPro\Modules\MangoPay\Processor\User;
 use WeDevs\DokanPro\Modules\MangoPay\Processor\Wallet;
-use WeDevs\DokanPro\Modules\MangoPay\Processor\PayOut;
+use WeDevs\DokanPro\Modules\MangoPay\Support\Helper;
+use WeDevs\DokanPro\Modules\MangoPay\Support\Meta;
 use WeDevs\DokanPro\Modules\MangoPay\Support\Settings;
-use WeDevs\DokanPro\Modules\MangoPay\Processor\BankAccount;
 
 /**
  * Class to handle all hooks for MangoPay as withdraw method
@@ -58,6 +58,28 @@ class Manager {
         add_filter( 'dokan_withdraw_method_icon', [ $this, 'get_icon' ], 10, 2 );
         add_filter( 'dokan_is_seller_connected_to_payment_method', [ $this, 'is_seller_connected' ], 10, 3 );
         add_filter( 'dokan_profile_completion_progress_for_payment_methods', [ $this, 'calculate_profile_progress' ] );
+        add_filter( 'dokan_vendor_to_array', [ $this, 'add_mangopay_to_vendor_profile_data' ] );
+    }
+
+    /**
+     * Returns true if venddor enabled mangopay
+     *
+     * @since 3.9.1
+     *
+     * @param $data
+     *
+     * @return array
+     */
+    public function add_mangopay_to_vendor_profile_data( $data ) {
+        $vendor_id = ! empty( $data['id'] ) ? absint( $data['id'] ) : 0;
+
+        if ( ! current_user_can( 'manage_woocommerce' ) && $vendor_id !== dokan_get_current_user_id() ) {
+            return $data;
+        }
+
+        $data['payment']['dokan_mangopay'] = Helper::is_seller_connected( $vendor_id );
+
+        return $data;
     }
 
     /**
@@ -307,7 +329,7 @@ class Manager {
                 continue;
             }
 
-            list( $obf_start, $obf_end ) = explode( ',', $data['redact'] );
+            [ $obf_start, $obf_end ] = explode( ',', $data['redact'] );
             $strlen = strlen( $mangopay_data['bank_account'][ $account_type ][ $field ] );
 
             /*
@@ -381,13 +403,13 @@ class Manager {
         }
 
         if ( false === get_transient( "dokan_mangopay_notice_intervals_$seller_id" ) ) {
-            $announcement = new Announcement();
-            // sent announcement message
+            $announcement = dokan_pro()->announcement->manager;
+            // sent an announcement message
             $args = array(
-                'title'         => $this->notice_to_connect(),
-                'sender_type'   => 'selected_seller',
-                'sender_ids'    => array( $seller_id ),
-                'status'        => 'publish',
+                'title'             => $this->notice_to_connect(),
+                'announcement_type' => 'selected_seller',
+                'sender_ids'        => [ $seller_id ],
+                'status'            => 'publish',
             );
 
             $notice = $announcement->create_announcement( $args );

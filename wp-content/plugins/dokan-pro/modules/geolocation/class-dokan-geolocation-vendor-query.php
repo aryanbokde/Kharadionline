@@ -87,7 +87,8 @@ class Dokan_Geolocation_Vendor_Query {
             }
         }
 
-        if ( ! isset( $_GET['_store_filter_nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_GET['_store_filter_nonce'] ) ), 'dokan_store_lists_filter_nonce' ) ) {
+        // Temporarily disable the nonce check if it is  a REST request.
+        if ( ! $this->is_rest_request()  && ( ! isset( $_GET['_store_filter_nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_GET['_store_filter_nonce'] ) ), 'dokan_store_lists_filter_nonce' ) ) ) {
             return;
         }
 
@@ -159,9 +160,20 @@ class Dokan_Geolocation_Vendor_Query {
      * @return void
      */
     private function filter_query_orderby() {
-        if ( $this->latitude && $this->longitude && $this->distance ) {
+        if ( $this->latitude && $this->longitude ) {
             $distance = absint( $this->distance );
             $this->user_query->query_orderby = "having ( geo_distance < {$distance} or geo_distance is null ) " . $this->user_query->query_orderby;
         }
+    }
+
+    /**
+     * Determine if the current request is a REST request.
+     *
+     * @since 3.8.4
+     *
+     * @return bool
+     */
+    private function is_rest_request(): bool {
+        return defined('REST_REQUEST') || ( strpos( $_SERVER['REQUEST_URI'], 'wp-json') === 1 );
     }
 }

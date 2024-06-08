@@ -109,6 +109,6 @@ class PayOutNormalFailed extends WebhookEvent {
                 ),
             )
         );
-        $order->save_meta_data();
+        $order->save();
     }
 }

@@ -3,7 +3,10 @@
 namespace WeDevs\DokanPro\REST;
 
 use WC_Coupon;
+use WC_Data;
 use WP_Error;
+use WP_REST_Request;
+use WP_REST_Response;
 use WP_REST_Server;
 use WeDevs\Dokan\Abstracts\DokanRESTController;
 
@@ -100,7 +103,7 @@ class CouponController extends DokanRESTController {
     /**
      * Get Coupon by id
      *
-     * @param type $id
+     * @param object|int $data
      *
      * @return WC_Coupon
      */
@@ -118,7 +121,7 @@ class CouponController extends DokanRESTController {
      *
      * @since 2.8.0
      *
-     * @return void
+     * @return WP_Error|bool
      */
     public function validation_before_create_item( $request ) {
         $store_id = dokan_get_current_user_id();
@@ -151,7 +154,7 @@ class CouponController extends DokanRESTController {
      *
      * @since 2.8.0
      *
-     * @return void
+     * @return WP_Error|bool
      */
     public function validation_before_update_item( $request ) {
         $store_id = dokan_get_current_user_id();
@@ -180,7 +183,7 @@ class CouponController extends DokanRESTController {
      *
      * @since 2.8.0
      *
-     * @return WP_Error|Boolean
+     * @return WP_Error|bool
      */
     public function validation_before_delete_item( $request ) {
         $store_id = dokan_get_current_user_id();
@@ -205,7 +208,7 @@ class CouponController extends DokanRESTController {
      *
      * @since 2.8.0
      *
-     * @return void
+     * @return bool
      */
     public function get_coupon_permission_check() {
         return current_user_can( 'dokan_view_coupon_menu' );
@@ -216,7 +219,7 @@ class CouponController extends DokanRESTController {
      *
      * @since 2.8.0
      *
-     * @return void
+     * @return bool
      */
     public function create_coupon_permission_check() {
         return current_user_can( 'dokan_add_coupon' );
@@ -227,7 +230,7 @@ class CouponController extends DokanRESTController {
      *
      * @since 2.8.0
      *
-     * @return void
+     * @return bool
      */
     public function edit_coupon_permission_check() {
         return current_user_can( 'dokan_edit_coupon' );
@@ -238,7 +241,7 @@ class CouponController extends DokanRESTController {
      *
      * @since 2.8.0
      *
-     * @return void
+     * @return bool
      */
     public function delete_coupon_permission_check() {
         return current_user_can( 'dokan_delete_coupon' );
@@ -249,7 +252,7 @@ class CouponController extends DokanRESTController {
      *
      * @since 2.8.0
      *
-     * @return void
+     * @return bool|object|WP_Error
      */
     public function get_item( $request ) {
         $validation = $this->validation_before_update_item( $request );

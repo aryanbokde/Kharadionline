@@ -2,12 +2,19 @@
 
 namespace WeDevs\DokanPro\Modules\RequestForQuotation\Frontend;
 
+use WC_Product;
 use WC_Emails;
+use Exception;
+use WC_Data_Exception;
+use WP_Error;
+
+use WC_Product_Addons_Helper;
+
 use WeDevs\DokanPro\Modules\RequestForQuotation\Helper;
 use WeDevs\DokanPro\Modules\RequestForQuotation\Session;
 use WeDevs\DokanPro\Modules\RequestForQuotation\SettingsHelper;
-use \WeDevs\Dokan\ReverseWithdrawal\Helper as ReverseWithdrawalHelper;
-use \WeDevs\Dokan\ReverseWithdrawal\SettingsHelper as ReverseWithdrawalSettingsHelper;
+use WeDevs\Dokan\ReverseWithdrawal\Helper as ReverseWithdrawalHelper;
+use WeDevs\Dokan\ReverseWithdrawal\SettingsHelper as ReverseWithdrawalSettingsHelper;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -45,9 +52,10 @@ class Hooks {
         // Hide price for selected products.
         add_filter( 'woocommerce_get_price_html', [ $this, 'remove_woocommerce_price_html' ], 10, 2 );
 
-        //Process and initialize the hooks.
+        // Process and initialize the hooks.
         add_action( 'init', [ $this, 'add_archive_page_hooks' ] );
         add_action( 'woocommerce_single_product_summary', [ $this, 'custom_product_button' ], 1, 0 );
+        add_action( 'woocommerce_before_single_product', [ $this, 'custom_product_button' ], 1, 0 ); // Elementor issue fixed
 
         // Save quote data.
         add_action( 'template_redirect', [ $this, 'insert_customer_quote' ] );
@@ -60,7 +68,7 @@ class Hooks {
         add_filter( 'the_title', [ $this, 'dokan_endpoint_title' ] );
 
         // For vendor
-        add_filter( 'dokan_get_dashboard_nav', [ $this, 'add_quote_menu' ], 10, 1 );
+        add_filter( 'dokan_get_dashboard_nav', [ $this, 'add_quote_menu' ], 10 );
         add_action( 'dokan_load_custom_template', [ $this, 'load_quote_template' ], 10, 1 );
         add_action( 'dokan_vendor_request_quote_heading', [ $this, 'vendor_request_quote_heading' ] );
         add_action( 'dokan_vendor_request_quote_details', [ $this, 'vendor_request_quote_details' ], 10, 2 );
@@ -78,7 +86,7 @@ class Hooks {
      *
      * @return array
      */
-    public function add_nonce_to_dokan_localized_args( $default_script ) {
+    public function add_nonce_to_dokan_localized_args( array $default_script ): array {
         $default_script['dokan_request_quote_nonce'] = wp_create_nonce( 'dokan_request_quote_nonce' );
         $default_script['valid_price_error']         = __( 'Please enter a valid price', 'dokan' );
         $default_script['valid_quantity_error']      = __( 'Please enter a valid quantity', 'dokan' );
@@ -92,11 +100,11 @@ class Hooks {
      * @since 3.6.0
      *
      * @param             $price
-     * @param \WC_Product $product
+     * @param WC_Product $product
      *
      * @return mixed
      */
-    public function remove_woocommerce_price_html( $price, $product ) {
+    public function remove_woocommerce_price_html( $price, WC_Product $product ) {
         // For shop single page loop main product.
         if ( 'grouped' === $product->get_type() ) {
             self::$group_child_products = $product->get_children();
@@ -125,7 +133,7 @@ class Hooks {
                 continue;
             }
 
-            // Checking if there are no capable rule is set or current loop rule priority is less or lower then the previous rule.
+            // Checking if there are no capable rule is set or current loop rule priority is less or lower than the previous rule.
             if ( null === $applicable_rule || $applicable_rule->rule_priority >= $rule->rule_priority ) {
                 $applicable_rule = $rule;
             }
@@ -133,7 +141,8 @@ class Hooks {
 
         if ( dokan_is_product_author( $product->get_id() ) && dokan_is_seller_dashboard() ) {
             return $price;
-        } elseif ( null !== $applicable_rule && $applicable_rule->hide_price ) {
+        } elseif ( null !== $applicable_rule && $applicable_rule->hide_price && ! dokan_is_product_author( $product->get_id() ) ) {
+            add_filter( 'dokan_should_render_stripe_express_payment_request_button', '__return_false' );
             return $applicable_rule->hide_price_text;
         }
 
@@ -191,14 +200,17 @@ class Hooks {
                 continue;
             }
 
-            // Checking if there are no capable rule is set or current loop rule priority is less or lower then the previous rule.
+            // Checking if there are no capable rule is set or current loop rule priority is less or lower than the previous rule.
             if ( null === $applicable_rule || $applicable_rule->rule_priority >= $rule->rule_priority ) {
                 $applicable_rule = $rule;
             }
         }
 
         if ( null !== $applicable_rule && 'replace' === $applicable_rule->hide_cart_button ) {
-            return '<a href="javascript:void(0)" rel="nofollow" data-quantity="1" class="dokan_request_button button product_type_' . esc_attr( $product->get_type() ) . ' dokan_add_to_quote_button" data-product_id="' . intval( $product->get_id() ) . '" data-product_sku="' . esc_attr( $product->get_sku() ) . '" aria-label="Add &ldquo;' . esc_attr( $product->get_title() ) . '&rdquo; to your quote" >' . esc_html( $applicable_rule->button_text ) . '</a>';
+            if ( ! dokan_is_product_author( $product->get_id() ) ) {
+                wp_enqueue_script( 'dokan-request-a-quote-frontend' );
+                return '<a href="javascript:void(0)" rel="nofollow" data-quantity="1" class="dokan_request_button button product_type_' . esc_attr( $product->get_type() ) . ' dokan_add_to_quote_button" data-product_id="' . intval( $product->get_id() ) . '" data-product_sku="' . esc_attr( $product->get_sku() ) . '" aria-label="Add &ldquo;' . esc_attr( $product->get_title() ) . '&rdquo; to your quote" >' . esc_html( $applicable_rule->button_text ) . '</a>';
+            }
         }
 
         if ( $this->check_required_addons( $product->get_id() ) ) {
@@ -214,9 +226,12 @@ class Hooks {
      *
      * @since 3.6.0
      *
+     * @param $rule
+     * @param $product_id
+     *
      * @return bool
      */
-    public function check_rule_for_product( $rule, $product_id ) {
+    public function check_rule_for_product( $rule, $product_id ): bool {
         $rule_contents = maybe_unserialize( $rule->rule_contents );
         if ( ! is_user_logged_in() && ( in_array( 'guest', (array) $rule_contents['selected_user_role'], true ) ) ) {
             if ( $this->validate_rules( $rule, $rule_contents, $product_id ) ) {
@@ -254,7 +269,7 @@ class Hooks {
      *
      * @return bool
      */
-    public function validate_rules( $rule, $rule_contents, $product_id ) {
+    public function validate_rules( $rule, $rule_contents, $product_id ): bool {
         if ( $rule->apply_on_all_product ) {
             return true;
         }
@@ -316,10 +331,14 @@ class Hooks {
             return;
         }
 
-        if ( 'simple' === $product->get_type() ) {
-            echo '<a href="javascript:void(0)" rel="nofollow" data-product_id="' . esc_attr( $product->get_id() ) . '" data-product_sku="' . esc_attr( $product->get_sku() ) . '" class="button dokan_request_button add_to_cart_button product_type_' . esc_attr( $product->get_type() ) . '">' . esc_html( $applicable_rule->button_text ) . '</a>';
-        } elseif ( 'keep_and_add_new' === $applicable_rule->hide_cart_button && ! empty( $applicable_rule->button_text ) ) {
-            echo '<a href="javascript:void(0)" rel="nofollow" data-product_id="' . esc_attr( $product->get_id() ) . '" data-product_sku="' . esc_attr( $product->get_sku() ) . '" class="button dokan_request_button add_to_cart_button product_type_' . esc_attr( $product->get_type() ) . '">' . esc_html( $applicable_rule->button_text ) . '</a>';
+        if ( ! dokan_is_product_author( $product->get_id() ) ) {
+            if ( 'simple' === $product->get_type() ) {
+                wp_enqueue_script( 'dokan-request-a-quote-frontend' );
+                echo '<a href="javascript:void(0)" rel="nofollow" data-product_id="' . esc_attr( $product->get_id() ) . '" data-product_sku="' . esc_attr( $product->get_sku() ) . '" class="button dokan_request_button add_to_cart_button product_type_' . esc_attr( $product->get_type() ) . '">' . esc_html( $applicable_rule->button_text ) . '</a>';
+            } elseif ( 'keep_and_add_new' === $applicable_rule->hide_cart_button && ! empty( $applicable_rule->button_text ) ) {
+                wp_enqueue_script( 'dokan-request-a-quote-frontend' );
+                echo '<a href="javascript:void(0)" rel="nofollow" data-product_id="' . esc_attr( $product->get_id() ) . '" data-product_sku="' . esc_attr( $product->get_sku() ) . '" class="button dokan_request_button add_to_cart_button product_type_' . esc_attr( $product->get_type() ) . '">' . esc_html( $applicable_rule->button_text ) . '</a>';
+            }
         }
     }
 
@@ -332,10 +351,10 @@ class Hooks {
      *
      * @return bool
      */
-    public function check_required_addons( $product_id ) {
+    public function check_required_addons( $product_id ): bool {
         // No parent add-ons, but yes to global.
         if ( in_array( 'woocommerce-product-addons/woocommerce-product-addons.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ), true ) ) {
-            $addons = \WC_Product_Addons_Helper::get_product_addons( $product_id );
+            $addons = WC_Product_Addons_Helper::get_product_addons( $product_id );
 
             if ( ! empty( $addons ) ) {
                 return true;
@@ -383,7 +402,7 @@ class Hooks {
                 continue;
             }
 
-            // Checking if already there is an applied rule and if current loop rule priority if higher then the old rule loop priority then skip.
+            // Checking if already there is an applied rule and if current loop rule priority if higher than the old rule loop priority then skip.
             if ( ! empty( $this->single_quote_rule ) && $this->single_quote_rule->rule_priority < $rule->rule_priority ) {
                 continue;
             }
@@ -397,6 +416,7 @@ class Hooks {
                 remove_action( 'woocommerce_simple_add_to_cart', 'woocommerce_simple_add_to_cart', 30 );
                 add_action( 'woocommerce_simple_add_to_cart', [ $this, 'custom_button_replacement' ], 30 );
             }
+            add_filter( 'dokan_stripe_express_should_render_payment_request_button', '__return_false' );
         }
     }
 
@@ -411,6 +431,8 @@ class Hooks {
         global $product;
 
         $template_name = 'variable' === $product->get_type() ? 'variable' : 'custom-button';
+
+        wp_enqueue_script( 'dokan-request-a-quote-frontend' );
 
         dokan_get_template_part(
             $template_name, '', [
@@ -431,13 +453,13 @@ class Hooks {
         global $wp;
 
         if (
-            ( dokan_is_seller_dashboard() && isset( $wp->query_vars['requested-quotes'] ) ) ||
-            ( is_account_page() && isset( $wp->query_vars['request-a-quote'] ) ) ||
-            is_page( get_option( 'dokan_request_quote_page_id' ) ) ||
-            dokan_is_store_page() ||
-            is_checkout() ||
-            is_product() ||
-            is_shop()
+            ( dokan_is_seller_dashboard() && isset( $wp->query_vars['requested-quotes'] ) )
+            || ( is_account_page() && isset( $wp->query_vars['request-a-quote'] ) )
+            || is_page( Helper::get_quote_page_id() )
+            || dokan_is_store_page()
+            || is_checkout()
+            || is_product()
+            || is_shop()
         ) {
             wp_enqueue_script( 'dokan-request-a-quote-frontend' );
             wp_enqueue_style( 'dokan-request-a-quote-frontend' );
@@ -474,8 +496,8 @@ class Hooks {
      *
      * @since 3.6.0
      *
-     * @throws \WC_Data_Exception
-     * @throws \Exception
+     * @throws WC_Data_Exception
+     * @throws Exception
      * @return void
      */
     public function insert_customer_quote() {
@@ -585,7 +607,6 @@ class Hooks {
 
             return;
         }
-        global $wp;
 
         unset( $_POST['dokan_quote_save_action'] );
 
@@ -602,7 +623,7 @@ class Hooks {
             $customer_info['name_field']    = ! empty( $_POST['name_field'] ) ? sanitize_text_field( wp_unslash( $_POST['name_field'] ) ) : '';
             $customer_info['email_field']   = ! empty( $_POST['email_field'] ) ? sanitize_text_field( wp_unslash( $_POST['email_field'] ) ) : '';
             $customer_info['company_field'] = ! empty( $_POST['company_field'] ) ? sanitize_text_field( wp_unslash( $_POST['company_field'] ) ) : '';
-            $customer_info['phone_field']   = ! empty( $_POST['phone_field'] ) ? sanitize_text_field( wp_unslash( $_POST['phone_field'] ) ) : '';
+            $customer_info['phone_field']   = ! empty( $_POST['phone_field'] ) ? dokan_sanitize_phone_number( wp_unslash( $_POST['phone_field'] ) ) : '';
         }
         $request_quote['customer_info'] = $customer_info;
         $request_quote['quote_title']   = "({$customer_info['name_field']})";
@@ -632,7 +653,7 @@ class Hooks {
             $quote_session->delete( DOKAN_SESSION_QUOTE_KEY );
             wc_add_notice( __( 'Your quote has been submitted successfully.', 'dokan' ), 'success' );
 
-            // Redirect to the newly created request qoute page.
+            // Redirect to the newly created request quote page.
             wp_safe_redirect( rtrim( wc_get_account_endpoint_url( 'request-a-quote' ), '/' ) . "/{$request_quote_id}" );
 
             return;
@@ -645,7 +666,7 @@ class Hooks {
      *
      * @since 3.6.0
      *
-     * @return void|bool|\WP_Error
+     * @return void | bool | WP_Error
      */
     public function dokan_update_quote() {
         if ( empty( $_POST['dokan_quote_nonce'] ) || ! wp_verify_nonce( esc_attr( sanitize_text_field( wp_unslash( $_POST['dokan_quote_nonce'] ) ) ), 'save_dokan_quote_action' ) ) {
@@ -656,10 +677,10 @@ class Hooks {
         $offer_price = ! empty( $_POST['offer_price'] ) ? array_map( 'floatval', wp_unslash( $_POST['offer_price'] ) ) : [];
         $quote_qty   = ! empty( $_POST['quote_qty'] ) ? array_map( 'absint', wp_unslash( $_POST['quote_qty'] ) ) : [];
         if ( ( empty( $offer_price ) || min( $offer_price ) <= 0 ) ) {
-            return new \WP_Error( 'error', __( 'Please enter a valid offer price.', 'dokan' ) );
+            return new WP_Error( 'error', __( 'Please enter a valid offer price.', 'dokan' ) );
         }
         if ( empty( $quote_qty ) || min( $quote_qty ) <= 0 ) {
-            return new \WP_Error( 'error', __( 'Please enter a valid quantity.', 'dokan' ) );
+            return new WP_Error( 'error', __( 'Please enter a valid quantity.', 'dokan' ) );
         }
         $converted_by      = empty( $_POST['updated_by'] ) ? 'Admin' : sanitize_text_field( wp_unslash( $_POST['updated_by'] ) );
         $old_quote_details = Helper::get_request_quote_details_by_quote_id( $quote_id );
@@ -693,7 +714,7 @@ class Hooks {
      *
      * @return array
      */
-    public function dokan_new_menu_items( $items ) {
+    public function dokan_new_menu_items( $items ): array {
         $menu_items = [
             DOKAN_MY_ACCOUNT_ENDPOINT => esc_html__( 'Request Quotes', 'dokan' ),
         ];
@@ -919,12 +940,12 @@ class Hooks {
      * @param $quote_id
      * @param $converted_by
      *
-     * @throws \Exception
-     * @return int|\WP_Error
+     * @throws Exception
+     * @return int | WP_Error
      */
     public function convert_to_order( $quote_id, $converted_by ) {
         if ( empty( $quote_id ) ) {
-            return new \WP_Error( 'no_quote_found', __( 'No quote found', 'dokan' ), [ 'status' => 404 ] );
+            return new WP_Error( 'no_quote_found', __( 'No quote found', 'dokan' ), [ 'status' => 404 ] );
         }
 
         $quote         = (object) Helper::get_request_quote_by_id( $quote_id );
@@ -946,14 +967,16 @@ class Hooks {
      * @return void
      */
     public function add_quote_menu( $urls ) {
+        $menu = [
+            'title'      => __( 'Request Quotes', 'dokan' ),
+            'icon'       => '<i class="fa fa-list" aria-hidden="true"></i>',
+            'url'        => dokan_get_navigation_url( DOKAN_VENDOR_ENDPOINT ),
+            'pos'        => 53,
+            'permission' => 'dokan_view_request_quote_menu',
+        ];
+
         if ( dokan_is_seller_enabled( dokan_get_current_user_id() ) ) {
-            $urls[ DOKAN_VENDOR_ENDPOINT ] = [
-                'title'      => __( 'Request Quotes', 'dokan' ),
-                'icon'       => '<i class="fa fa-list" aria-hidden="true"></i>',
-                'url'        => dokan_get_navigation_url( DOKAN_VENDOR_ENDPOINT ),
-                'pos'        => 53,
-                'permission' => 'dokan_view_request_quote_menu',
-            ];
+            $urls[ DOKAN_VENDOR_ENDPOINT ] = $menu;
         }
 
         return $urls;
@@ -1045,11 +1068,12 @@ class Hooks {
      * @since 3.6.0
      *
      * @param string $header
-     * @param array  $query_vars
+     * @param string $query_vars
      *
      * @return string
+     *
      */
-    public function load_settings_header( $header, $query_vars ) {
+    public function load_settings_header( string $header, string $query_vars ): string {
         if ( DOKAN_VENDOR_ENDPOINT === $query_vars ) {
             $header = __( 'Request Quote', 'dokan' );
         }
@@ -1062,12 +1086,12 @@ class Hooks {
      *
      * @since 3.6.0
      *
-     * @param $total_page
-     * @param $page_no
+     * @param int | string $total_page
+     * @param int | string $page_no
      *
      * @return string
      */
-    public function get_pagination( $total_page, $page_no ) {
+    public function get_pagination( $total_page, $page_no ): string {
         $pagination_html = '';
         if ( $total_page > 1 ) {
             $pagination_html = '<div class="pagination-wrap">';
@@ -1086,7 +1110,7 @@ class Hooks {
             $pagination_html .= join( "</li>\n\t<li>", $page_links );
             $pagination_html .= "</li>\n</ul>\n";
             $pagination_html .= '</div>';
-        };
+        }
 
         return $pagination_html;
     }

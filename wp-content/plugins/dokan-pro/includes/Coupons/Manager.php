@@ -115,7 +115,7 @@ class Manager {
      *
      * @return boolean
      */
-    public function is_admin_coupon_valid( $coupon, $vendors, $products, $coupon_meta_data = array() ) {
+    public function is_admin_coupon_valid( $coupon, $vendors, $products, $coupon_meta_data = array(), $valid = false ) {
         if ( empty( $coupon ) ) {
             return false;
         }
@@ -162,18 +162,37 @@ class Manager {
             return true;
         }
 
+        // Check any vendor ID excluded from the discount.
+        if (
+            'yes' === $enabled_all_vendor &&
+            $total_vendors &&
+            ! empty( $exclude_vendors ) &&
+            $total_vendors === count( array_intersect( $vendors, $exclude_vendors ) )
+        ) {
+            $valid = false;
+        }
+
         // Check any one vendor ID included on the discount
         if (
             'no' === $enabled_all_vendor &&
             empty( $product_ids ) &&
             $total_vendors &&
-            count( $vendors_ids ) &&
-            count( array_intersect( $vendors, $vendors_ids ) ) > 0
+            count( $vendors_ids )
         ) {
-            return true;
+            $valid = count( array_intersect( $vendors, $vendors_ids ) ) > 0;
         }
 
-        return false;
+        // Check NO vendor ID included and coupon NOT enabled for vendors, but trying to apply to a vendor. This means this is admin specific coupon.
+        if (
+            'no' === $enabled_all_vendor &&
+            empty( $product_ids ) &&
+            $total_vendors &&
+            ! count( $vendors_ids )
+        ) {
+            $valid = false;
+        }
+
+        return $valid;
     }
 
     /**
@@ -200,9 +219,7 @@ class Manager {
         $get_total          = $item->get_total();
         $get_subtotal       = $item->get_subtotal();
         $get_quantity       = $item->get_quantity();
-        $product_discount   = $this->get_product_discount( $product, $get_total, $get_quantity );
-        $order_discount     = $this->get_order_discount( $order, $get_total );
-        $commission_product = $get_subtotal - $product_discount - $order_discount;
+        $commission_product = $get_subtotal;
         $product_price      = $refund ? $commission_product - $refund : $commission_product;
         $real_product_price = $refund ? $get_subtotal - $refund : $get_subtotal;
         $get_items_count    = count( $order->get_items() );
@@ -372,9 +389,9 @@ class Manager {
             $vendor_earning = $current_data['vendor_earning'] - $seller_discount_price - $extended_admin_amount;
         }
 
-        $current_data['admin_earning']          = $admin_earning;
-        $current_data['vendor_earning']         = $vendor_earning;
         $current_data['current_product_price'] -= $discount_price;
+        $current_data['admin_earning']          = $admin_earning;
+        $current_data['vendor_earning']         = min( $vendor_earning, $current_data['current_product_price'] );
         $current_data['coupon_applied']        += 1;
 
         return apply_filters( 'dokan_get_earning_for_shared_coupon', $current_data, $coupon_meta, $discount_price );
@@ -446,7 +463,7 @@ class Manager {
      * @param float $get_subtotal
      */
     protected function apply_coupon_percent( $coupon_meta, $get_subtotal ) {
-        return wc_round_discount( $get_subtotal * ( $coupon_meta['amount'] / 100 ), 0 );
+        return wc_round_discount( $get_subtotal * ( $coupon_meta['amount'] / 100 ), 2 );
     }
 
     /**
@@ -458,7 +475,7 @@ class Manager {
      * @param int   $quantity
      */
     protected function apply_coupon_fixed_product( $coupon_meta, $quantity ) {
-        return wc_round_discount( $coupon_meta['amount'] * $quantity, 0 );
+        return wc_round_discount( $coupon_meta['amount'] * $quantity, 2 );
     }
 
     /**
@@ -470,7 +487,7 @@ class Manager {
      * @param int   $get_items_count
      */
     protected function apply_coupon_fixed_cart( $coupon_meta, $get_items_count ) {
-        return wc_round_discount( $coupon_meta['amount'] / $get_items_count, 0 );
+        return wc_round_discount( $coupon_meta['amount'] / $get_items_count, 2 );
     }
 
     /**
@@ -482,59 +499,6 @@ class Manager {
      * @param float $get_subtotal
      */
     protected function apply_coupon_custom( $coupon_meta, $get_subtotal ) {
-        return wc_round_discount( $get_subtotal * ( $coupon_meta['amount'] / 100 ), 0 );
-    }
-
-    /**
-     * Get product discount by item
-     *
-     * @since 3.4.0
-     *
-     * @param object $product
-     * @param float  $get_total
-     * @param int    $get_quantity
-     *
-     * @return float
-     */
-    public function get_product_discount( $product, $get_total, $get_quantity ) {
-        $product_discount = $product->get_meta( '_is_lot_discount', true );
-        $discount_total   = 0;
-
-        if ( 'yes' !== $product_discount  ) {
-            return $discount_total;
-        }
-
-        $lot_discount_percentage = (float) $product->get_meta( '_lot_discount_amount', true );
-        $lot_discount_quantity   = absint( $product->get_meta( '_lot_discount_quantity', true ) );
-
-        if ( $get_quantity >= $lot_discount_quantity ) {
-            $discount_total += ( $get_total * $lot_discount_percentage / 100 );
-        }
-
-        return $discount_total;
-    }
-
-    /**
-     * Get order discount by item
-     *
-     * @since 3.4.0
-     *
-     * @param object $order
-     * @param float  $get_total
-     *
-     * @return float
-     */
-    public function get_order_discount( $order, $get_total ) {
-        $is_min_order_discount = $order->get_meta( 'dokan_is_min_order_discount', true );
-        $discount_total        = 0;
-
-        if ( 'yes' !== $is_min_order_discount ) {
-            return $discount_total;
-        }
-
-        $min_order_discount_percentage = $order->get_meta( 'dokan_setting_order_percentage' );
-        $discount_total                = ( $get_total * $min_order_discount_percentage / 100 );
-
-        return $discount_total;
+        return wc_round_discount( $get_subtotal * ( $coupon_meta['amount'] / 100 ), 2 );
     }
 }

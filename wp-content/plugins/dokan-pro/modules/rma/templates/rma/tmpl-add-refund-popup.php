@@ -1,7 +1,13 @@
-<script type="text/html" id="tmpl-dokan-send-refund">
+<div class="dokan-rma-modals"></div>
+<div style="display: none">
     <div id="dokan-send-refund-popup" class="dokan-rma-popup white-popup">
-        <form method="post" id="dokan-send-refund-popup-form">
-            <h2><i class="fas fa-undo-alt" aria-hidden="true"></i>&nbsp;<?php esc_html_e( 'Send Refund Request', 'dokan' ); ?></h2>
+        <form method="post" id="dokan-send-refund-popup-form" class="dokan-rma-popup-form  dokan-izimodal-wraper">
+            <div class="dokan-izimodal-close-btn">
+                <button data-iziModal-close class="icon-close">
+                    <i class="fa fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+            <h2 class="dokan-rma-popup-title"><i class="fas fa-undo-alt" aria-hidden="true"></i>&nbsp;<?php esc_html_e( 'Send Refund Request', 'dokan' ); ?></h2>
 
             <div class="rma-popup-content refund-content"></div>
 
@@ -10,4 +16,4 @@
             </div>
         </form>
     </div>
-</script>
+</div>

@@ -16,6 +16,12 @@ class Dokan_Warranty_Item {
     public $duration_type;
     public $no_warranty_option;
     public $order_id;
+    public $policy;
+    public $reasons;
+    public $length_value;
+    public $length_duration;
+    public $addon_settings;
+    public $from;
 
 
     /**

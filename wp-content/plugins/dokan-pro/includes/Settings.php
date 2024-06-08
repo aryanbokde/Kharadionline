@@ -48,12 +48,12 @@ class Settings extends DokanSettings {
         add_action( 'dokan_settings_render_profile_progressbar', array( $this, 'load_settings_progressbar' ), 10, 2 );
         add_action( 'dokan_settings_content_area_header', array( $this, 'render_shipping_status_message' ), 25 );
         add_action( 'dokan_render_settings_content', array( $this, 'load_settings_content' ), 10 );
-        add_action( 'dokan_settings_form_bottom', array( $this, 'add_discount_option' ), 10, 2 );
-        add_action( 'dokan_store_profile_saved', array( $this, 'save_store_data' ), 1000000, 2 );
 
         // Add vendor biography
         add_action( 'dokan_settings_form_bottom', array( $this, 'render_biography_form' ), 10, 2 );
         add_action( 'dokan_store_profile_saved', array( $this, 'save_biography_data' ) );
+
+        add_action( 'dokan_store_profile_saved', array( $this, 'save_store_data' ), 1000000, 2 );
 
         // Calculate store progress after vendor creation by admin
         add_action( 'dokan_new_vendor', array( $this, 'save_store_data' ) );
@@ -390,54 +390,28 @@ class Settings extends DokanSettings {
     }
 
     /**
-    * Render discount options
-    *
-    * @since 2.6
-    *
-    * @return void
-    **/
-    public function add_discount_option( $current_user, $profile_info ) {
-        $is_enable_op_discount = dokan_get_option( 'discount_edit', 'dokan_selling' );
-        $is_enable_op_discount = $is_enable_op_discount ? $is_enable_op_discount : array();
-        $is_enable_order_discount = isset( $profile_info['show_min_order_discount'] ) ? $profile_info['show_min_order_discount'] : 'no';
-        $setting_minimum_order_amount = isset( $profile_info['setting_minimum_order_amount'] ) ? $profile_info['setting_minimum_order_amount'] : '';
-        $setting_order_percentage = isset( $profile_info['setting_order_percentage'] ) ? $profile_info['setting_order_percentage'] : '';
-
-        dokan_get_template_part( 'settings/discount', '', array(
-            'pro'                          => true,
-            'is_enable_op_discount'        => $is_enable_op_discount,
-            'is_enable_order_discount'     => $is_enable_order_discount,
-            'setting_minimum_order_amount' => $setting_minimum_order_amount,
-            'setting_order_percentage'     => $setting_order_percentage
-        ) );
-    }
-
-    /**
-    * Save doscount settings data
-    *
-    * @since 2.6
-    *
-    * @return void
-    **/
+     * Save doscount settings data
+     *
+     * @since 2.6
+     *
+     * @return void
+     **/
     public function save_store_data( $store_id, $dokan_settings = [] ) {
         if ( ! $store_id ) {
             return;
         }
 
-        $dokan_settings                       = get_user_meta( $store_id, 'dokan_profile_settings', true );
-        $profile_completeness                 = $this->calculate_profile_completeness_value( $dokan_settings );
-        $dokan_settings['profile_completion'] = $profile_completeness;
+        $dokan_settings = get_user_meta( $store_id, 'dokan_profile_settings', true );
 
-        // Set discount data in seller profile
-        $data = array(
-            'show_min_order_discount'      => isset( $_POST['setting_show_minimum_order_discount_option'] ) ? wc_clean( $_POST['setting_show_minimum_order_discount_option'] ) : '',
-            'setting_minimum_order_amount' => isset( $_POST['setting_minimum_order_amount'] ) ? wc_clean( $_POST['setting_minimum_order_amount'] ) : '',
-            'setting_order_percentage'     => isset( $_POST['setting_order_percentage'] ) ? wc_clean( $_POST['setting_order_percentage'] ) : '',
-        );
+        // Set empty array if no settings found.
+        if( empty( $dokan_settings ) || ! is_array( $dokan_settings ) ) {
+            $dokan_settings = [];
+        }
 
-        $settings_data = wp_parse_args( $data, $dokan_settings );
+        // Calculate profile completeness value.
+        $dokan_settings['profile_completion'] = $this->calculate_profile_completeness_value( $dokan_settings );
 
-        update_user_meta( $store_id, 'dokan_profile_settings', $settings_data );
+        update_user_meta( $store_id, 'dokan_profile_settings', $dokan_settings );
     }
 
     /**

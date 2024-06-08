@@ -137,7 +137,7 @@ class Dokan_Geolocation_Product_Query {
      * @return string
      */
     public function posts_groupby_request( $groupby ) {
-        if ( $this->latitude && $this->longitude && $this->distance ) {
+        if ( $this->latitude && $this->longitude ) {
             $distance = absint( $this->distance );
             $groupby .= " having geo_distance < {$distance}";
         }

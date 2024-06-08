@@ -68,6 +68,6 @@ class PayOutNormalSucceeded extends WebhookEvent {
                 'order_id' => $order->get_id(),
             )
         );
-        $order->save_meta_data();
+        $order->save();
     }
 }

@@ -78,21 +78,20 @@ class Dokan_RMA_Ajax {
                 <table class="dokan-table dokan-refund-item-list-table">
                     <thead>
                         <tr>
-                            <th width="30%"><?php esc_html_e( 'Product', 'dokan' ); ?></th>
-                            <th width="10%"><?php esc_html_e( 'Qty', 'dokan' ); ?></th>
+                            <th style="width:30%"><?php esc_html_e( 'Product', 'dokan' ); ?></th>
+                            <th style="width:10%"><?php esc_html_e( 'Qty', 'dokan' ); ?></th>
 
                             <?php if ( $wc_tax_enabled ) : ?>
-                                <th width="10%"><?php esc_html_e( 'Tax', 'dokan' ); ?></th>
+                                <th style="width:10%"><?php esc_html_e( 'Tax', 'dokan' ); ?></th>
                             <?php endif; ?>
 
-                            <th width="15%"><?php esc_html_e( 'Subtotal', 'dokan' ); ?></th>
+                            <th style="width:15%"><?php esc_html_e( 'Total', 'dokan' ); ?></th>
 
                             <?php if ( $wc_tax_enabled ) : ?>
-                                <th width="15%"><?php esc_html_e( 'Tax Refund', 'dokan' ); ?></th>
+                                <th style="width:15%"><?php esc_html_e( 'Tax Refund', 'dokan' ); ?></th>
                             <?php endif; ?>
 
-                            <th width="20%"><?php esc_html_e( 'Subtotal Refund', 'dokan' ); ?></th>
-<!--                            <th width="15%"></th>-->
+                            <th style="width:20%"><?php esc_html_e( 'Total Refund', 'dokan' ); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -102,7 +101,7 @@ class Dokan_RMA_Ajax {
                                 <td><?php echo esc_html( $item['quantity'] ); ?></td>
 
                                 <?php if ( $wc_tax_enabled ) : ?>
-                                <td><?php echo wc_price( $item['tax'] * $item['quantity'] ); ?></td>
+                                    <td><?php echo wc_price( $item['tax'] * $item['quantity'] ); ?></td>
                                 <?php endif; ?>
 
                                 <td><?php echo wc_price( $item['price'] * $item['quantity'] ); ?></td>
@@ -169,7 +168,8 @@ class Dokan_RMA_Ajax {
 
         try {
             $refund = \WeDevs\DokanPro\Refund\Ajax::create_refund_request( $postdata );
-            do_action( 'dokan_rma_requested', absint( $data['refund_order_id'] ) );
+            do_action( 'dokan_rma_requested', absint( $data['refund_order_id'] ), $postdata );
+            do_action( 'dokan_rma_requested_amount', $postdata['order_id'], $postdata['refund_amount'], $postdata );
             wp_send_json_success( __( 'Refund request successfully sent for admin approval.', 'dokan' ) );
         } catch ( Exception $e ) {
             \WeDevs\DokanPro\Refund\Ajax::wc_ajax_request_error_handler( $e );
@@ -297,8 +297,8 @@ class Dokan_RMA_Ajax {
             $requested_qty    = $data['line_item_qtys'][ $key ];
             $requested_amount = ! empty( $data['refund_amount'][ $key ] ) ? wc_format_decimal( $data['refund_amount'][ $key ] ) : 0;
             $requested_tax    = ! empty( $data['refund_tax'][ $key ] ) ? wc_format_decimal( $data['refund_tax'][ $key ] ) : 0;
-            $allowed_amount   = (float) $line_item['price'] * absint( $line_item['quantity'] );
-            $allowed_tax      = (float) $line_item['tax'] * absint( $line_item['quantity'] );
+            $allowed_amount   = wc_format_decimal( (float) $line_item['price'] * absint( $line_item['quantity'] ), '' );
+            $allowed_tax      = wc_format_decimal( (float) $line_item['tax'] * absint( $line_item['quantity'] ), '' );
 
             if ( $requested_amount > $allowed_amount ) {
                 // translators: Product name.

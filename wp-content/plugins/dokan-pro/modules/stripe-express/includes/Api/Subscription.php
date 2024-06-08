@@ -54,7 +54,11 @@ class Subscription extends Api {
         } catch ( Exception $e ) {
             Helper::log( sprintf( 'Could not create subscription: %s', $e->getMessage() ), 'Subscription' );
             Helper::log( 'Data: ' . print_r( $data, true ), 'Subscription' );
-            throw new DokanException( 'dokan-stripe-express-subscription-create-error', $e->getMessage() );
+			$error_code = 'dokan-stripe-express-subscription-create-error';
+	        if ( Helper::is_no_such_customer_error( $e->getMessage() ) ) {
+		        $error_code = 'error_setup-intent_no-such-customer';
+	        }
+            throw new DokanException( $error_code, $e->getMessage() );
         }
     }
 

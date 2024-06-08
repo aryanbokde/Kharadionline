@@ -48,9 +48,15 @@ class Invoice {
         $fields_enabled = Helper::is_fields_enabled_for_customer();
         // get order id
         $order_id = $order->get_parent_id() ? $order->get_parent_id() : $order->get_id();
+        // get parent order
+        $parent_order = wc_get_order( $order_id );
+        if ( ! $parent_order ) {
+            return;
+        }
+
         // get data from order meta first, if order meta is empty get data from user meta
-        $bank_name = get_post_meta( $order_id, '_billing_dokan_bank_name', true );
-        $bank_iban = get_post_meta( $order_id, '_billing_dokan_bank_iban', true );
+        $bank_name = $parent_order->get_meta( '_billing_dokan_bank_name', true );
+        $bank_iban = $parent_order->get_meta( '_billing_dokan_bank_iban', true );
 
         // check if bank name exists for this customer
         if ( ! empty( $bank_name ) && $fields_enabled['billing_dokan_bank_name'] ) {
@@ -82,14 +88,20 @@ class Invoice {
         }
 
         // get order id
-        $order_id       = $order->get_parent_id() ? $order->get_parent_id() : $order->get_id();
+        $order_id = $order->get_parent_id() ? $order->get_parent_id() : $order->get_id();
+        // get parent order
+        $parent_order = wc_get_order( $order_id );
+        if ( ! $parent_order ) {
+            return;
+        }
+
         $printed        = false;
         $fields_enabled = Helper::is_fields_enabled_for_customer();
 
         // get company id
-        $dokan_company_id_number = get_post_meta( $order_id, '_billing_dokan_company_id_number', true );
+        $dokan_company_id_number = $parent_order->get_meta( '_billing_dokan_company_id_number', true );
         // get vat number
-        $dokan_vat_number = get_post_meta( $order_id, '_billing_dokan_vat_number', true );
+        $dokan_vat_number = $parent_order->get_meta( '_billing_dokan_vat_number', true );
 
         // check if company id exists for this customer
         if ( ! empty( $dokan_company_id_number ) && $fields_enabled['billing_dokan_company_id_number'] ) {

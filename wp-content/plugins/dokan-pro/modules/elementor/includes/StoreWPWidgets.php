@@ -283,7 +283,7 @@ class StoreWPWidgets {
      *
      * @param array                          $args
      * @param array                          $instance
-     * @param \Dokan_Store_Verification_list $widget
+     * @param \Verificationlist $widget
      *
      * @return void
      */

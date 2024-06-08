@@ -68,7 +68,7 @@ class Module {
         add_action( 'init', [ $this, 'register_scripts' ] );
         add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_scripts' ] );
 
-        add_filter( 'dokan_get_dashboard_nav', [ $this, 'add_importer_page' ], 13, 1 );
+        add_filter( 'dokan_get_dashboard_nav', [ $this, 'add_importer_page' ], 13 );
         add_filter( 'dokan_query_var_filter', [ $this, 'add_endpoint' ] );
         add_filter( 'dokan_dashboard_template_render', [ $this, 'dashboard_template' ] );
 
@@ -145,23 +145,6 @@ class Module {
 
         // flash rewrite rules
         $this->flush_rewrite_rules();
-
-        if ( get_option( 'dokan_importer_page_created' ) ) {
-            return;
-        }
-        $dasboard_page = get_page_by_title( 'Dashboard' );
-
-        $post_id = wp_insert_post(
-            [
-                'post_title'  => wp_strip_all_tags( 'Import' ),
-                'post_status' => 'publish',
-                'post_parent' => $dasboard_page->ID,
-                'post_type'   => 'page',
-            ]
-        );
-
-        update_option( 'dokan_importer_page_created', true );
-        update_option( 'dokan_importer_page_id', $post_id );
     }
 
     /**
@@ -244,7 +227,7 @@ class Module {
                     'title' => __( 'Tools', 'dokan' ),
                     'icon'  => '<i class="fas fa-wrench"></i>',
                     'url'   => dokan_get_navigation_url( 'tools' ),
-                    'pos'   => 182,
+                    'pos'   => 183,
                 ];
             } else {
                 $urls['tools'] = [
@@ -354,27 +337,6 @@ class Module {
         $capabilities['menu']['dokan_view_tools_menu'] = __( 'View tools menu', 'dokan' );
 
         return $capabilities;
-    }
-
-    /**
-     * Load Importer page templates in template directory
-     *
-     * @param string $file
-     *
-     * @return string $file
-     */
-    public function importer_page_template( $file ) {
-        $page_id = get_option( 'dokan_importer_page_id' );
-
-        if ( is_page( $page_id ) ) {
-            $file = plugin_dir_path( __FILE__ ) . 'templates/template_importer.php';
-
-            if ( file_exists( $file ) ) {
-                return $file;
-            }
-        }
-
-        return $file;
     }
 
     /**
@@ -657,7 +619,7 @@ class Module {
                 if ( 'product_variation' === $post['post_type'] ) {
                     $post_status = $post['status'];
                 } else {
-                    $post_status = ( 'publish' === $post['status'] ) ? dokan_get_option( 'product_status', 'dokan_selling' ) : $post['status'];
+                    $post_status = ( 'publish' === $post['status'] ) ? dokan_get_new_post_status( $author ) : $post['status'];
                 }
 
                 $postdata = [
@@ -1484,16 +1446,17 @@ class Module {
      * @return object
      */
     public function change_product_status( $object, $item ) {
-        $can_publish    = get_user_meta( get_current_user_id(), 'dokan_publishing', true );
-        $product_status = dokan_get_option( 'product_status', 'dokan_selling' );
+        $seller_id      = dokan_get_current_user_id();
+        $is_trusted     = dokan_is_seller_trusted( $seller_id );
+        $product_status = dokan_get_new_post_status( $seller_id );
 
         // if uploading pending product make it pending
         if ( 'draft' === $object->get_status() ) {
-            $object->set_status( 'pending' );
+            $object->set_status( 'draft' );
         }
 
         // if new product status set to pending then make product status to pending
-        if ( 'pending' === $product_status && 'yes' !== $can_publish ) {
+        if ( 'pending' === $product_status && ! $is_trusted ) {
             $object->set_status( 'pending' );
         }
 

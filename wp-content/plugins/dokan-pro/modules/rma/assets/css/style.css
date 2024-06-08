@@ -27,6 +27,10 @@ table.dokan-rma-addon-warranty-table tbody tr td select {
     height: 30px;
 }
 
+#dokan-rma-popup-form {
+    padding: 20px;
+}
+
 .dokan-rma-request-area ul.request-statuses-filter {
     font-size: 12px;
     margin-left: 5px;
@@ -148,21 +152,23 @@ table.rma-request-listing-table tbody tr:hover td.details .row-actions {
     margin: 10px 0px !important;
 }
 
-.dokan-rma-popup h2 {
+.dokan-rma-popup-form h2 {
     font-size: 17px;
-    padding: 15px 20px 10px;
+    padding: 15px 0px 10px;
     margin: 0px;
     border-bottom: 1px solid #eee;
 }
-
-.dokan-rma-popup .rma-popup-content {
+h2.dokan-rma-popup-title {
+    margin-left: 20px;
+}
+.dokan-rma-popup-form .rma-popup-content {
     padding: 20px;
 }
-.dokan-rma-popup .rma-popup-action {
+.dokan-rma-popup-form .rma-popup-action {
     padding: 10px 20px;
     text-align: right;
     border-top: 1px solid #eee;
 }
-.dokan-rma-popup .rma-popup-content .dokan-popup-total-refund-amount {
+.dokan-rma-popup-form .rma-popup-content .dokan-popup-total-refund-amount {
     padding: 0px 10px;
 }

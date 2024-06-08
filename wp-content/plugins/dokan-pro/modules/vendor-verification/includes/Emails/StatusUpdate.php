@@ -3,6 +3,10 @@
 namespace WeDevs\DokanPro\Modules\VendorVerification\Emails;
 
 use WC_Email;
+use WeDevs\Dokan\Vendor\Vendor;
+use WeDevs\DokanPro\Modules\VendorVerification\Helper;
+use WeDevs\DokanPro\Modules\VendorVerification\Models\VerificationMethod;
+use WeDevs\DokanPro\Modules\VendorVerification\Models\VerificationRequest;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -25,8 +29,8 @@ class StatusUpdate extends WC_Email {
         $this->id             = 'dokan_vendor_verification_status_update';
         $this->title          = __( 'Seller Verification Status Updated', 'dokan' );
         $this->description    = __( 'This email will be sent to the vendor after updating verification status by admin.', 'dokan' );
-        $this->template_html  = '/emails/vendor-verification-status-update.php';
-        $this->template_plain = '/emails/plain/vendor-verification-status-update.php';
+        $this->template_html  = 'emails/vendor-verification-status-update.php';
+        $this->template_plain = 'emails/plain/vendor-verification-status-update.php';
         $this->template_base  = DOKAN_VERFICATION_TEMPLATE_DIR;
         $this->placeholders   = [
             '{verification_status}' => '',
@@ -35,7 +39,7 @@ class StatusUpdate extends WC_Email {
         ];
 
         // Triggers for this email
-        add_action( 'dokan_verification_status_change', [ $this, 'trigger' ], 20, 3 );
+        add_action( 'dokan_pro_vendor_verification_request_updated', [ $this, 'trigger' ], 20, 1 );
 
         // Call parent constructor
         parent::__construct();
@@ -78,53 +82,52 @@ class StatusUpdate extends WC_Email {
     }
 
     /**
-     * Trigger the sending of this email.
+     * Trigger Email.
      *
-     * @since 3.7.23
+     * @since 3.11.1
      *
-     * @param int   $seller_id      Sellder id
-     * @param array $seller_profile Sellder profile
-     * @param array $postdata       Post data
+     * @param int $verification_id Verification id.
      *
      * @return void
      */
-    public function trigger( $user_id, $seller_profile, $postdata ) {
+    public function trigger( int $verification_id ) {
         if ( ! $this->is_enabled() ) {
             return;
         }
 
-        if ( empty( $user_id ) || ! user_can( $user_id, 'dokandar' ) ) {
+        if ( empty( $verification_id ) ) {
+            return;
+        }
+        $this->setup_locale();
+        $verification_request = new VerificationRequest( $verification_id );
+
+        $vendor = new Vendor( $verification_request->get_vendor_id() );
+
+        if ( empty( $vendor->get_email() ) ) {
             return;
         }
 
-        $user_data = get_userdata( $user_id );
-
-        if ( empty( $user_data ) || empty( $user_data->data->user_email ) ) {
-            return;
-        }
-
-        $verification_status = ! empty ( $postdata['status'] ) ? \WeDevs\DokanPro\Modules\VendorVerification\Module::get_translated_status( sanitize_text_field( wp_unslash( $postdata['status'] ) ) ) : '';
-        $document_type       = ! empty ( $postdata['type'] ) ? sanitize_text_field( wp_unslash( $postdata['type'] ) ) : '';
+        $verification_status = $verification_request->get_status_title();
+        $document_type       = ( new VerificationMethod( $verification_request->get_method_id() ) )->get_title();
         $admin_email         = get_option( 'admin_email' );
         $site_name           = get_bloginfo( 'name' );
         $site_url            = site_url();
+        $store_name          = $vendor->get_shop_name();
 
         $this->placeholders = [
             '{verification_status}' => $verification_status,
             '{site_name}'           => $site_name,
-            '{site_url}'            => $site_url,
         ];
 
         $this->data = [
-            'store_name'          => $seller_profile['store_name'],
+            'store_name'          => $store_name,
             'document_type'       => $document_type,
             'verification_status' => $verification_status,
             'home_url'            => $site_url,
             'admin_email'         => $admin_email,
         ];
 
-        $this->setup_locale();
-        $this->send( $user_data->data->user_email, $this->get_subject(), $this->get_content(), $this->get_headers(), $this->get_attachments() );
+        $this->send( $vendor->get_email(), $this->get_subject(), $this->get_content(), $this->get_headers(), $this->get_attachments() );
         $this->restore_locale();
     }
 
@@ -137,8 +140,7 @@ class StatusUpdate extends WC_Email {
      * @return string
      */
     public function get_content_html() {
-        ob_start();
-        wc_get_template(
+        return wc_get_template_html(
             $this->template_html,
             [
                 'email_heading'       => $this->get_heading(),
@@ -155,8 +157,6 @@ class StatusUpdate extends WC_Email {
             'dokan/',
             $this->template_base
         );
-
-        return ob_get_clean();
     }
 
     /**
@@ -168,8 +168,7 @@ class StatusUpdate extends WC_Email {
      * @return string
      */
     public function get_content_plain() {
-        ob_start();
-        wc_get_template(
+        return wc_get_template_html(
             $this->template_plain,
             [
                 'email_heading'       => $this->get_heading(),
@@ -181,12 +180,11 @@ class StatusUpdate extends WC_Email {
                 'verification_status' => $this->data['verification_status'],
                 'home_url'            => $this->data['home_url'],
                 'admin_email'         => $this->data['admin_email'],
+                'additional_content'  => $this->get_additional_content(),
             ],
             'dokan/',
             $this->template_base
         );
-
-        return ob_get_clean();
     }
 
     /**

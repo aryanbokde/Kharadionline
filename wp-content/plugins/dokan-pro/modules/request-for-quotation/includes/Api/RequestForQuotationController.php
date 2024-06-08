@@ -5,6 +5,10 @@ use WP_Error;
 use WC_Product;
 use WP_REST_Server;
 use WC_Product_Variation;
+use WP_HTTP_Response;
+use WP_REST_Response;
+use WC_Data_Exception;
+use Exception;
 use WeDevs\Dokan\Abstracts\DokanRESTController;
 use WeDevs\DokanPro\Modules\RequestForQuotation\Helper;
 
@@ -26,6 +30,19 @@ class RequestForQuotationController extends DokanRESTController {
      * @var string
      */
     protected $base = 'request-for-quote';
+
+    /**
+     * Quote status
+     *
+     * @since 3.7.30
+     *
+     * @var array
+     */
+    protected const QUOTE_STATUS = [
+        'PENDING' => 'pending',
+        'APPROVED' => 'approve',
+        'CONVERTED' => 'converted'
+    ];
 
     /**
      * Class constructor
@@ -123,6 +140,20 @@ class RequestForQuotationController extends DokanRESTController {
                     'methods'             => WP_REST_Server::CREATABLE,
                     'callback'            => [ $this, 'convert_to_order' ],
                     'permission_callback' => [ $this, 'convert_to_order_permissions_check' ],
+                    'args' => [
+                        'quote_id' => [
+                            'description'       => __('Request quote id', 'dokan'),
+                            'type'              => 'number',
+                            'sanitize_callback' => 'absint',
+                            'required'          => true,
+                        ],
+                        'status' => [
+                            'description'       => __('Request quote status', 'dokan'),
+                            'type'              => 'string',
+                            'sanitize_callback' => 'sanitize_text_field',
+                            'required'          => true,
+                        ],
+                    ],
                 ],
             ]
         );
@@ -527,26 +558,34 @@ class RequestForQuotationController extends DokanRESTController {
      *
      * @since 3.6.0
      *
-     * @throws \WC_Data_Exception
-     * @throws \Exception
-     * @return \WP_Error
+     * @return  WP_Error | WP_HTTP_Response | WP_REST_Response
+     *
+     * @throws WC_Data_Exception | Exception
      */
     public function convert_to_order( $request ) {
-        $params = $request->get_params();
+        $quote_id = absint( $request->get_param( 'quote_id' ) );
+        $quote_status = $request->get_param( 'status' ) ?? self::QUOTE_STATUS['PENDING'];
 
-        if ( empty( $params['quote_id'] ) ) {
+        // Request Validation
+        if ( empty( $quote_id ) ) {
+            return new WP_Error( 'no_quote_found', __( 'No quote found', 'dokan' ), [ 'status' => 404 ] );
+        } elseif ( ! in_array( $quote_status, array_values( self::QUOTE_STATUS ) ) ) {
+            return new WP_Error( 'invalid_status_for_quote', __( 'Invalid Status', 'dokan' ), [ 'status' => 422 ] );
+        }
+
+        $quote         = (object) $this->get_quote_object_by_id( $quote_id );
+        $quote_details = Helper::get_request_quote_details_by_quote_id( $quote_id );
+
+        if ( empty( $quote_details ) ) {
             return new WP_Error( 'no_quote_found', __( 'No quote found', 'dokan' ), [ 'status' => 404 ] );
         }
 
-        $quote         = (object) $this->get_quote_object_by_id( (int) $params['quote_id'] );
-        $quote_details = Helper::get_request_quote_details_by_quote_id( $params['quote_id'] );
-
         $order_id = Helper::convert_quote_to_order( $quote, $quote_details );
 
-        Helper::change_status( 'dokan_request_quotes', $params['quote_id'], $params['status'] );
-        Helper::update_dokan_request_quote_converted( $params['quote_id'], 'Admin', $order_id );
+        Helper::change_status( 'dokan_request_quotes', $quote_id, $quote_status );
+        Helper::update_dokan_request_quote_converted( $quote_id, 'Admin', $order_id );
 
-        $data = $this->prepare_response_for_object( (object) $this->get_quote_object_by_id( (int) $params['quote_id'] ), $request );
+        $data = $this->prepare_response_for_object( (object) $this->get_quote_object_by_id( $quote_id ), $request );
 
         return rest_ensure_response( $data );
     }
@@ -1052,6 +1091,17 @@ class RequestForQuotationController extends DokanRESTController {
         if ( isset( $params['request_a_quote'] ) && intval( $params['request_a_quote'] ) === 1 ) {
             unset( $args['author'] );
         }
+
+        if ( empty( $args['tax_query'] ) ) {
+            $args['tax_query'] = [];
+        }
+
+        $args['tax_query'][] = [
+            'taxonomy'  => 'product_visibility',
+            'terms'     => [ 'exclude-from-catalog' ],
+            'field'     => 'name',
+            'operator'  => 'NOT IN',
+        ];
 
         return $args;
     }

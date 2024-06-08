@@ -4,14 +4,36 @@ use WeDevs\Dokan\ProductCategory\Helper;
 use WeDevs\Dokan\Walkers\TaxonomyDropdown;
 global $post, $product;
 
-$post_id        = $post->ID;
+$post_id        = ! empty( $post->ID ) ? $post->ID : 0;
 $seller_id      = dokan_get_current_user_id();
+$new_product    = false;
+$is_proxy_ac_on = get_option( 'simple_auctions_proxy_auction_on', 'no' );
 
 if ( isset( $_GET['product_id'] ) ) {
-    $post_id        = intval( $_GET['product_id'] );
-    $post           = get_post( $post_id );
-    $post_status    = $post->post_status;
-    $product        = dokan_wc_get_product( $post_id );
+    $post_id = intval( $_GET['product_id'] );
+
+    if ( empty( $post_id ) ) {
+        $product = new WC_Product_Auction( new WC_Product() );
+        $product->set_status( 'auto-draft' );
+        $product->set_name( '' );
+        $product->update_meta_data( '_auction_proxy', $is_proxy_ac_on );
+        $post_id = $product->save();
+        $new_product = true;
+        wp_update_post(
+            [
+                'ID'          => $post_id,
+                'post_author' => dokan_get_current_user_id(),
+            ]
+        );
+    }
+
+    $post        = get_post( $post_id );
+    $product     = wc_get_product( $post_id );
+    $new_product = 'auto-draft' === $product->get_status();
+
+    // Set product default status.
+    $post_status = dokan_get_default_product_status( dokan_get_current_user_id() );
+    $post_status = $product->get_status() === 'auto-draft' ? $post_status : $product->get_status();
 }
 
 // bail out if not author
@@ -53,6 +75,10 @@ do_action( 'dokan_edit_auction_product_content_before' );
 <!--  -->
 <div class="dokan-dashboard-content dokan-product-edit">
 <?php
+if ( $new_product ) {
+    do_action( 'dokan_new_product_before_product_area' );
+    do_action( 'dokan_auction_content_inside_before' );
+} else {
 
     /**
      *  dokan_edit_auction_product_content_inside_before hook
@@ -60,10 +86,17 @@ do_action( 'dokan_edit_auction_product_content_before' );
      *  @since 2.4
      */
     do_action( 'dokan_edit_auction_product_content_inside_before' );
+}
     ?>
     <header class="dokan-dashboard-header dokan-clearfix">
         <h1 class="entry-title">
-            <?php _e( 'Edit Auction Products', 'dokan' ); ?>
+            <?php
+            if ( $new_product ) {
+                esc_html_e( 'Add New Auction Product', 'dokan' );
+            } else {
+                esc_html_e( 'Edit Auction Products', 'dokan' );
+            }
+            ?>
             <span class="dokan-label <?php echo dokan_get_post_status_label_class( $post->post_status ); ?> dokan-product-status-label">
                 <?php echo dokan_get_post_status( $post->post_status ); ?>
             </span>
@@ -169,20 +202,43 @@ do_action( 'dokan_edit_auction_product_content_before' );
                         <div class="content-half-part dokan-product-meta">
 
                             <div class="dokan-form-group dokan-auction-post-title">
-                                <input type="hidden" name="dokan_product_id" value="<?php echo $post_id; ?>">
-                                <?php dokan_post_input_box( $post_id, 'post_title', array( 'placeholder' => 'Product name..', 'value' => $post->post_title ) ); ?>
+                                <input type="hidden" name="dokan_product_id" value="<?php echo esc_attr( $post_id ); ?>">
+                                <?php
+                                // Render auction product title field.
+                                $post_title = ! empty( $post->post_title ) ? esc_html( $post->post_title ) : '';
+                                dokan_post_input_box(
+                                    $post_id,
+                                    'post_title',
+                                    array(
+                                        'placeholder' => __( 'Product name..', 'dokan' ),
+                                        'value'       => ! $new_product ? $post_title : '',
+                                    )
+                                );
+                                ?>
                             </div>
 
                             <div class="dokan-form-group dokan-auction-post-excerpt">
-                                <?php dokan_post_input_box( $post_id, 'post_excerpt', array( 'placeholder' => 'Short description about the product...', 'value' => $post->post_excerpt ), 'textarea' ); ?>
+                                <?php
+                                // Render auction product excerpt field.
+                                $excerpt = ! empty( $post->post_excerpt ) ? esc_html( $post->post_excerpt ) : '';
+                                dokan_post_input_box(
+                                    $post_id,
+                                    'post_excerpt',
+                                    array(
+                                        'placeholder' => __( 'Short description about the product...', 'dokan' ),
+                                        'value'       => ! $new_product ? $excerpt : '',
+                                    ),
+                                    'textarea'
+                                );
+                                ?>
                             </div>
                             <div class="dokan-form-group dokan-auction-category">
-                                    <?php
-                                        $data = Helper::get_saved_products_category( $post_id );
-                                        $data['from'] = 'edit_booking_product';
+                                <?php
+                                    $data = Helper::get_saved_products_category( $post_id );
+                                    $data['from'] = 'edit_booking_product';
 
-                                        dokan_get_template_part('products/dokan-category-header-ui', '', $data );
-                                    ?>
+                                    dokan_get_template_part('products/dokan-category-header-ui', '', $data );
+                                ?>
                             </div>
 
                             <div class="dokan-form-group dokan-auction-tags">
@@ -406,21 +462,12 @@ do_action( 'dokan_edit_auction_product_content_before' );
                             <div class="dokan-section-content">
                                 <div class="dokan-form-group content-half-part dokan-auction-product-status">
                                     <label for="post_status" class="form-label"><?php _e( 'Product Status', 'dokan' ); ?></label>
-                                    <?php if ( $post_status != 'pending' ) { ?>
-                                        <?php $post_statuses = apply_filters( 'dokan_post_status', array(
-                                            'publish' => __( 'Online', 'dokan' ),
-                                            'draft'   => __( 'Draft', 'dokan' )
-                                        ), $post ); ?>
-
-                                        <select id="post_status" class="dokan-form-control" name="post_status">
-                                            <?php foreach ( $post_statuses as $status => $label ) { ?>
-                                                <option value="<?php echo $status; ?>"<?php selected( $post_status, $status ); ?>><?php echo $label; ?></option>
-                                            <?php } ?>
-                                        </select>
-                                    <?php } else { ?>
-                                        <?php $pending_class = $post_status == 'pending' ? '  dokan-label dokan-label-warning': ''; ?>
-                                        <span class="dokan-toggle-selected-display<?php echo $pending_class; ?>"><?php echo dokan_get_post_status( $post_status ); ?></span>
-                                    <?php } ?>
+                                    <?php $post_statuses = dokan_get_available_post_status( $post->ID ); ?>
+                                    <select id="post_status" class="dokan-form-control" name="post_status">
+                                        <?php foreach ( $post_statuses as $status => $label ) { ?>
+                                            <option value="<?php echo $status; ?>"<?php selected( $post_status, $status ); ?>><?php echo $label; ?></option>
+                                        <?php } ?>
+                                    </select>
                                 </div>
 
                                 <div class="dokan-form-group content-half-part dokan-auction-product-visibility">
@@ -443,10 +490,10 @@ do_action( 'dokan_edit_auction_product_content_before' );
                         <?php do_action( 'dokan_product_edit_after_options', $post_id ); ?>
                         <?php do_action( 'dokan_product_edit_after_main', $post, $post_id ); ?>
                     </div>
-
+                    <input type='hidden' name='dokan_new_product_id' id='dokan_product_id' value="<?php echo esc_attr( $post_id ); ?>"/>
                     <input type="hidden" name="dokan_product_id" id="dokan-edit-product-id" value="<?php echo $post_id; ?>"/>
                     <input type="hidden" name="product-type" value="auction">
-                    <input type="submit" name="update_auction_product" class="dokan-btn dokan-btn-theme dokan-btn-lg dokan-right" value="<?php esc_attr_e( 'Update Product', 'dokan' ); ?>"/>
+                    <input type="submit" name="update_auction_product" class="dokan-btn dokan-btn-theme dokan-btn-lg dokan-right" value="<?php esc_attr_e( 'Save Product', 'dokan' ); ?>"/>
 
                     <div class="dokan-clearfix"></div>
                 </div>

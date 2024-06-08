@@ -1,0 +1,51 @@
+.htaccess
+# Ignore the wp-config.php file for security reasons
+wp-config.php
+
+# Ignore log files and databases
+*.log
+*.sql
+*.sqlite
+
+# Ignore WordPress content directories
+wp-content/uploads/
+wp-content/upgrade/
+wp-content/backup-db/
+wp-content/languages/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Ignore PHPStorm project files
+.idea/
+
+# Ignore Node.js dependencies and build directories
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignore composer dependencies and generated files
+vendor/
+composer.lock
+
+# Ignore WP-CLI generated files
+wp-cli.local.yml
+wp-cli.yml
+
+# Ignore environment variables file
+.env
+
+# # Ignore compiled styles and scripts
+# *.css.map
+# *.js.map
+
+# # Ignore Sass, LESS, and other CSS preprocessor directories
+# .sass-cache/
+# *.scssc
+# *.sass-cache
+
+# Ignore Jetpack sync metadata
+.wpcom-meta-data/

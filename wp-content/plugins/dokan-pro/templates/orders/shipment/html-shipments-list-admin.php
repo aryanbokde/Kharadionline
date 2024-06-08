@@ -4,7 +4,12 @@
             <strong><?php esc_html_e( 'Shipment', 'dokan' ); ?> #<?php echo esc_html( $incre ); ?> </strong>
         </h3>
         <p class="shippments-tracking-status">
-            <strong class="<?php echo esc_attr( $shipping_status ); ?> status_label_<?php echo esc_attr( $shipment_id ); ?>"><?php echo esc_html( $status ); ?> </strong>
+            <strong class="<?php echo esc_attr( $shipping_status ); ?> status_label_<?php echo esc_attr( $shipment_id ); ?>">
+                <?php
+                $status = apply_filters( 'dokan_pro_shipping_status', $status );
+                echo esc_html( $status );
+                ?>
+            </strong>
 
             <span class="shipment-item-details-tab-toggle" data-shipment_id="<?php echo esc_attr( $shipment_id ); ?>">
                 <span class="dashicons dashicons-arrow-down-alt2 fa-sort-desc"></span>
@@ -12,7 +17,7 @@
         </p>
         <div class="clear"></div>
         <p class="shippments-tracking-via">
-            <?php esc_html_e( 'via', 'dokan' ); ?> 
+            <?php esc_html_e( 'via', 'dokan' ); ?>
             <strong><?php echo esc_html( $provider ); ?></strong>
             <a href="<?php echo esc_attr( $provider_url ); ?>" target="_blank">
                 <span class="dashicons dashicons-external"></span>

@@ -5,6 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
 }
 
+use ReflectionMethod;
 use WC_Germanized_Meta_Box_Product_Data;
 
 /**
@@ -364,15 +365,25 @@ class Helper {
      * @return string|null Database query result (as string), or null on failure.
      */
     public static function get_vendor_last_order_date( $vendor_id, $current_order_id ) {
-        global $wpdb;
-
-        return $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT p.post_date FROM {$wpdb->postmeta} as m left join {$wpdb->posts} as p on m.post_id = p.ID
-                where m.meta_key = '_dokan_vendor_id' AND m.meta_value = %d AND m.post_id != %d order by m.post_id DESC limit 1",
-                [ $vendor_id, $current_order_id ]
-            )
+        $last_order = dokan()->order->all(
+            [
+                'seller_id' => $vendor_id,
+                'exclude'   => $current_order_id,
+                'limit'     => 1,
+                'order'     => 'DESC',
+                'orderby'   => 'id',
+                'return'    => 'ids',
+            ]
         );
+
+        if ( empty( $last_order ) ) {
+            return null;
+        }
+
+        $order_id = reset( $last_order );
+        $order = wc_get_order( $order_id );
+
+        return $order->get_date_created()->format( 'Y-m-d H:i:s' );
     }
 
     /**
@@ -388,17 +399,19 @@ class Helper {
     public static function save_simple_product_eu_data( $post_id, $data ) {
         $product = WC_Germanized_Meta_Box_Product_Data::save( $post_id );
 
+        if ( ! is_object( $product ) ) {
+            return;
+        }
+
         if ( isset( $data['_ts_gtin'] ) ) {
-            $product = wc_ts_set_crud_data( $product, '_ts_gtin', wc_clean( wp_unslash( $data['_ts_gtin'] ) ) );
+            $product->update_meta_data( '_ts_gtin', wc_clean( wp_unslash( $data['_ts_gtin'] ) ) );
         }
 
         if ( isset( $data['_ts_mpn'] ) ) {
-            $product = wc_ts_set_crud_data( $product, '_ts_mpn', wc_clean( wp_unslash( $data['_ts_mpn'] ) ) );
+            $product->update_meta_data( '_ts_mpn', wc_clean( wp_unslash( $data['_ts_mpn'] ) ) );
         }
 
-        if ( is_object( $product ) ) {
-            $product->save();
-        }
+        $product->save();
     }
 
     /**
@@ -452,11 +465,19 @@ class Helper {
         WC_Germanized_Meta_Box_Product_Data::save_product_data( $product, $data, true );
 
         foreach ( $store_trusted_data as $key => $value ) {
-            $germanized_product = wc_ts_set_crud_data( $product, $key, $value );
-        }
+            // the $key here is unknown, so we need to check if it has a setter already in product object, otherwise set in meta data.
+            $key_unprefixed = substr( $key, 0, 1 ) === '_' ? substr( $key, 1 ) : $key;
+            $setter         = substr( $key_unprefixed, 0, 3 ) === 'set' ? $key : "set_{$key_unprefixed}";
 
-        if ( is_object( $germanized_product ) ) {
-            $germanized_product->save();
+            if ( is_callable( array( $product, $setter ) ) ) {
+                $reflection = new ReflectionMethod( $product, $setter );
+                if ( $reflection->isPublic() ) {
+                    $product->{$setter}( $value );
+                }
+            } else {
+                $product->update_meta_data( $key, $value );
+            }
         }
+        $product->save();
     }
 }

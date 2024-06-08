@@ -32,8 +32,9 @@
 .dokan-support-topic-counts {
     padding-left: 0px !important;
 }
-.dokan-support-topic-counts li{
+.dokan-support-topic-counts li {
     display: inline-block;
+    padding: 0 5px !important;
 }
 .dokan-support-topic-counts li.active a {
   color: #999;
@@ -402,4 +403,21 @@
 .dokan-store-support-ticket-search-form #dokan-support-ticket-search-input {
     width: 160px;
     padding: 4px 10px;
+}
+
+@media (max-width: 767px) {
+    .dokan-table.dokan-support-table tbody {
+        display: flex;
+        flex-direction: column;
+    }
+    .dokan-table.dokan-support-table tbody tr {
+        vertical-align: inherit;
+        width: 100%;
+    }
+    .dokan-table.dokan-support-table tbody tr:not(.is-expanded) {
+        display: flex;
+    }
+    .dokan-table.dokan-support-table tbody tr td.column-primary {
+        flex: 1;
+    }
 }

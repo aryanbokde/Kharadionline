@@ -69,6 +69,6 @@ class CheckoutOrderApproved extends WebhookEventHandler {
 
         //store paypal debug id
         $order->update_meta_data( '_dokan_paypal_capture_payment_debug_id', $response['paypal_debug_id'] );
-        $order->save_meta_data();
+        $order->save();
     }
 }

@@ -111,7 +111,7 @@ trait Transferable {
             $on_hold     = $transfer->on_hold ? true : false;
 
             $order->update_meta_data( '_dokan_razorpay_transfer_id', $transfer_id );
-            $order->save_meta_data();
+            $order->save();
 
             // Add gateway fee note if this is not a parent order.
             // For parent order this has already been added.

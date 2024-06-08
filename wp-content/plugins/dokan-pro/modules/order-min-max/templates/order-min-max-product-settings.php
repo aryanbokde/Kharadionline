@@ -18,10 +18,10 @@ extract( $product_settings_args, EXTR_SKIP );
 <?php do_action( 'dokan_order_min_max_product_settings_before', $post_id ); ?>
 <div class="dokan-edit-row dokan-clearfix dokan-border-top dokan-form-group dokan-product-type-container show_if_simple">
     <div class="dokan-section-heading" data-togglehandler="dokan_product_shipping_tax">
-        <h2><i class="fa fa-usd" aria-hidden="true"></i> <?php echo isset( $tab_title ) ? esc_html( $tab_title ) : ''; ?></h2>
+        <h2><i class="fas fa-dollar-sign" aria-hidden="true"></i> <?php echo isset( $tab_title ) ? esc_html( $tab_title ) : ''; ?></h2>
         <p><?php echo isset( $tab_desc ) ? esc_html( $tab_desc ) : ''; ?></p>
         <a href="#" class="dokan-section-toggle">
-            <i class="fa fa-sort-desc fa-flip-vertical" aria-hidden="true"></i>
+            <i class="fa fa-sort-down fa-flip-vertical" aria-hidden="true"></i>
         </a>
         <div class="dokan-clearfix"></div>
     </div>

@@ -16,6 +16,7 @@ class Admin {
         add_filter( 'dokan-admin-routes', [ self::class, 'add_admin_route' ] );
         add_action( 'dokan-vue-admin-scripts', [ self::class, 'enqueue_admin_script' ] );
         add_action( 'init', [ self::class, 'register_scripts' ] );
+        add_action( 'dokan_after_saving_settings', [ $this, 'after_save_settings' ], 10, 3 );
     }
 
     /**
@@ -91,5 +92,26 @@ class Admin {
     public static function enqueue_admin_script() {
         wp_enqueue_style( 'woocommerce_select2' );
         wp_enqueue_script( 'dokan-report-abuse-admin-vue' );
+    }
+
+    /**
+     * After Save Admin Settings.
+     *
+     * @since 3.10.0
+     *
+     * @param string $option_name Option Key (Section Key).
+     * @param array $option_value Option value.
+     * @param array $old_options Option Previous value.
+     *
+     * @return void
+     */
+    public function after_save_settings( $option_name, $option_value, $old_options ) {
+        if ( 'dokan_report_abuse' !== $option_name ) {
+            return;
+        }
+
+        foreach ( $option_value['abuse_reasons'] as $key => $status ) {
+            do_action( 'dokan_pro_register_abuse_report_reason', $status['value'] );
+        }
     }
 }

@@ -43,7 +43,7 @@ class Upgrades {
         ],
         '3.5.2' => [
             'upgrader' => Upgraders\V_3_5_2::class,
-            'require'  => null,
+            'require'  => '',
         ],
         '3.7.0' => [
             'upgrader' => Upgraders\V_3_7_0::class,
@@ -55,15 +55,43 @@ class Upgrades {
         ],
         '3.7.8' => [
             'upgrader' => Upgraders\V_3_7_8::class,
-            'require'  => null,
+            'require'  => '',
         ],
         '3.7.17' => [
             'upgrader' => Upgraders\V_3_7_17::class,
-            'require'  => null,
+            'require'  => '',
         ],
         '3.7.21' => [
             'upgrader' => Upgraders\V_3_7_21::class,
-            'require'  => null,
+            'require'  => '',
+        ],
+        '3.8.0'  => [
+            'upgrader' => Upgraders\V_3_8_0::class,
+            'require'  => '',
+        ],
+        '3.8.3' => [
+            'upgrader' => Upgraders\V_3_8_3::class,
+            'require'  => '',
+        ],
+        '3.9.0' => [
+            'upgrader' => Upgraders\V_3_9_0::class,
+            'require' => '',
+        ],
+        '3.9.4' => [
+            'upgrader' => Upgraders\V_3_9_4::class,
+            'require'  => '',
+        ],
+        '3.9.7' => [
+            'upgrader' => Upgraders\V_3_9_7::class,
+            'require'  => '',
+        ],
+        '3.10.0' => [
+            'upgrader' => Upgraders\V_3_10_0::class,
+            'require'  => '',
+        ],
+        '3.11.1' => [
+            'upgrader' => Upgraders\V_3_11_1::class,
+            'require'  => '',
         ],
     ];
 
@@ -75,7 +103,7 @@ class Upgrades {
      * @return string
      */
     public static function get_db_installed_version() {
-        return get_option( dokan_pro()->get_db_version_key(), null );
+        return get_option( dokan_pro()->get_db_version_key(), '' );
     }
 
     /**
@@ -95,7 +123,7 @@ class Upgrades {
             return true;
         }
 
-        if ( $installed_version && version_compare( $installed_version, end( $upgrade_versions ), '<' ) ) {
+        if ( is_string( $installed_version ) && version_compare( $installed_version, end( $upgrade_versions ), '<' ) ) {
             return true;
         }
 

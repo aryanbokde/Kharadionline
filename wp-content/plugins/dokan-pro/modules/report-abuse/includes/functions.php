@@ -177,6 +177,10 @@ function dokan_report_abuse_get_option() {
         ];
     }
 
+    foreach ( $option['abuse_reasons'] as $key => $status ) {
+        $option['abuse_reasons'][$key]['value'] = apply_filters('dokan_pro_abuse_report_reason', $status['value'] );
+    }
+
     return $option;
 }
 

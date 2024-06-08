@@ -172,7 +172,7 @@ class Module {
             'title'                => __( 'Colors', 'dokan' ),
             'icon_url'             => DOKAN_COLOR_CUSTOMIZER_ASSETS_DIR . '/images/colors.svg',
             'description'          => __( 'Store Color Customization', 'dokan' ),
-            'document_link'        => 'https://wedevs.com/docs/dokan/modules/color-scheme/',
+            'document_link'        => 'https://dokan.co/docs/wordpress/modules/color-scheme/',
             'settings_title'       => __( 'Colors Settings', 'dokan' ),
             'settings_description' => __( 'You can configure your general site settings with the option to adjust the color of your dashboard.', 'dokan' ),
         ];
@@ -420,6 +420,8 @@ class Module {
             }
 
             .dokan-btn-theme.active,
+            .dokan-dashboard-wrap .button,
+            .dokan-dashboard-wrap .button-link,
             .open .dropdown-toggle.dokan-btn-theme,
             .open .dropdown-togglea.dokan-btn-theme,
             input[type="submit"].dokan-btn-theme:hover,
@@ -556,6 +558,11 @@ class Module {
 
             .dokan-subscription-content .pack_content_wrapper .product_pack_item.current_pack {
                 border-color: <?php echo esc_attr( $btn_h_bg ); ?> !important;
+            }
+
+            .dokan-panel .dokan-panel-body td.refunded-total,
+            .dokan-product-edit-form #dokan-product-title-area #edit-slug-box #sample-permalink a {
+                color: <?php echo esc_attr( $btn_h_bg ); ?> !important;
             }
         </style>
 

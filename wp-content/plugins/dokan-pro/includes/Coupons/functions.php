@@ -75,7 +75,7 @@ function dokan_is_admin_coupon_used_for_vendors( $order, $vendor_id, $product_id
             continue;
         }
 
-        $coupon_meta = dokan_get_coupon_metadata_from_order( $coupon_meta->get_data()['value'] );
+        $coupon_meta = dokan_get_coupon_metadata_from_order( (array) $coupon_meta->get_data()['value'] );
 
         if ( ! isset( $coupon_meta['coupon_commissions_type'] ) ) {
             continue;
@@ -166,13 +166,13 @@ function dokan_get_admin_coupon_meta( $coupon ) {
  *
  * @since 3.4.0
  *
- * @param array $coupon
+ * @param WC_Coupon $coupon
  *
  * @return bool
  */
 function dokan_is_coupon_created_by_admin_for_vendor( $coupon ) {
     if ( empty( $coupon ) ) {
-        return;
+        return false;
     }
 
     return empty( $coupon->get_meta( 'admin_coupons_enabled_for_vendor' ) ) ? false : true;
@@ -272,4 +272,20 @@ function dokan_get_seller_products_ids_by_coupon( $coupon, $seller_id ) {
     } else {
         return '&ndash;';
     }
+}
+
+/**
+ * Get Coupon Localize Data.
+ *
+ * @since 3.10.3
+ *
+ * @return array
+ **/
+function dokan_get_coupon_localize_data() {
+    return apply_filters(
+        'dokan_get_coupon_localize_param', [
+            'single_seller_mode'               => dokan_is_single_seller_mode_enable(),
+            'i18n_fixed_cart_discount_warning' => __( 'Fixed cart coupon can\'t be used for purchasing products from multiple vendors at once.', 'dokan' ),
+        ]
+    );
 }

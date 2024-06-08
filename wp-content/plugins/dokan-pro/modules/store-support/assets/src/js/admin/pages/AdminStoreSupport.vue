@@ -9,7 +9,7 @@
         </h1>
 
         <div class="help-block">
-            <span class='help-text'><a href="https://wedevs.com/docs/dokan/modules/how-to-install-and-use-store-support/" target="_blank">{{ __( 'Need Any Help ?', 'dokan' ) }}</a></span>
+            <span class='help-text'><a href="https://dokan.co/docs/wordpress/modules/how-to-install-and-use-store-support/" target="_blank">{{ __( 'Need Any Help ?', 'dokan' ) }}</a></span>
             <span class="dashicons dashicons-smiley"></span>
         </div>
 

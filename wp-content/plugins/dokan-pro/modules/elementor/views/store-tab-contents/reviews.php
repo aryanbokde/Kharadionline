@@ -7,6 +7,7 @@ $limit                  = 20;
 $status                 = '1';
 $comments               = $dokan_template_reviews->comment_query( $id, $post_type, $limit, $status );
 ?>
+<div class="dokan-store-review-iziModal"></div>
 <div id="reviews">
     <div id="comments">
 

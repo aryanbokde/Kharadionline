@@ -22,8 +22,12 @@ class Dokan_Follow_Store_Scripts {
     public function register_scripts() {
         list( $suffix, $script_version ) = dokan_get_script_suffix_and_version();
 
-        wp_register_style( 'dokan-follow-store', DOKAN_FOLLOW_STORE_ASSETS . '/css/follow-store' . $suffix . '.css', array( 'dokan-style', 'dokan-fontawesome' ), DOKAN_FOLLOW_STORE_VERSION );
+        wp_register_style( 'dokan-follow-store', DOKAN_FOLLOW_STORE_ASSETS . '/css/follow-store' . $suffix . '.css', array( 'dokan-style' ), DOKAN_FOLLOW_STORE_VERSION );
         wp_register_script( 'dokan-follow-store', DOKAN_FOLLOW_STORE_ASSETS . '/js/follow-store' . $suffix . '.js', array( 'jquery', 'dokan-login-form-popup' ), DOKAN_FOLLOW_STORE_VERSION, true );
+
+        if ( 'off' === dokan_get_option( 'disable_dokan_fontawesome', 'dokan_appearance', 'off' ) ) {
+            wp_enqueue_style( 'dokan-fontawesome' );
+        }
 
         $dokan_follow_store = array(
             '_nonce'        => wp_create_nonce( 'dokan_follow_store' ),
@@ -43,7 +47,6 @@ class Dokan_Follow_Store_Scripts {
     public function enqueue_scripts() {
         if ( dokan_is_store_listing() || dokan_is_store_page() || ( is_account_page() && false !== get_query_var( 'following', false ) ) ) {
             wp_enqueue_style( 'dokan-follow-store' );
-            wp_enqueue_style( 'dokan-magnific-popup' );
             wp_enqueue_script( 'dokan-follow-store' );
         }
     }

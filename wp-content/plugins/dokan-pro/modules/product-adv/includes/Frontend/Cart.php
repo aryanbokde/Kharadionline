@@ -1,6 +1,7 @@
 <?php
 namespace WeDevs\DokanPro\Modules\ProductAdvertisement\Frontend;
 
+use WC_Order;
 use WeDevs\DokanPro\Modules\ProductAdvertisement\Helper;
 use WeDevs\DokanPro\Modules\ProductAdvertisement\Manager;
 

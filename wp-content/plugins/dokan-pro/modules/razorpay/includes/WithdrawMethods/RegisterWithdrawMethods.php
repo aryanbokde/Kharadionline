@@ -3,6 +3,7 @@
 namespace WeDevs\DokanPro\Modules\Razorpay\WithdrawMethods;
 
 use WeDevs\DokanPro\Modules\Razorpay\Helper;
+use WP_User;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
@@ -42,6 +43,28 @@ class RegisterWithdrawMethods {
         add_filter( 'dokan_withdraw_method_settings_title', [ $this, 'get_heading' ], 10, 2 );
         add_filter( 'dokan_is_seller_connected_to_payment_method', [ $this, 'is_seller_connected' ], 10, 3 );
         add_filter( 'dokan_profile_completion_progress_for_payment_methods', [ $this, 'calculate_profile_progress' ] );
+        add_filter( 'dokan_vendor_to_array', [ $this, 'add_razorpay_to_vendor_profile_data' ] );
+    }
+
+    /**
+     * Returns true if venddor enabled razorpay
+     *
+     * @since 3.9.1
+     *
+     * @param $data
+     *
+     * @return array
+     */
+    public function add_razorpay_to_vendor_profile_data( $data ) {
+        $vendor_id = ! empty( $data['id'] ) ? absint( $data['id'] ) : 0;
+
+        if ( ! current_user_can( 'manage_woocommerce' ) && $vendor_id !== dokan_get_current_user_id() ) {
+            return $data;
+        }
+
+        $data['payment']['dokan_razorpay'] = $this->is_seller_connected( false, 'dokan_razorpay', $vendor_id );
+
+        return $data;
     }
 
     /**
@@ -85,8 +108,6 @@ class RegisterWithdrawMethods {
         // Register scripts and styles for the payment page only
         if ( isset( $wp->query_vars['settings'] ) && in_array( $wp->query_vars['settings'], [ 'payment', 'payment-manage-' . Helper::get_gateway_id(), 'payment-manage-' . Helper::get_gateway_id() . '-edit' ], true ) ) {
             wp_enqueue_style( 'dokan-razorpay-vendor-register' );
-            wp_enqueue_style( 'dokan-magnific-popup' );
-            wp_enqueue_script( 'dokan-magnific-popup' );
         }
     }
 
@@ -96,7 +117,7 @@ class RegisterWithdrawMethods {
      * @since 3.7.4
      */
     public function register_scripts() {
-        list( $suffix, $version ) = dokan_get_script_suffix_and_version();
+        [ $suffix, $version ] = dokan_get_script_suffix_and_version();
 
         wp_register_style( 'dokan-razorpay-vendor-register', DOKAN_RAZORPAY_ASSETS . 'css/razorpay-vendor-register.css', [], $version );
     }
@@ -117,7 +138,6 @@ class RegisterWithdrawMethods {
         // check if page is dokan-seller-setup and step is payment
         if ( isset( $_GET['page'] ) && 'dokan-seller-setup' === $_GET['page'] && isset( $_GET['step'] ) && 'payment' === $_GET['step'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             wp_enqueue_style( 'dokan-style' );
-            wp_enqueue_style( 'dokan-magnific-popup' );
             wp_enqueue_style( 'dokan-razorpay-vendor-register' );
         }
     }
@@ -209,13 +229,13 @@ class RegisterWithdrawMethods {
         }
 
         if ( false === get_transient( "dokan_razorpay_notice_intervals_$seller_id" ) ) {
-            $announcement = new \WeDevs\DokanPro\Admin\Announcement();
-            // sent announcement message
+            $announcement = dokan_pro()->announcement->manager;
+            // sent an announcement message
             $args = [
-                'title'       => $this->connect_messsage(),
-                'sender_type' => 'selected_seller',
-                'sender_ids'  => [ $seller_id ],
-                'status'      => 'publish',
+                'title'             => $this->connect_messsage(),
+                'announcement_type' => 'selected_seller',
+                'sender_ids'        => [ $seller_id ],
+                'status'            => 'publish',
             ];
             $notice = $announcement->create_announcement( $args );
 

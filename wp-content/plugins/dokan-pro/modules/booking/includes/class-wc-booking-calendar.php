@@ -15,6 +15,48 @@ class Dokan_WC_Bookings_Calendar {
             wp_enqueue_script( 'wc-enhanced-select' );
         }
 
+        if ( ! defined( 'WC_BOOKINGS_PLUGIN_URL' ) ) {
+            return;
+        }
+
+        $admin_script_dependencies = wc_booking_get_script_dependencies( 'admin', [ 'jquery-ui-datepicker', 'jquery-ui-sortable' ] );
+        wp_enqueue_script( 'wc_bookings_admin_js', WC_BOOKINGS_PLUGIN_URL . '/dist/admin.js', $admin_script_dependencies, WC_BOOKINGS_VERSION, true );
+        wp_enqueue_script( 'wc_bookings_admin_calendar_js', WC_BOOKINGS_PLUGIN_URL . '/dist/admin-calendar.js', wc_booking_get_script_dependencies( 'admin-calendar' ), WC_BOOKINGS_VERSION, true );
+
+
+        $params = array(
+            'i18n_remove_person'            => esc_js( __( 'Are you sure you want to remove this person type?', 'dokan' ) ),
+            'nonce_unlink_person'           => wp_create_nonce( 'unlink-bookable-person' ),
+            'nonce_add_person'              => wp_create_nonce( 'add-bookable-person' ),
+            'i18n_remove_resource'          => esc_js( __( 'Are you sure you want to remove this resource?', 'dokan' ) ),
+            'nonce_delete_resource'         => wp_create_nonce( 'delete-bookable-resource' ),
+            'nonce_add_resource'            => wp_create_nonce( 'add-bookable-resource' ),
+            'i18n_minutes'                  => esc_js( __( 'minutes', 'dokan' ) ),
+            'i18n_hours'                    => esc_js( __( 'hours', 'dokan' ) ),
+            'i18n_days'                     => esc_js( __( 'days', 'dokan' ) ),
+            'i18n_new_resource_name'        => esc_js( __( 'Enter a name for the new resource', 'dokan' ) ),
+            'post'                          => isset( $post->ID ) ? $post->ID : '',
+            'plugin_url'                    => WC()->plugin_url(),
+            'ajax_url'                      => admin_url( 'admin-ajax.php' ),
+            'nonce'                         => array(
+                'wc_bookings_get_product_template' => wp_create_nonce( 'wc_bookings_get_product_template' ),
+            ),
+            'calendar_image'                => WC_BOOKINGS_PLUGIN_URL . '/dist/images/calendar.png',
+            'i18n_view_details'             => esc_js( __( 'View details', 'dokan' ) ),
+            'i18n_customer'                 => esc_js( __( 'Customer', 'dokan' ) ),
+            'i18n_resource'                 => esc_js( __( 'Resource', 'dokan' ) ),
+            'i18n_persons'                  => esc_js( __( 'Persons', 'dokan' ) ),
+            'i18n_max_booking_overwridden'  => esc_js( __( 'This setting is being overridden at the resource level.', 'dokan' ) ),
+            'i18n_limited_hours'            => esc_js( __( 'A duration greater than 24 hours is not allowed when Availability is "not-available by default".', 'dokan' ) ),
+            'i18n_limited_hours_in_gen_tab' => esc_js( __( 'The booking duration has been set to 24 as a duration greater than 24 hours is not allowed when Availability is "not-available by default".', 'dokan' ) ),
+            'bookings_version'              => WC_BOOKINGS_VERSION,
+            'bookings_db_version'           => WC_BOOKINGS_DB_VERSION,
+            'start_of_week'                 => get_option( 'start_of_week' ),
+            'time_in_12hours'               => ! preg_match( '/(?<!\\\\)(\\\\{2})*(H|G)/', get_option( 'time_format' ) ),
+        );
+
+        wp_localize_script( 'wc_bookings_admin_js', 'wc_bookings_admin_js_params', $params );
+
         // @codingStandardsIgnoreStart
         $product_filter = isset( $_REQUEST['filter_bookings'] ) ? absint( $_REQUEST['filter_bookings'] ) : '';
         $view           = isset( $_REQUEST['view'] ) && $_REQUEST['view'] == 'day' ? 'day' : 'month';
@@ -94,6 +136,18 @@ class Dokan_WC_Bookings_Calendar {
                     false
                 );
             }
+
+
+            $calendar_params = array(
+                'default_month' => esc_html( date_i18n( 'F', mktime( 0, 0, 0, $month, 10 ) ) ),
+                'default_year'  => esc_html( $year ),
+                'default_day'   => esc_html( isset( $_REQUEST['calendar_day'] ) ? dokan_current_datetime()->modify( wc_clean( wp_unslash( $_REQUEST['calendar_day'] ) ) )->format( 'F d, Y' ) : dokan_current_datetime()->format( 'F d, Y' ) ),
+            );
+            // First day of currently selected year/month for datepicker default.
+            $default_date = "$year-$month-01";
+
+            wp_localize_script( 'wc_bookings_admin_calendar_gutenberg_js', 'wc_bookings_admin_calendar_js_params', $calendar_params );
+
         }
 
         include DOKAN_WC_BOOKING_DIR . ( '/templates/booking/calendar/html-calendar-' . $view . '.php' );
@@ -218,15 +272,41 @@ class Dokan_WC_Bookings_Calendar {
 
         $start_column = $column;
         $last_end     = 0;
-
+        $assigned_colors = $this->get_event_color_styles( $this->bookings );
         foreach ( $bookings_by_time as $bookings ) {
             foreach ( $bookings as $booking ) {
+                $data   = $this->get_booking_data( $booking );
+
+                if ( is_null( $data ) ) {
+                    continue;
+                }
+                $attr_data = [];
+                foreach ( $data as $key => $val ) {
+                    $attr_data[ 'data-booking-' . $key ] = esc_attr( $val );
+                }
+                $li_attrs = array(
+                    'style' => $assigned_colors[ $booking->get_id() ],
+                );
+
+                $attr_data = array_merge( $attr_data, $li_attrs );
                 $short_start_time = $this->get_short_time( $booking->get_start() );
                 $short_end_time   = $this->get_short_time( $booking->get_end() );
                 // @codingStandardsIgnoreLine
                 $booking_time     = sprintf( __( '%1$s %2$s', 'dokan' ), $short_start_time, $short_end_time );
 
-                $element = "<li class='dokan-booking-time dokan-booking-{$short_start_time}' data-booking-time='{$booking_time}'>";
+                $element = "<li class='dokan-booking-time daily_view_booking dokan-booking-{$short_start_time}' data-booking-time='{$booking_time}'";
+                foreach ( $attr_data as $attribute => $value ) {
+                    if ( is_array( $value ) ) {
+                        $attrs = '';
+                        foreach ( $value as $attr_key => $attr_val ) {
+                            $attrs .= "{$attr_key}: {$attr_val};";
+                        }
+                        $value = $attrs;
+                    }
+
+                    $element .= "{$attribute}=\"{$value}\" ";
+                }
+                $element .= ">";
                 $element .= "<a href='{$edit_url}'>{$this->get_tip( $booking )}</a>";
                 $element .= '</li>';
 
@@ -368,5 +448,181 @@ class Dokan_WC_Bookings_Calendar {
 
         return date( $time_format, $timestamp );
         // @codingStandardsIgnoreEnd
+    }
+
+    /**
+     * Get Bookings data to be included in the html element on the calendar.
+     *
+     * @since 3.10.4
+     *
+     * @param WC_Booking $booking
+     * @param integer    $check_date Timestamp during day to be checked. Defaults to $_REQUEST['calendar_day'] or current day.
+     *
+     * @return array|null
+     */
+    protected function get_booking_data( $event, $check_date = null ) {
+        if ( is_null( $check_date ) ) {
+            $day = dokan_current_datetime()->modify(  isset( $_REQUEST['calendar_day'] ) ? wc_clean( wp_unslash( $_REQUEST['calendar_day'] ) ) : dokan_current_datetime()->format( 'Y-m-d' ) )->getTimestamp();
+        } else {
+            $day = $check_date;
+        }
+        $startday         = dokan_current_datetime()->setTimestamp( $day )->modify( 'midnight' )->getTimestamp();
+        $endday           = dokan_current_datetime()->setTimestamp( $day )->modify( 'tomorrow' )->getTimestamp();
+        $booking_customer = '';
+        $booking_id       = is_callable( array( $event, 'get_id' ) ) ? $event->get_id() : '';
+        $booking_resource = '';
+        $booking_persons  = array();
+        $event_url        = '';
+
+        if ( 'WC_Booking' === get_class( $event ) ) {
+            $booking          = $event;
+            $product          = $booking->get_product();
+            $booking_customer = $booking->get_customer()->name ?: '';
+            $booking_resource = $booking->get_resource();
+            $booking_resource = $booking_resource ? $booking_resource->get_name() : '';
+            $event_start      = $booking->get_start();
+            $event_end        = $booking->get_end();
+            $event_title      = $product ? $product->get_name() : '';
+            $event_url        = admin_url( 'post.php?post=' . $booking->get_id() . '&action=edit' );
+            $booking_id       = $booking->get_id();
+
+            if ( $booking->has_persons() ) {
+                foreach ( $booking->get_persons() as $id => $qty ) {
+                    if ( 0 === $qty ) {
+                        continue;
+                    }
+
+                    $person_type = ( 0 < $id ) ? get_the_title( $id ) : __( 'Person(s)', 'dokan' );
+                    /* translators: 1: person type 2: quantity */
+                    $booking_persons[] = sprintf( __( '%1$s: %2$d', 'dokan' ), $person_type, $qty );
+                }
+            }
+
+            if ( $product && in_array( $product->get_duration_unit(), array( 'hour', 'minute' ), true ) ) {
+                /* translators: 1: start time 2: end time */
+                $short_start_time = $this->get_short_time( $booking->get_start() );
+                $short_end_time   = $this->get_short_time( $booking->get_end() );
+                $event_time       = $booking->is_all_day() ? __( 'All Day', 'dokan' ) : sprintf( __( '%1$s — %2$s', 'dokan' ), $short_start_time, $short_end_time );
+                $event_date       = $booking->get_start_date( 'l, M j, Y', '' );
+            } else {
+                $event_time = $booking->get_end_date( 'l, M j, Y' );
+                $event_date = $booking->get_start_date( 'l, M j, Y' );
+
+                // If the start date is same as the end date, then this is all day for that particular date
+                if ( $event_time == $event_date ) {
+                    $event_time = __( 'All Day', 'dokan' );
+                }
+            }
+        } else {
+            $availability = $event;
+            $range        = $availability->get_time_range_for_date( $day );
+            if ( is_null( $range ) ) {
+                return null;
+            }
+            $event_start      = $range['start'];
+            $event_end        = $range['end'];
+            $short_start_time = $this->get_short_time( $event_start );
+            $short_end_time   = $this->get_short_time( $event_end );
+            /* translators: 1: start time 2: end time */
+            $event_time = sprintf( __( '%1$s — %2$s', 'dokan' ), $short_start_time, $short_end_time );
+            $event_date = $availability->get_formatted_date( $event_start, 'l, M j, Y' );
+            // If the start date is same as the end date, then this is all day for that particular date
+            if ( ( $event_start === $event_end ) || $availability->is_all_day() ) {
+                $event_time = __( 'All Day', 'dokan' );
+            }
+
+            $event_title  = ! empty( $availability->get_title() ) ? $availability->get_title() : __( 'Unavailable', 'woocommerce_bookings' );
+            $event_title .= ' ' . __( '(From Google Calendar)', 'dokan' );
+        }
+
+        $booking_persons = ! empty( $booking_persons ) ? implode( ', ', $booking_persons ) : '';
+
+        $start = dokan_current_datetime()->setTimestamp( 0 )->modify( dokan_current_datetime()->setTimestamp( $event_start )->format( 'H:i' ) )->getTimestamp() / 60;
+        if ( $event_start < $startday ) {
+            $start = 0;
+        }
+
+        $end = dokan_current_datetime()->setTimestamp( 0 )->modify( dokan_current_datetime()->setTimestamp( $event_end )->format( 'H:i' ) )->getTimestamp() / 60;
+        if ( $endday < $event_end ) {
+            $end = 1440;
+        }
+
+        $end = $end ?: 1440;
+
+        return array(
+            'customer' => $booking_customer,
+            'resource' => $booking_resource,
+            'persons'  => $booking_persons,
+            'time'     => $event_time,
+            'date'     => $event_date,
+            'title'    => $event_title,
+            'url'      => $event_url,
+            'id'       => $booking_id,
+            'start'    => $start,
+            'end'      => $end,
+        );
+    }
+
+    /**
+     * Get color CSS styles for a given list of events.
+     *
+     * @param array $events
+     * @return array Hash event_id => color styles
+     */
+    protected function get_event_color_styles( $events ) {
+        $colors                = array( '#d7f1bf', '#52d4ad', '#1dbcc0', '#227a95', '#fedab9', '#feaa6e', '#ffe800', '#e67e22', '#fd8d67', '#ffb2d0', '#64d72c', '#f2d7d5', '#e6b0aa', '#d98880', '#cd6155' );
+        $booked_product_colors = array();
+        $assigned_colors       = array();
+        $index                 = 0;
+
+        foreach ( $events as $event ) {
+            if ( 'WC_Global_Availability' === get_class( $event ) ) {
+                $assigned_colors[ $event->get_id() ] = '#dbdbdb';
+                continue;
+            }
+
+            if ( 'WC_Booking' !== get_class( $event ) ) {
+                $assigned_colors[ $event->get_id() ] = isset( $colors[ $index ] ) ? $colors[ $index ] : $this->random_color();
+                $index++;
+                continue;
+            }
+
+            if ( ! isset( $booked_product_colors[ $event->get_product_id() ] ) ) {
+                $booked_product_colors[ $event->get_product_id() ] = isset( $colors[ $index ] ) ? $colors[ $index ] : $this->random_color();
+                $index++;
+            }
+
+            $assigned_colors[ $event->get_id() ] = $booked_product_colors[ $event->get_product_id() ];
+        }
+
+        return array_map(
+            function( $color ) {
+                return array(
+                    'background' => $color,
+                    'color'      => $this->get_font_color( $color ),
+                );
+            },
+            $assigned_colors
+        );
+    }
+
+
+    /**
+     * Determine font color based on background color.
+     * Calculations rely on perceptive luminance (contrast).
+     *
+     * @param string $bg_color Background color as a hex code.
+     *
+     * @return string Font color as a hex code.
+     */
+    protected function get_font_color( $bg_color ) {
+        $bg_color = hexdec( str_replace( '#', '', $bg_color ) );
+        $red      = 0xFF & ( $bg_color >> 0x10 );
+        $green    = 0xFF & ( $bg_color >> 0x8 );
+        $blue     = 0xFF & $bg_color;
+
+        $luminance = 1 - ( 0.299 * $red + 0.587 * $green + 0.114 * $blue ) / 255;
+
+        return $luminance < 0.5 ? '#000000' : '#ffffff';
     }
 }

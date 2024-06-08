@@ -110,7 +110,7 @@ class InvoicePaymentSucceeded implements WebhookHandleable {
         $stripe_transaction_id = $invoice->id;
 
         if ( ! empty( $invoice->charge ) ) {
-            update_post_meta( $order_id, '_stripe_subscription_charge_id', $invoice->charge );
+            $subscription_order->update_meta_data( '_stripe_subscription_charge_id', $invoice->charge );
         }
 
         if ( 'subscription_create' === $invoice->billing_reason ) {
@@ -188,6 +188,8 @@ class InvoicePaymentSucceeded implements WebhookHandleable {
             // translators: 1) subscription order number
             $renewal_order->add_order_note( sprintf( __( 'Order created to record renewal subscription for %s.', 'dokan' ), sprintf( '<a href="%s">%s</a> ', esc_url( SubscriptionHelper::get_edit_post_link( $subscription->get_id() ) ), $subscription_order_number ) ) );
 
+            $subscription_order->save();
+
             // set subscription order to renewal order
             $subscription_order = $renewal_order;
 
@@ -207,7 +209,7 @@ class InvoicePaymentSucceeded implements WebhookHandleable {
             );
 
             // Finally save everything
-            $subscription_order->save_meta_data();
+            $subscription_order->save();
 
             $test_mode = Helper::is_test_mode() ? __( 'Stripe Sandbox Transaction ID', 'dokan' ) : __( 'Stripe Transaction ID', 'dokan' );
             $subscription_order->add_order_note(

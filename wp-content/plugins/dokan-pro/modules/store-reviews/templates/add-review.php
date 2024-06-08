@@ -5,6 +5,8 @@ $store_info = dokan_get_store_info( $seller_id );
 
 $current_user      = wp_get_current_user();
 
+$rtl = is_rtl() ? 'true' : 'false';
+$rating = isset( $post->ID ) ? get_post_meta( $post->ID, 'rating', true) : 1;
 ?>
 
 <div class="dokan-add-review-wrapper">
@@ -13,10 +15,8 @@ $current_user      = wp_get_current_user();
 <div class="dokan-seller-rating-intro-text">
     <?php printf( __( "Share your Experience with <a href='%s' target='_blank'>%s</a>", 'dokan' ), dokan_get_store_url( $seller_id ), $store_info['store_name'] ) ?>
 </div>
-        <form class="dokan-form-container" id="dokan-add-review-form">
-
-            <div id="dokan-seller-rating"></div>
-
+    <form class="dokan-form-container" id="dokan-add-review-form" data-rtl="<?php echo $rtl;?>" data-rating="<?php echo $rating;?>">
+        <div id="dokan-seller-rating"></div>
             <div class="dokan-form-group">
                 <label class="dokan-form-label" for="dokan-review-title"><?php _e( 'Title :', 'dokan' ) ?></label>
                 <input required class="dokan-form-control" type="text" name='dokan-review-title' id='dokan-review-title'/>
@@ -35,27 +35,3 @@ $current_user      = wp_get_current_user();
         </form>
 </div>
 <div class="dokan-clearfix"></div>
-<?php $rtl = is_rtl() ? 'true' : 'false' ?>
-
-<script>
-    (function($){
-
-    var Dokan_Seller_Rating_Form = {
-
-        init : function() {
-            $("#dokan-seller-rating").rateYo({
-                rating: 1,
-                starWidth: "20px",
-                fullStar: true,
-                minValue: 1,
-                rtl : <?php echo $rtl ?>
-            });
-        }
-    };
-
-    $(function() {
-        Dokan_Seller_Rating_Form.init();
-    });
-
-})(jQuery);
-</script>

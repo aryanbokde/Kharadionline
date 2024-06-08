@@ -31,7 +31,7 @@ class Dokan_Subscription_Cancelled extends WC_Email {
     public function __construct() {
         $this->id             = 'Dokan_Subscription_Cancelled';
         $this->title          = __( 'Dokan Subscription Cancelled', 'dokan' );
-        $this->description    = __( 'This email is sent to admin and vendor when a new auction product is added', 'dokan' );
+        $this->description    = __( 'This email is sent to admin when vendors cancel their subscriptions', 'dokan' );
 
         $this->template_base  = DPS_PATH . '/templates/';
         $this->template_html  = 'emails/html/dokan-subscription-cancelled.php';

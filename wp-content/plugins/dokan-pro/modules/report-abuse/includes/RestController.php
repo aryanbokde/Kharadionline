@@ -2,7 +2,9 @@
 
 namespace WeDevs\DokanPro\Modules\ReportAbuse;
 
+use WP_Error;
 use WP_REST_Controller;
+use WP_REST_Response;
 use WP_REST_Server;
 
 class RestController extends WP_REST_Controller {
@@ -163,13 +165,13 @@ class RestController extends WP_REST_Controller {
      *
      * @param \WP_REST_Request $request
      *
-     * @return \WP_REST_Response
+     * @return \WP_REST_Response|WP_Error
      */
     public function delete_items( $request ) {
         $ids = array_filter( (array) $request['items'], 'is_numeric' );
 
-        if ( empty( $ids ) ) {
-            return new \WP_Error( 'invalid_data', __( 'items must be an array of report ids', 'dokan' ) );
+        if ( ! is_array( $ids ) || empty( $ids ) || ! count( array_filter( $ids ) ) == count( $ids ) ) {
+            return new WP_Error( 'invalid_data', __( 'Items must be an array of report ids', 'dokan' ), [ 'status' => 404 ] );
         }
 
         $reports = dokan_report_abuse_get_reports( [ 'ids' => $ids ] );
@@ -181,7 +183,9 @@ class RestController extends WP_REST_Controller {
             return $report['id'];
         }, $reports );
 
-        dokan_report_abuse_delete_reports( $ids );
+        if ( ! empty( $ids ) ) {
+            dokan_report_abuse_delete_reports( $ids );
+        }
 
         return rest_ensure_response( $reports );
     }

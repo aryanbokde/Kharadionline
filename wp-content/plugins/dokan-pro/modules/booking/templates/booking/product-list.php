@@ -39,12 +39,15 @@ do_action( 'dokan_before_listing_product' );
             <?php dokan_product_listing_filter(); ?>
         </div>
 
-        <table class="dokan-table dokan-table-striped product-listing-table">
+        <table class="dokan-table dokan-table-striped product-listing-table" id="dokan-product-list-table">
             <thead>
                 <tr>
                     <th><?php _e( 'Image', 'dokan' ); ?></th>
                     <th><?php _e( 'Name', 'dokan' ); ?></th>
                     <th><?php _e( 'Status', 'dokan' ); ?></th>
+
+                    <?php do_action( 'dokan_booking_product_list_table_after_status_table_header' ); ?>
+
                     <th><?php _e( 'SKU', 'dokan' ); ?></th>
                     <th><?php _e( 'Stock', 'dokan' ); ?></th>
                     <th><?php _e( 'Price', 'dokan' ); ?></th>
@@ -186,6 +189,8 @@ do_action( 'dokan_before_listing_product' );
                             <td class="post-status" data-title="<?php esc_attr_e( 'Status', 'dokan' ); ?>">
                             <label class="dokan-label <?php echo esc_attr( dokan_get_post_status_label_class( $post->post_status ) ); ?>"><?php echo esc_html( dokan_get_post_status( $post->post_status ) ); ?></label>
                             </td>
+
+                            <?php do_action( 'dokan_booking_product_list_table_after_status_table_data', $post, $product ); ?>
 
                             <td data-title="<?php esc_attr_e( 'SKU', 'dokan' ); ?>">
                                 <?php

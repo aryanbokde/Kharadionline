@@ -11,23 +11,14 @@
     <div class="dokan-section-content">
         <div class="dokan-form-group content-half-part">
             <label for="post_status" class="form-label"><?php _e( 'Product Status', 'dokan' ); ?></label>
-            <?php if ( $post_status != 'pending' ) { ?>
-                <?php
-                $post_statuses = apply_filters( 'dokan_post_status', array(
-                    'publish' => __( 'Online', 'dokan' ),
-                    'draft'   => __( 'Draft', 'dokan' )
-                ), $post );
-                ?>
-
-                <select id="post_status" class="dokan-form-control" name="post_status">
-                    <?php foreach ( $post_statuses as $status => $label ) { ?>
-                        <option value="<?php echo $status; ?>"<?php selected( $post_status, $status ); ?>><?php echo $label; ?></option>
-                    <?php } ?>
-                </select>
-            <?php } else { ?>
-                <?php $pending_class = $post_status == 'pending' ? '  dokan-label dokan-label-warning' : ''; ?>
-                <span class="dokan-toggle-selected-display<?php echo $pending_class; ?>"><?php echo dokan_get_post_status( $post_status ); ?></span>
-            <?php } ?>
+            <?php
+            $post_statuses = dokan_get_available_post_status( $post->ID );
+            ?>
+            <select id="post_status" class="dokan-form-control" name="post_status">
+                <?php foreach ( $post_statuses as $status => $label ) { ?>
+                    <option value="<?php echo $status; ?>"<?php selected( $post_status, $status ); ?>><?php echo $label; ?></option>
+                <?php } ?>
+            </select>
         </div>
 
         <div class="dokan-form-group content-half-part">

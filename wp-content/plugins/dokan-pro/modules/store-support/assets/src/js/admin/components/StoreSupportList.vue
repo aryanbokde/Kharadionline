@@ -93,11 +93,33 @@
                     >&times;</button>
                 </span>
                 <span class="form-group">
-                    <label for="to">{{ __( 'From', 'dokan' ) }} :</label>
-                    <datepicker class="dokan-input admin-support-filter-date-picker" :value="from_date" format="yy-mm-d" v-model="from_date"></datepicker>
+                    <date-range-picker
+                        class="mr-5"
+                        ref="picker"
+                        :locale-data="datePickerFormat()"
+                        :singleDatePicker="false"
+                        :timePicker="false"
+                        :timePicker24Hour="false"
+                        :showWeekNumbers="false"
+                        :showDropdowns="false"
+                        :autoApply="false"
+                        v-model="dateRange"
+                        @update="dateRangeUpdated"
+                        :linkedCalendars="true"
+                        opens="center"
+                    >
+                        <template v-slot:input="picker">
+                            <span v-if="dateRange.from_date">{{ dateRange.from_date | date }} - {{ dateRange.to_date | date }}</span>
+                            <span class="date-range-placeholder" v-if="! dateRange.from_date">{{ __( 'Filter by date', 'dokan' ) }}</span>
+                        </template>
 
-                    <label for="to">{{ __( 'To', 'dokan' ) }} :</label>
-                    <datepicker class="dokan-input admin-support-filter-date-picker" :value="from_date" format="yy-mm-d" v-model="to_date"></datepicker>
+                        <!--    footer slot-->
+                        <div slot="footer" slot-scope="data" class="drp-buttons">
+                            <span class="drp-selected">{{ data.rangeText }}</span>
+                            <button @click="clearDateRange()" type="button" class="cancelBtn btn btn-sm btn-secondary">{{ __( 'Clear', 'dokan' ) }}</button>
+                            <button @click="data.clickApply" v-if="!data.in_selection" type="button" class="applyBtn btn btn-sm btn-success">{{ __( 'Apply', 'dokan' ) }}</button>
+                        </div>
+                    </date-range-picker>
 
                     <button @click="clickFilterSupportTickets" type="submit" class="button">{{ __( 'Filter', 'dokan' ) }}</button>
                 </span>
@@ -111,6 +133,7 @@
 let ListTable = dokan_get_lib('ListTable');
 let Search = dokan_get_lib('Search');
 let Datepicker = dokan_get_lib('Datepicker');
+let DateRangePicker = dokan_get_lib('DateRangePicker');
 
 import $ from 'jquery';
 
@@ -120,13 +143,16 @@ export default {
     components: {
         ListTable,
         Search,
-        Datepicker
+        Datepicker,
+        DateRangePicker
     },
 
     data() {
         return {
-            from_date: '',
-            to_date: '',
+            dateRange: {
+                from_date: '',
+                to_date: '',
+            },
             showCb: true,
             totalItems: 0,
             perPage: 20,
@@ -188,6 +214,17 @@ export default {
     },
 
     methods: {
+        datePickerFormat() {
+            if (this.dateTimePickerFormat) {
+                return this.dateTimePickerFormat();
+            }
+            return {
+                format: dokan_get_daterange_picker_format().toLowerCase(),
+                separator: ' - ',
+                applyLabel: this.__( 'Apply', 'dokan' ),
+                cancelLabel: this.__( 'Clear', 'dokan' ),
+            }
+        },
         currentTab( tab = 'open' ) {
             return tab === this.currentStatus ? 'current' : '';
         },
@@ -286,8 +323,8 @@ export default {
 
         clickFilterSupportTickets(){
             let filter = {
-                from_date: this.from_date,
-                to_date: this.to_date,
+                from_date: this.dateRange.from_date,
+                to_date: this.dateRange.to_date,
                 vendor_id: this.filter.vendor_id,
                 customer_id: this.filter.customer_id
             }
@@ -301,6 +338,21 @@ export default {
 
             this.fetchAllSupportTickets();
         },
+        dateRangeUpdated() {
+            this.dateRange.from_date = $.datepicker.formatDate('yy-mm-dd', new Date(this.dateRange.startDate))
+            this.dateRange.to_date = $.datepicker.formatDate('yy-mm-dd', new Date(this.dateRange.endDate));
+        },
+        clearDateRange() {
+            this.dateRange.from_date = '';
+            this.dateRange.to_date = '';
+            this.$refs.picker.togglePicker(false);
+        },
+    },
+
+    filters: {
+        date(date) {
+            return date ? $.datepicker.formatDate(dokan_get_i18n_date_format(), new Date(date)) : '';
+        }
     },
 
     watch: {
@@ -308,8 +360,8 @@ export default {
             this.currentPage = 1;
             this.filter.vendor_id = 0;
             this.filter.customer_id = 0;
-            this.from_date = '';
-            this.to_date = '';
+            this.dateRange.from_date = '';
+            this.dateRange.to_date = '';
 
             this.fetchAllSupportTickets();
         },

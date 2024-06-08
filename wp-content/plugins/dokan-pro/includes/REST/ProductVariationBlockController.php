@@ -4,6 +4,7 @@ namespace WeDevs\DokanPro\REST;
 
 use WeDevs\Dokan\REST\ProductBlockController;
 use WP_Error;
+use WP_REST_Request;
 use WP_REST_Server;
 
 /**
@@ -53,8 +54,9 @@ class ProductVariationBlockController extends ProductBlockController {
      *
      * @since 3.7.13
      *
-     * @param \WP_Request $request
-     * @return array
+     * @param WP_REST_Request $request
+     *
+     * @return WP_Error|array
      */
     public function get_item( $request ) {
         $product_id = absint( $request['id'] );
@@ -93,7 +95,7 @@ class ProductVariationBlockController extends ProductBlockController {
                     'stock_status'      => $product->is_in_stock() ? 'instock' : 'outofstock',
                     'manage_stock'      => $product->managing_stock(),
                     'stock_quantity'    => $product->get_stock_quantity( $context ),
-                    'low_stock_amount'  => version_compare( WC_VERSION, '3.4.7', '>' ) ? $product->get_low_stock_amount( $context ) : '',
+                    'low_stock_amount'  => $product->get_low_stock_amount( $context ),
                     'backorders'        => $product->get_backorders( $context ),
                     'sold_individually' => $product->is_sold_individually(),
                 ],

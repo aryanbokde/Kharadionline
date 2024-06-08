@@ -73,11 +73,23 @@ class ProductAttribute {
         }
 
         foreach ( $taxonomies as $taxonomy ) {
+            $terms = get_terms(
+                array(
+					'taxonomy'   => 'pa_' . $taxonomy->attribute_name,
+					'hide_empty' => false,
+                )
+            );
+            $terms = array_map(
+                function ( $item ) {
+                    return $item->to_array();
+                }, $terms
+            );
+
             $selects[] = [
                 'label' => $taxonomy->attribute_label,
                 'value' => $taxonomy->attribute_name,
                 'id'    => $taxonomy->attribute_id,
-                'terms' => wp_list_pluck( get_terms( 'pa_' . $taxonomy->attribute_name ), 'name', 'term_id' ),
+                'terms' => wp_list_pluck( $terms, 'name', 'term_id' ),
             ];
         }
 

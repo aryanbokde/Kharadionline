@@ -50,8 +50,9 @@ class Assets {
      */
     public function add_localized_data( $data ) {
         $data['dokan_pro_i18n'] = array( 'dokan' => dokan_get_jed_locale_data( 'dokan', DOKAN_PRO_DIR . '/languages/' ) );
-        $data['current_plan']   = dokan_pro()->get_plan();
+        $data['current_plan']   = dokan_pro()->license->get_plan();
         $data['active_modules'] = dokan_pro()->module->get_active_modules();
+        $data['pro_has_license_key'] = dokan_pro()->license->has_license_key();
         return $data;
     }
 
@@ -168,14 +169,9 @@ class Assets {
 
             'dokan-pro-vue-frontend-shipping' => [
                 'src'       => DOKAN_PRO_PLUGIN_ASSEST . '/js/vue-pro-frontend-shipping' . $this->suffix . '.js',
-                'deps'      => [ 'jquery', 'dokan-vue-vendor', 'dokan-vue-bootstrap', 'underscore' ],
+                'deps'      => [ 'jquery', 'dokan-vue-vendor', 'dokan-vue-bootstrap', 'underscore', 'jquery-blockui' ],
                 'version'   => $this->script_version,
                 'in_footer' => true,
-            ],
-
-            'dokan-magnific-popup' => [
-                'src'       => DOKAN_PRO_PLUGIN_ASSEST . '/vendor/magnific/jquery.magnific-popup.min.js',
-                'deps'      => [ 'jquery' ],
             ],
         ];
 
@@ -199,6 +195,7 @@ class Assets {
             'dokan-pro-vue-admin' => [
                 'src'     => DOKAN_PRO_PLUGIN_ASSEST . '/css/vue-pro-admin' . $this->suffix . '.css',
                 'version' => $this->script_version,
+                'deps'    => [ 'dokan-pro-tailwind' ],
             ],
             'dokan-pro-vue-frontend-shipping' => [
                 'src'     => DOKAN_PRO_PLUGIN_ASSEST . '/css/vue-pro-frontend-shipping' . $this->suffix . '.css',
@@ -212,8 +209,9 @@ class Assets {
                 'src'     => DOKAN_PRO_PLUGIN_ASSEST . '/css/wp-version-before-5-3.css',
                 'version' => $this->script_version,
             ],
-            'dokan-magnific-popup' => [
-                'src'     => DOKAN_PRO_PLUGIN_ASSEST . '/vendor/magnific/magnific-popup.css',
+            'dokan-pro-tailwind' => [
+                'src'     => DOKAN_PRO_PLUGIN_ASSEST . '/css/dokan-tailwind.css',
+                'version' => $this->script_version,
             ],
         ];
 

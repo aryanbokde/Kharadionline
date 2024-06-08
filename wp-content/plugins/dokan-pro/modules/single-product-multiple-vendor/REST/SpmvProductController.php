@@ -7,6 +7,7 @@ use Dokan_SPMV_Product_Duplicator;
 use WP_REST_Request;
 use WP_REST_Server;
 use WeDevs\DokanPro\Modules\SPMV\Search\Dashboard;
+use WP_Error;
 
 /**
 * SPMV Product Variation controller
@@ -92,6 +93,8 @@ class SpmvProductController extends WP_REST_Controller {
     public function spmv_collection_params() {
         $params = $this->get_collection_params();
 
+        $params['search']['default'] = '';
+
         $params['orderby'] = [
             'description'       => __( 'Sort by products.', 'dokan' ),
             'type'              => 'string',
@@ -159,7 +162,6 @@ class SpmvProductController extends WP_REST_Controller {
         $spmv_products = Dashboard::dokan_spmv_get_products(
             $page,
             $search,
-            '',
             $per_page,
             $type
         );

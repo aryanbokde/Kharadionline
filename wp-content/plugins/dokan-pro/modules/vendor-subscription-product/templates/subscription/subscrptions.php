@@ -198,7 +198,7 @@
                 'return'      => 'count',
             )
         );
-        $num_of_pages = ( $subscription_count ? ceil( $subscription_count / $limit ) : 0 );
+        $num_of_pages = $subscription_count ? ceil( $subscription_count / $limit ) : 0;
         $base_url     = dokan_get_navigation_url( 'user-subscription' );
 
         if ( $num_of_pages > 1 ) {

@@ -30,7 +30,7 @@ class BecomeAVendor extends DokanShortcode {
      */
     public function render_shortcode( $atts ) {
         ob_start();
-        dokan_get_template_part( 'account/update-customer-to-vendor', '' );
+        dokan()->frontend_manager->become_a_vendor->load_customer_to_vendor_update_template();
         wp_enqueue_script( 'dokan-vendor-registration' );
         return ob_get_clean();
     }

@@ -13,7 +13,7 @@ class Dokan_Wholesale_Customer {
      * @since 2.9.5
      */
     public function __construct() {
-        add_action( 'dokan_customer_account_migration_list', [ $this, 'render_migration_html' ], 10 );
+        add_action( 'woocommerce_account_dashboard', [ $this, 'render_migration_html' ], 10 );
     }
 
     /**

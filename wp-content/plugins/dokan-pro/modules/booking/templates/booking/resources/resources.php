@@ -31,6 +31,7 @@ global $post;
                             <tr>
                                 <th><?php _e( 'Name', 'dokan' ); ?></th>
                                 <th><?php _e( 'Parent', 'dokan' ); ?></th>
+                                <th><?php _e( 'Action', 'dokan' ); ?></th>
                             </tr>
                         </thead>
                         <tbody>

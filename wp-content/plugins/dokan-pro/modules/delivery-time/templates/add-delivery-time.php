@@ -34,10 +34,10 @@
     <!-- Store times action start -->
     <label for='open-close-actions' class='open-close-actions'>
         <a href='' class='remove-store-closing-time'>
-            <span class="fas fa-times"></span>
+            <span class="fas fa-trash"></span>
         </a>
         <a href='' class='added-store-opening-time'>
-            <?php echo esc_html( $add_action ); ?>
+            <span class="fas fa-plus"></span>
         </a>
     </label>
     <!-- Store times action end -->

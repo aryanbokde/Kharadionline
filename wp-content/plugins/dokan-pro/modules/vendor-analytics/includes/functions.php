@@ -65,38 +65,16 @@ function dokan_analytics_date_form( $start_date, $end_date ) {
 ?>
     <form method="post" class="dokan-form-inline report-filter dokan-clearfix" action="">
         <div class="dokan-form-group">
-            <label for="from"><?php esc_html_e( 'From:', 'dokan' ); ?></label>
-            <input type="text" class="datepicker" name="start_date_alt" id="from" readonly="readonly" value="<?php echo esc_attr( $start_date_alt ); ?>" />
-            <input type="hidden" name="start_date" id="from_alt" value="<?php echo esc_attr( $start_date ); ?>" />
+            <input type="text" class="dokan-form-control dokan-daterangepicker" placeholder="<?php esc_attr_e( 'Select Date Range', 'dokan' ); ?>" value="<?php echo dokan_format_date( $start_date ) . ' - ' . dokan_format_date( $end_date ); ?>" autocomplete="off">
+            <input type="hidden" name="start_date_alt" class="dokan-daterangepicker-start-date" value="<?php echo esc_attr( $start_date ); ?>" />
+            <input type="hidden" name="end_date_alt" class="dokan-daterangepicker-end-date" value="<?php echo esc_attr( $end_date ); ?>" />
         </div>
 
         <div class="dokan-form-group">
-            <label for="to"><?php esc_html_e( 'To:', 'dokan' ); ?></label>
-            <input type="text" name="end_date_alt" id="to" class="datepicker" readonly="readonly" value="<?php echo esc_attr( $end_date_alt ); ?>" />
-            <input type="hidden" name="end_date" id="to_alt"  value="<?php echo esc_attr( $end_date ); ?>" />
             <?php wp_nonce_field( 'dokan_analytics_date', 'security' ); ?>
             <input type="submit" name="dokan_analytics_filter" class="dokan-btn dokan-btn-success dokan-btn-sm dokan-theme" value="<?php _e( 'Show', 'dokan' ); ?>" />
         </div>
     </form>
-    <script>
-        jQuery( function( $ ) {
-            $( '#from' ).datepicker(
-                {
-                    dateFormat: dokan_get_i18n_date_format( '<?php echo wc_date_format(); ?>'),
-                    altFormat: 'yy-mm-dd',
-                    altField: '#from_alt'
-                }
-            );
-            $( '#to' ).datepicker(
-                {
-                    dateFormat: dokan_get_i18n_date_format( '<?php echo wc_date_format(); ?>'),
-                    altFormat: 'yy-mm-dd',
-                    altField: '#to_alt'
-                }
-            );
-        } );
-    </script>
-
     <?php
 }
 
@@ -859,8 +837,8 @@ function dokan_vendor_analytics_date_form_handler(): array {
             'dokan_analytics_date'
         )
     ) {
-        $start_date = ! empty( $_POST['start_date'] ) ? sanitize_text_field( wp_unslash( $_POST['start_date'] ) ) : $start_date;
-        $end_date   = ! empty( $_POST['end_date'] ) ? sanitize_text_field( wp_unslash( $_POST['end_date'] ) ) : $end_date;
+        $start_date = ! empty( $_POST['start_date_alt'] ) ? sanitize_text_field( wp_unslash( $_POST['start_date_alt'] ) ) : $start_date;
+        $end_date   = ! empty( $_POST['end_date_alt'] ) ? sanitize_text_field( wp_unslash( $_POST['end_date_alt'] ) ) : $end_date;
     }
 
     return [ $start_date, $end_date ];

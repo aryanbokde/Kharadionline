@@ -38,6 +38,56 @@ class Stripe extends PaymentGateway {
     const ID = 'dokan_stripe_express';
 
     /**
+     * @var string $payment_methods
+     */
+    public $payment_methods;
+
+    /**
+     * @var boolean $testmode
+     */
+    public $testmode;
+
+    /**
+     * @var string $secret_key
+     */
+    public $secret_key;
+
+    /**
+     * @var string $publishable_key
+     */
+    public $publishable_key;
+
+    /**
+     * @var string $debug
+     */
+    public $debug;
+
+    /**
+     * @var boolean $capture
+     */
+    public $capture;
+
+    /**
+     * @var boolean $payment_request
+     */
+    public $payment_request;
+
+    /**
+     * @var boolean $saved_cards
+     */
+    public $saved_cards;
+
+    /**
+     * @var string $statement_descriptor
+     */
+    public $statement_descriptor;
+
+    /**
+     * @var string $selected_payment_methods
+     */
+    public $selected_payment_methods;
+
+    /**
      * Class constructor.
      *
      * @since 3.6.1
@@ -212,7 +262,7 @@ class Stripe extends PaymentGateway {
         parent::process_admin_options();
 
         /**
-         * @var \WeDevs\DokanPro\Modules\StripeExpress\Controllers\Webhook
+         * @var \WeDevs\DokanPro\Modules\StripeExpress\Controllers\Webhook $webhook
          */
         $webhook = dokan_pro()->module->stripe_express->webhook;
 
@@ -409,7 +459,7 @@ class Stripe extends PaymentGateway {
             $order_id = absint( get_query_var( 'order-pay' ) );
             $order    = wc_get_order( $order_id );
 
-            if ( is_a( $order, 'WC_Order' ) ) {
+            if ( $order ) {
                 $stripe_params['orderReturnURL'] = esc_url_raw(
                     add_query_arg(
                         [
@@ -480,7 +530,7 @@ class Stripe extends PaymentGateway {
                 throw new Exception( __( 'This payment method is not available on the selected country', 'dokan' ) );
             }
 
-            Payment::update_intent( $payment_intent_id, $order_id, [], false, $save_payment_method, $selected_payment_type );
+            Payment::update_intent( $payment_intent_id, $order, [], false, $save_payment_method, $selected_payment_type );
         }
 
         return [
@@ -562,7 +612,7 @@ class Stripe extends PaymentGateway {
                     $intent_data['confirm'] = 'true';
                     $intent = Payment::create_intent( $order, $intent_data );
                 } else {
-                    $intent = Payment::update_intent( $intent->id, $order->get_id(), $intent_data );
+                    $intent = Payment::update_intent( $intent->id, $order, $intent_data );
                 }
             } else {
                 if ( ! $intent ) {
@@ -582,7 +632,7 @@ class Stripe extends PaymentGateway {
 
                     $intent = Payment::create_intent( $order, $intent_data, true );
                 } else {
-                    $intent = Payment::update_intent( $intent->id, $order->get_id(), $intent_data, true );
+                    $intent = Payment::update_intent( $intent->id, $order, $intent_data, true );
                 }
             }
             // phpcs:enable WordPress.Security.NonceVerification.Missing
@@ -596,6 +646,10 @@ class Stripe extends PaymentGateway {
              * @param string   $payment_method_id The source of the payment.
              */
             do_action( 'dokan_stripe_express_process_payment', $order, $payment_method->id );
+
+            if ( empty( $intent ) ) {
+                throw new DokanException( $intent, 'Invalid Payment Intent.' );
+            }
 
             if ( ! empty( $intent->error ) ) {
                 $this->maybe_remove_non_existent_customer( $intent->error, $order );
@@ -749,6 +803,10 @@ class Stripe extends PaymentGateway {
      */
     public function show_update_card_notice( $user_id, $load_address ) {
         if ( ! $this->saved_cards || ! $this->customer_has_saved_methods( $user_id ) || 'billing' !== $load_address ) {
+            return;
+        }
+
+        if( ! function_exists( 'wc_add_notice' ) ) {
             return;
         }
 

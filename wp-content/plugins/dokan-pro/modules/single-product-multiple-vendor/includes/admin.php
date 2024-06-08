@@ -31,7 +31,7 @@ class Dokan_SPMV_Admin {
             'title'                => __( 'Single Product MultiVendor', 'dokan' ),
             'icon_url'             => DOKAN_SPMV_ASSETS_DIR . '/images/spmv.svg',
             'description'          => __( 'Single Product MultiVendor Settings', 'dokan' ),
-            'document_link'        => 'https://wedevs.com/docs/dokan/modules/single-product-multiple-vendor/',
+            'document_link'        => 'https://dokan.co/docs/wordpress/modules/single-product-multiple-vendor/',
             'settings_title'       => __( 'SPMV Settings', 'dokan' ),
             'settings_description' => __( 'You can configure your site to allow vendors to sell other vendor\'s products with desired customizations.', 'dokan' ),
         ];

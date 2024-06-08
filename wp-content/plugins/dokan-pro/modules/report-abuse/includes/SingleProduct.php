@@ -58,7 +58,13 @@ class SingleProduct {
 
             wp_enqueue_script( 'dokan-report-abuse' );
 
-            $options = get_option( 'dokan_report_abuse', [] );
+            // Get abuse reasons form `dokan_report_abuse`.
+            $options                  = (array) get_option( 'dokan_report_abuse', [] );
+            $options['abuse_reasons'] = $options['abuse_reasons'] ?? [];
+
+            foreach ( $options['abuse_reasons'] as $key => $status ) {
+                $options['abuse_reasons'][$key]['value'] = apply_filters('dokan_pro_abuse_report_reason', $status['value'] );
+            }
 
             wp_localize_script(
                 'dokan-report-abuse',

@@ -13,6 +13,8 @@ class FrontEnd {
     private $max_quantity = - 1;
     private static $enable_min_max_quantity;
     private static $enable_min_max_amount;
+    public $max_amount;
+    public $min_amount;
 
     /**
      * OrderMinMax Class Constructor.
@@ -65,6 +67,11 @@ class FrontEnd {
             $product_id = $cart_item['variation_id'];
         }
 
+        // Check is current product is applicable for min-max rules.
+        if ( ! Helper::is_min_max_rules_valid_for_product( $product_id ) ) {
+            return $product_quantity;
+        }
+
         // Product wise settings.
         $quantity_error = $this->check_min_max_quantity_or_amount_error( $cart_item['quantity'], $product_id, 'quantity' );
         if ( ! empty( $quantity_error ) ) {
@@ -101,6 +108,11 @@ class FrontEnd {
             $product_id = $cart_item['variation_id'];
         }
 
+        // Check is current product is applicable for min-max rules.
+        if ( ! Helper::is_min_max_rules_valid_for_product( $product_id ) ) {
+            return $product_price;
+        }
+
         // Product wise settings.
         $amount_error = $this->check_min_max_quantity_or_amount_error( $cart_item['line_subtotal'], $product_id, 'amount' );
         if ( ! empty( $amount_error ) ) {
@@ -128,6 +140,11 @@ class FrontEnd {
         }
 
         if ( 'on' !== self::$enable_min_max_quantity && 'on' !== self::$enable_min_max_amount ) {
+            return $price;
+        }
+
+        // Check is current product is applicable for min-max rules.
+        if ( ! Helper::is_min_max_rules_valid_for_product( $product->get_id() ) ) {
             return $price;
         }
 
@@ -282,6 +299,11 @@ class FrontEnd {
             return $cart_item_data;
         }
 
+        // Check is current product is applicable for min-max rules.
+        if ( ! Helper::is_min_max_rules_valid_for_product( $product_id ) ) {
+            return $cart_item_data;
+        }
+
         $other_product_found = false;
         foreach ( WC()->cart->get_cart() as $cart_item ) {
             if ( $product_id === $cart_item['product_id'] ) {
@@ -330,6 +352,11 @@ class FrontEnd {
 
         $dokan_settings = $this->dokan_get_store_settings_by_product_id( $product_id );
         if ( empty( $dokan_settings['order_min_max']['enable_vendor_min_max_quantity'] ) || 'yes' !== $dokan_settings['order_min_max']['enable_vendor_min_max_quantity'] ) {
+            return $passed;
+        }
+
+        // Check is current product is applicable for min-max rules.
+        if ( ! Helper::is_min_max_rules_valid_for_product( $product_id ) ) {
             return $passed;
         }
 
@@ -478,6 +505,11 @@ class FrontEnd {
      * @return int|mixed
      */
     public function update_quantity_args( $data, $product ) {
+        // Check is current product is applicable for min-max rules.
+        if ( ! Helper::is_min_max_rules_valid_for_product( $product->get_id() ) ) {
+            return $data;
+        }
+
         $quantity_error = $this->check_min_max_quantity_or_amount_error( 1, $product->get_id(), 'quantity' );
 
         if ( empty( $quantity_error ) ) {
@@ -608,7 +640,8 @@ class FrontEnd {
      * @return string
      */
     public function add_to_cart_link( $html, $product ) {
-        if ( 'variable' !== $product->get_type() ) {
+        // Check current product is applicable for min-max rules & variable product.
+        if ( Helper::is_min_max_rules_valid_for_product( $product->get_id() ) && 'variable' !== $product->get_type() ) {
             $quantity_error = $this->check_min_max_quantity_or_amount_error( '', $product->get_id(), 'quantity', true );
 
             if ( ! empty( $quantity_error ) ) {
@@ -644,6 +677,11 @@ class FrontEnd {
 
             if ( $product->get_type() === 'variable' ) {
                 $product_id = $cart_item['variation_id'];
+            }
+
+            // Check is current product is applicable for min-max rules.
+            if ( ! Helper::is_min_max_rules_valid_for_product( $product_id ) ) {
+                continue;
             }
 
             $quantity_error = $this->check_min_max_quantity_or_amount_error( $cart_item['quantity'], $product_id, 'quantity', true );
@@ -885,8 +923,8 @@ class FrontEnd {
      * @return string
      */
     public function dokan_global_min_max_settings( $product_id, $context, $product_quantity, $return_type_number ) {
-        $error                    = '';
-        $dokan_settings           = $this->dokan_get_store_settings_by_product_id( $product_id );
+        $error          = '';
+        $dokan_settings = $this->dokan_get_store_settings_by_product_id( $product_id );
         if ( ! isset( $dokan_settings['order_min_max'] ) ) {
             return $error;
         }
@@ -944,5 +982,4 @@ class FrontEnd {
 
         return $error;
     }
-
 }

@@ -75,7 +75,7 @@ class AdminSettings {
             'title'                => __( 'Vendor Analytics', 'dokan' ),
             'icon_url'             => DOKAN_VENDOR_ANALYTICS_ASSETS . '/images/analytics.svg',
             'description'          => __( 'Setup Analytics', 'dokan' ),
-            'document_link'        => 'https://wedevs.com/docs/dokan/modules/dokan-vendor-analytics/',
+            'document_link'        => 'https://dokan.co/docs/wordpress/modules/dokan-vendor-analytics/',
             'settings_title'       => __( 'Vendor Analytics Settings', 'dokan' ),
             'settings_description' => __( 'Configure Dokan to give vendors the ability to measure and track their store performances.', 'dokan' ),
         ];

@@ -77,13 +77,18 @@ class Refund {
 
         $order = wc_get_order( $refund->get_order_id() );
 
-        // Return if $order is not instance of WC_Order
-        if ( ! $order instanceof \WC_Order ) {
+        // Return if $order is not an instance of WC_Order
+        if ( ! $order ) {
             return;
         }
 
         // Retrieves parent order as intent id is stored for parent order
         $parent_order = $order->get_parent_id() ? wc_get_order( $order->get_parent_id() ) : $order;
+
+        // return if not paid with dokan stripe payment gateway
+        if ( Helper::get_gateway_id() !== $order->get_payment_method() ) {
+            return;
+        }
 
         // get intent id of the parent order
         $payment_intent_id = OrderMeta::get_payment_intent( $parent_order );
@@ -182,7 +187,7 @@ class Refund {
         }
 
         $order = wc_get_order( $refund->get_order_id() );
-        if ( ! $order instanceof \WC_Order ) {
+        if ( ! $order ) {
             return $amount;
         }
 
@@ -243,7 +248,7 @@ class Refund {
      */
     public function process_vendor_withdraw_entry( $refund, $args, $amount ) {
         $order = wc_get_order( $refund->get_order_id() );
-        if ( ! $order instanceof \WC_Order ) {
+        if ( ! $order ) {
             return;
         }
 
@@ -260,10 +265,7 @@ class Refund {
 
             // An amount less than 1 cannot be reversed
             if ( $stripe_amount < 1 ) {
-                throw new DokanException(
-                    'invalid-reverse-transfer-amount',
-                    __( 'The amount for reverse transfer must be greater than or equal to 1.', 'dokan' )
-                );
+                return;
             }
 
             $reverse_transfer = Transfer::reverse(
@@ -317,9 +319,10 @@ class Refund {
             $order->add_order_note(
                 sprintf(
                     /* translators: 1) gateway title, 2) amount  */
-                    __( '[%1$s] Could not reversed %2$s from vendor stripe account.', 'dokan' ),
+                    __( '[%1$s] Could not reversed %2$s from vendor stripe account. Error: %3$s', 'dokan' ),
                     Helper::get_gateway_title(),
-                    wc_price( $refund->get_refund_amount(), [ 'currency' => $order->get_currency() ] )
+                    wc_price( $refund->get_refund_amount(), [ 'currency' => $order->get_currency() ] ),
+                    $e->getMessage()
                 )
             );
         }

@@ -40,7 +40,7 @@ class Settings {
             'title'                => __( 'Delivery Time', 'dokan' ),
             'icon_url'             => DOKAN_DELIVERY_TIME_ASSETS_DIR . '/images/delivery-time.svg',
             'description'          => __( 'Delivery Schedule Setup', 'dokan' ),
-            'document_link'        => 'https://wedevs.com/docs/dokan/modules/dokan-delivery-time/',
+            'document_link'        => 'https://dokan.co/docs/wordpress/modules/dokan-delivery-time/',
             'settings_title'       => __( 'Delivery Time Settings', 'dokan' ),
             'settings_description' => __( 'You can configure your site to allow customers to choose the time and date they want their products delivered.', 'dokan' ),
         ];
@@ -88,6 +88,7 @@ class Settings {
                     'delivery'     => __( 'Home Delivery', 'dokan' ),
                     'store-pickup' => __( 'Store Pickup', 'dokan' ),
                 ],
+                'tooltip' => __( 'Home delivery refers to that you will deliver to users set location. Store pickup refers to that customers will come to your location and pickup the order.', 'dokan' ),
             ],
             'delivery_date_label' => [
                 'name'    => 'delivery_date_label',
@@ -107,11 +108,12 @@ class Settings {
             'time_slot_minutes' => [
                 'name'    => 'time_slot_minutes',
                 'label'   => __( 'Time Slot', 'dokan' ),
-                'desc'    => __( 'Time slot in minutes. Please keep opening and closing time divisible by slot minutes. E.g ( 30, 60, 120 )', 'dokan' ),
+                'desc'    => __( 'Time slot in minutes. Please keep opening and closing time divisible by slot minutes. E.g ( 30, 60, 120 ). Also this cannot be empty, less then 10 or greater then 1440 minutes.', 'dokan' ),
                 'default' => '30',
                 'type'    => 'number',
                 'step'    => '30',
                 'max'     => '360',
+                'tooltip' => __( 'Check this to allow vendors to override & customize the delivery settings. Otherwise, admin configured settings will be applied.', 'dokan' ),
             ],
             'order_per_slot' => [
                 'name'    => 'order_per_slot',
@@ -140,7 +142,7 @@ class Settings {
                 'name'          => 'delivery_day',
                 'type'          => 'sub_section',
                 'label'         => __( 'Delivery Days', 'dokan' ),
-                'description'   => __( 'Configure your delivery time settings and control access to your site.', 'dokan' ),
+                'description'   => __( 'Configure your delivery time settings and control access to your site. At least one delivery date should be selected.', 'dokan' ),
                 'content_class' => 'sub-section-styles',
             ],
         ];
@@ -153,6 +155,7 @@ class Settings {
                 'type'    => 'day_timer',
                 'options' => array_combine( $delivery_settings_key, $delivery_settings_key ),
                 'default' => array_fill_keys( $delivery_settings_key, '' ),
+                'desc'    => __( 'Closing time must be greater then opening time.', 'dokan' ),
             ];
 
             $fields['dokan_delivery_time'][ "delivery_day_$key" ]['content_class'] = ( $day === $week_starts_day ? 'field_top_styles' : ( $day === $week_ends_day ? 'field_bottom_styles' : '' ) );

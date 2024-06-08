@@ -79,87 +79,184 @@
                                 $( 'div#dokan-states-box' ).slideDown();
                             }
                         }
+                    };
+
+    let DokanVendorVerification = {
+        init() {
+            // do initialization.
+            // close all the closable panel
+            $( '.dokan-vendor-verification-start' ).on( 'click', this.open );
+            $( '.dokan_vendor_verification_cancel' ).on( 'click', this.close );
+            $( '.dokan-vendor-verification-cancel-request' ).on( 'click', this.cancelRequest );
+            $( '.dokan-vendor-verification-files-drag-button' ).on( 'click', this.file );
+            $( '.dokan-vendor-verification-request-form' ).on( 'submit', this.formSubmit );
+
+        },
+        open( event ){
+            let element = $( event.target );
+            let method_id = element.data( 'method' );
+            let innerContent = $( '#dokan-vendor-verification-inner-content-' + method_id );
+            let fileContent = $( '#dokan-vendor-verification-file-container-' + method_id );
+
+            element.slideUp('fast', () => {
+                fileContent.slideUp( 'fast' );
+                innerContent.slideDown( 'fast' );
+            });
+        },
+        close( event ) {
+            let element = $( event.target );
+            let method_id = element.data( 'method' );
+            let innerContent = $( '#dokan-vendor-verification-inner-content-' + method_id );
+            let fileContent = $( '#dokan-vendor-verification-file-container-' + method_id );
+            let button = $( '#dokan-vendor-verification-start-' + method_id );
+
+            innerContent.slideUp('fast', () => {
+                fileContent.slideDown( 'fast' );
+                button.slideDown( 'fast' );
+            });
+        },
+        async cancelRequest( event ) {
+            let element = $( event.target );
+            let request_id = element.data( 'request' );
+            let nonce = element.data( 'nonce' );
+            let message = element.data( 'message' );
+            let data = { request_id, nonce, action: 'dokan_vendor_verification_request_cancellation' };
+            let container = element.parent().parent();
+
+            const answer = await dokan_sweetalert( message, {
+                action : 'confirm',
+                icon   : 'warning',
+            } );
+
+            if( 'undefined' !== answer && answer.isConfirmed ) {
+                container.block({
+                    message: null,
+                    overlayCSS: {
+                        background: '#fff',
+                        opacity: 0.6
                     }
+                });
+
+                $.post(dokan.ajaxurl, data, (response) => {
+                    if (response.success === true) {
+                        dokan_sweetalert(response.data, {
+                            position: 'bottom-end',
+                            toast: true,
+                            icon: 'success',
+                            showConfirmButton: false,
+                            timer: 2000,
+                            timerProgressBar: true,
+                            didOpen: (toast) => {
+                                setTimeout(() => {
+                                    container.unblock();
+                                    window.location.reload();
+                                }, 2000);
+                            }
+                        });
+                    } else {
+                        dokan_sweetalert('', {
+                            icon: 'error',
+                            html: response.data,
+                        });
+                        container.unblock();
+                    }
+                });
+            }
+        },
+        file( event ) {
+            event.preventDefault();
+            let file_frame,
+                self = $(this),
+                method = self.data( 'method' );
+
+            // If the media frame already exists, reopen it.
+            if (file_frame) {
+                file_frame.open();
+                return;
+            }
+
+            // Create the media frame.
+            file_frame = wp.media.frames.file_frame = wp.media({
+                title: $(this).data('uploader_title'),
+                button: {
+                    text: $(this).data('uploader_button_text')
+                },
+                multiple: false,
+            });
+
+            // When an image is selected, run a callback.
+            file_frame.on('select', function() {
+                let attachment = file_frame
+                    .state()
+                    .get('selection')
+                    .first()
+                    .toJSON();
+
+                const filesContainer = $( '#dokan-vendor-verification-method-files-' + method );
+
+                const customId = 'dokan-vendor-verification-' + method + '-file-' + attachment.id;
+
+                const html = `
+                    <div class="dokan-vendor-verification-file-item" id="${customId}">
+                        <a href="${attachment.url}" target="_blank" >${attachment.title}.${attachment.subtype}</a>
+                        <a href="#" onclick="dokanVendorVerificationRemoveFile(event)" data-attachment_id="${customId}" class="dokan-btn disconnect dokan-btn-danger"><i class="fas fa-times" data-attachment_id="${customId}"></i></a>
+                        <input type="hidden" name="vendor_verification_files_ids[]" value="${attachment.id}" />
+                    </div>
+                `;
+                filesContainer.append(html);
+            });
+
+            // Finally, open the modal
+            file_frame.open();
+        },
+        formSubmit( event ) {
+            event.preventDefault();
+
+            let self = $( this );
+            let container = self.parent().parent();
+
+            let data = self.serialize()
+
+            container.block({
+                message: null,
+                overlayCSS: {
+                    background: '#fff',
+                    opacity: 0.6
+                }
+            });
+
+            $.post( dokan.ajaxurl, data, ( response ) => {
+                if ( response.success === true ) {
+                    dokan_sweetalert( response.data, {
+                        position: 'bottom-end',
+                        toast: true,
+                        icon: 'success',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            setTimeout(() => {
+                                container.unblock();
+                                window.location.reload();
+                            }, 2000 );
+                        }
+                    } );
+                } else {
+                    dokan_sweetalert( '', {
+                        icon: 'error',
+                        html: response.data,
+                    } );
+                    container.unblock();
+                }
+            } );
+
+        },
+    };
 
     $( document ).ready( function () {
 
         dokan_address_select.init();
-
-    //ID verification
-        // show verification panel on start click
-        $( 'button#dokan_v_id_click' ).on( 'click', function () {
-            $(this).slideUp( 'fast',function(){
-                $( '.dokan_v_id_info_box' ).slideDown('fast');
-            });
-        } );
-
-        // close verification panel on cancel click
-        $( 'input#dokan_v_id_cancel_form' ).on( 'click', function () {
-            $( '.dokan_v_id_info_box' ).slideUp( 'fast',function(){
-                $( 'button#dokan_v_id_click' ).slideDown('fast');
-            });
-        } );
-
-        // submit ID verification request
-        $( '.dokan-verification-content' ).on( 'click', 'input#dokan_v_id_submit', function ( e ) {
-            e.preventDefault();
-
-            if ( $( "input[name='dokan_gravatar']" ).val() == 0 ) {
-                dokan_sweetalert( dokan.i18n_gravater, {
-                    icon: 'warning',
-                } );
-                return;
-            }
-
-            var self = $( this ),
-                data = {
-                    action: 'dokan_update_verify_info',
-                    data: self.closest( '#dokan-verify-id-form' ).serialize(),
-                };
-
-            feedback.fadeOut();
-
-            $.post( dokan.ajaxurl, data, function ( resp ) {
-                if ( resp.success == true ) {
-                    $( '#dokan_v_id_feedback' ).addClass( 'hidden' );
-                    feedback.addClass( 'dokan-alert dokan-alert-success' );
-                    feedback.html( resp.data );
-                    feedback.fadeIn();
-                    $( 'div.dokan_v_id_info_box' ).hide();
-                    $( 'button#dokan_v_id_cancel' ).show();
-                } else {
-                    feedback.addClass( 'dokan-alert dokan-alert-danger' );
-                    feedback.html( 'failed' );
-                    feedback.fadeIn();
-                }
-            } )
-        } );
-
-        // cancel Verification ID request
-        $( 'button#dokan_v_id_cancel' ).on( 'click', function () {
-            data = {
-                action: 'dokan_id_verification_cancel',
-                data: 'cancel',
-            };
-
-            feedback.fadeOut();
-            $.post( dokan.ajaxurl, data, function ( resp ) {
-                if ( resp.success == true ) {
-                    $( '#dokan_v_id_feedback' ).addClass( 'hidden' );
-                    feedback.addClass( 'dokan-alert dokan-alert-success' );
-                    feedback.html( resp.data );
-                    feedback.fadeIn();
-                    $( 'button#dokan_v_id_cancel' ).hide();
-                    $( 'button#dokan_v_id_click' ).removeClass('dokan-hide');
-                    $( 'button#dokan_v_id_click' ).show();
-
-                } else {
-                    feedback.addClass( 'dokan-alert dokan-alert-danger' );
-                    feedback.html( 'failed' );
-                    feedback.fadeIn();
-                }
-            } )
-        } );
+        DokanVendorVerification.init();
 
     //Phone verification
         // send sms on submit
@@ -203,23 +300,8 @@
             })
         });
 
-        // Allow Numeric values only on phone verification field
-        $( '#phone' ).on( 'keydown', function ( e ) {
-            // Allow: backspace, delete, tab, escape, enter and .
-            if ( $.inArray( e.keyCode, [ 46, 8, 9, 27, 13, 91, 107, 109, 110, 187, 189, 190 ] ) !== -1 ||
-                // Allow: Ctrl+A
-                    ( e.keyCode == 65 && e.ctrlKey === true ) ||
-                    // Allow: home, end, left, right
-                        ( e.keyCode >= 35 && e.keyCode <= 39 ) ) {
-                    // let it happen, don't do anything
-                    return;
-                }
-
-                // Ensure that it is a number and stop the keypress
-                if ( ( e.shiftKey || ( e.keyCode < 48 || e.keyCode > 57 ) ) && ( e.keyCode < 96 || e.keyCode > 105 ) ) {
-                    e.preventDefault();
-                }
-        } );
+        // Sanitize phone number character inputs.
+        $( '#phone' ).on( 'keydown', dokan_sanitize_phone_number );
 
         // submit verification code
         $('.dokan_v_phone_code_box').on('submit', 'form#dokan-v-phone-code-form', function(e) {
@@ -262,262 +344,11 @@
             });
         });
 
-    //Address verification
-        // show address verification panel on start click
-        $( 'button#dokan_v_address_click' ).on( 'click', function () {
-            $( 'button#dokan_v_address_click' ).slideUp('fast',function(){
-                $( '.dokan_v_address_box' ).slideDown('fast');
-            });
-        } );
-
-        // close address verification panel on cancel click
-        $( 'input#dokan_v_address_cancel' ).on( 'click', function () {
-            $( '.dokan_v_address_box' ).slideUp('fast',function(){
-                $( 'button#dokan_v_address_click' ).slideDown('fast');
-                var address_feedback = $('div#d_v_address_feedback');
-                address_feedback.addClass('dokan-hide');
-                address_feedback.html('');
-            });
-        } );
-
-        // submit Address verification request
-        $( '.dokan-verification-content' ).on( 'submit', 'form#dokan-verify-address-form', function ( e ) {
-            e.preventDefault();
-
-            var self = $( this );
-
-            var address_feedback = $('div#d_v_address_feedback');
-            feedback.fadeOut();
-            address_feedback.addClass( 'dokan-hide' );
-
-
-
-            $.post( dokan.ajaxurl, self.serialize(), function ( resp ) {
-
-                if ( resp.success == true ) {
-
-                    feedback.addClass( 'dokan-alert dokan-alert-success' );
-                    $( 'html,body' ).animate( { scrollTop: 100 } );
-                    feedback.html( resp.data );
-                    feedback.fadeIn();
-                    $( 'div.dokan_v_address_box' ).slideUp( 'fast' );
-                    $( 'button#dokan_v_address_cancel' ).removeClass( 'dokan-hide' );
-                    $( '#dokan_v_address_cancel' ).show();
-
-
-                } else {
-                    address_feedback.addClass( 'dokan-alert dokan-alert-danger' );
-                    address_feedback.html( resp.data );
-                    address_feedback.removeClass( 'dokan-hide' );
-                    address_feedback.fadeIn();
-                }
-            } );
-        } );
-
-        //cancel Address verification request
-        $( 'button#dokan_v_address_cancel' ).on( 'click', function () {
-            var data = {
-                action: 'dokan_address_verification_cancel',
-                data: 'cancel',
-            };
-
-            feedback.fadeOut();
-
-            $.post( dokan.ajaxurl, data, function ( resp ) {
-                if ( resp.success == true ) {
-                    $( '#dokan_v_address_feedback' ).addClass( 'dokan-hide' );
-                    feedback.addClass( 'dokan-alert dokan-alert-success' );
-                    feedback.html( resp.data );
-                    feedback.fadeIn();
-                    $( 'button#dokan_v_address_cancel' ).addClass('dokan-hide');
-                    $( 'button#dokan_v_address_click' ).removeClass('dokan-hide');
-                    $( 'button#dokan_v_address_click' ).show();
-                    $('div#d_v_address_feedback').addClass('dokan-hide');
-
-                } else {
-                    feedback.addClass( 'dokan-alert dokan-alert-danger' );
-                    feedback.html( 'failed' );
-                    feedback.fadeIn();
-                }
-            } )
-        } );//
-
-    //Company verification
-        // show company verification panel on start click
-        $( 'button#dokan_v_company_click' ).on( 'click', function () {
-            $( 'button#dokan_v_company_click' ).slideUp('fast',function(){
-                $( '.dokan_v_company_box' ).slideDown('fast');
-            });
-        } );
-
-        // close company verification panel on cancel click
-        $( 'input#dokan_v_company_cancel' ).on( 'click', function () {
-            $( '.dokan_v_company_box' ).slideUp('fast',function(){
-                $( 'button#dokan_v_company_click' ).slideDown('fast');
-                var company_feedback = $('div#d_v_company_feedback');
-                company_feedback.addClass('dokan-hide');
-                company_feedback.html('');
-            });
-        } );
-
-        // submit company verification request
-        $( '.dokan-verification-content' ).on( 'submit', 'form#dokan-verify-company-form', function ( e ) {
-            e.preventDefault();
-
-            var self = $( this );
-
-            var company_feedback = $('div#d_v_company_feedback');
-            feedback.fadeOut();
-            company_feedback.addClass( 'dokan-hide' );
-
-            $.post( dokan.ajaxurl, self.serialize(), function ( resp ) {
-
-                if ( resp.success == true ) {
-
-                    feedback.addClass( 'dokan-alert dokan-alert-success' );
-                    $( 'html,body' ).animate( { scrollTop: 100 } );
-                    feedback.html( resp.data );
-                    feedback.fadeIn();
-                    $( 'div.dokan_v_company_box' ).slideUp( 'fast' );
-                    $( 'button#dokan_v_company_cancel' ).removeClass( 'dokan-hide' );
-                    $( '#dokan_v_company_cancel' ).show();
-
-                } else {
-                    company_feedback.addClass( 'dokan-alert dokan-alert-danger' );
-                    company_feedback.html( resp.data );
-                    company_feedback.removeClass( 'dokan-hide' );
-                    company_feedback.fadeIn();
-                }
-            } );
-        } );
-
-        //cancel Address verification request
-        $( 'button#dokan_v_company_cancel' ).on( 'click', function () {
-            var data = {
-                action: 'dokan_company_verification_cancel',
-                data: 'cancel',
-            };
-
-            feedback.fadeOut();
-            $.post( dokan.ajaxurl, data, function ( resp ) {
-                if ( resp.success == true ) {
-                    $( '#dokan_v_company_feedback' ).addClass( 'dokan-hide' );
-                    feedback.addClass( 'dokan-alert dokan-alert-success' );
-                    feedback.html( resp.data );
-                    feedback.fadeIn();
-                    $( 'button#dokan_v_company_cancel' ).addClass('dokan-hide');
-                    $( 'button#dokan_v_company_click' ).removeClass('dokan-hide');
-                    $( 'button#dokan_v_company_click' ).show();
-                    $('div#d_v_company_feedback').addClass('dokan-hide');
-
-                } else {
-                    feedback.addClass( 'dokan-alert dokan-alert-danger' );
-                    feedback.html( 'failed' );
-                    feedback.fadeIn();
-                }
-            } )
-        } );//
-
-        $( '.dokan-files-drag' ).on( 'click', function( e ) {
-            e.preventDefault();
-            var file_frame,
-                self = $(this);
-
-            // If the media frame already exists, reopen it.
-            if (file_frame) {
-                file_frame.open();
-                return;
-            }
-
-            // Create the media frame.
-            file_frame = wp.media.frames.file_frame = wp.media({
-                title: jQuery(this).data('uploader_title'),
-                button: {
-                    text: jQuery(this).data('uploader_button_text')
-                },
-                multiple: false,
-            });
-
-            // When an image is selected, run a callback.
-            file_frame.on('select', function() {
-                var attachment = file_frame
-                    .state()
-                    .get('selection')
-                    .first()
-                    .toJSON();
-
-                const filesContainer = $('.dokan-vendor-company-files');
-
-                const customId = 'dokan-vendor-company-file-' + attachment.id;
-
-                const html = `
-                    <div class="dokan-vendor-company-file-item" id="${customId}">
-                        <a href="${attachment.url}" target="_blank" >${attachment.title}.${attachment.subtype}</a>
-                        <a href="#" onclick="companyVerificationRemoveList(event)" data-attachment_id="${customId}" class="dokan-btn dokan-btn-danger"><i class="fas fa-times" data-attachment_id="${customId}"></i></a>
-                        <input type="hidden" name="vendor_verification_files_ids[]" value="${attachment.id}" />
-                    </div>
-                `;
-                filesContainer.append(html);
-            });
-
-            // Finally, open the modal
-            file_frame.open();
-        });
-
-        $( '#dokan_v_address_submit' ).on( 'click', function (e) {
-            if ( ! $( '#vendor-proof-url' ).val() ) {
-                $( '.dokan-vendor-proof-alert' ).removeClass( 'dokan-hide' );
-                e.preventDefault();
-            }
-        });
-
-        let proof = '';
-        $( '#vendor-proof' ).on( 'click', function (e) {
-            $( '.dokan-vendor-proof-alert' ).addClass( 'dokan-hide' );
-
-            if ( proof ) {
-                proof.open();
-                return false;
-            }
-
-            proof = wp.media({
-                multiple : false,
-                title    : verify_data.upload_title,
-                button   : {
-                    text : verify_data.insert_title,
-                },
-            });
-
-            proof.on( 'select', function () {
-                const attachment   = proof.state().get( 'selection' ).first().toJSON(),
-                    attachment_url = attachment.url;
-
-                if ( attachment_url ) {
-                    $( '.vendor_img_container' ).show();
-                    $( '#vendor-proof-url' ).val( attachment_url );
-
-                    const attachment_icon = ( 'application/pdf' === attachment.mime ) ? attachment.icon : attachment_url;
-                    $( '.vendor_img_container' ).html( `<img src='${attachment_icon}' /><a class="dokan-close dokan-remove-proof-image">×</a>` );
-
-                    $( '.proof-button-area' ).hide();
-                }
-            });
-
-            proof.open();
-            e.preventDefault();
-        });
-
-        $( '.dokan-form-group' ).on( 'click', '.dokan-remove-proof-image', function (e) {
-            $( '#vendor-proof-url' ).val( '' );
-            $( '.proof-button-area' ).show();
-            $( '.vendor_img_container' ).hide();
-        });
-        //End
     } );
 
 } )( jQuery );
 
-function companyVerificationRemoveList(e) {
+function dokanVendorVerificationRemoveFile(e) {
     e.preventDefault();
     jQuery(`#${e.target.dataset.attachment_id}`).remove();
 }

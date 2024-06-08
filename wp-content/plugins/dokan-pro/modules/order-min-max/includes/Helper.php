@@ -80,4 +80,31 @@ class Helper {
         $product->update_meta_data( self::MIN_MAX_META_KEY, $meta );
         $product->save();
     }
+
+    /**
+     * Check product is applicable with min-max criteria.
+     *
+     * @since 3.10.3
+     *
+     * @param int $product_id
+     *
+     * @return bool
+     */
+    public static function is_min_max_rules_valid_for_product( $product_id ) {
+
+        /**
+         * Determines if this product meets the specified minimum-maximum criteria.
+         *
+         * This filter allows for extending or modifying the validation logic,
+         * enabling custom rules to be applied for determining the
+         * product's compliance with the min-max criteria.
+         *
+         * @since 3.10.3
+         *
+         * @param int $product_id The ID of the product to check.
+         *
+         * @return bool True if the product meets the min-max criteria, false otherwise. Defaults to true.
+         */
+        return apply_filters( 'dokan_validate_min_max_rules_for_product', true, (int) $product_id );
+    }
 }

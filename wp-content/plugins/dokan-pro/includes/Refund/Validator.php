@@ -4,6 +4,10 @@ namespace WeDevs\DokanPro\Refund;
 
 use WP_Error;
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly
+}
+
 class Validator {
 
     /**
@@ -13,7 +17,7 @@ class Validator {
      *
      * @param int $id
      *
-     * @return bool
+     * @return bool|WP_Error
      */
     public static function validate_id( $id ) {
         if ( $id ) {
@@ -34,7 +38,7 @@ class Validator {
      *
      * @param int $id
      *
-     * @return bool
+     * @return bool|WP_Error
      */
     public static function validate_order_id( $order_id ) {
         $order = wc_get_order( $order_id );
@@ -51,10 +55,10 @@ class Validator {
      *
      * @since 3.0.0
      *
-     * @param string                                          $id
-     * @param \WeDevs\DokanPro\Refund\Request\WP_REST_Request $request
+     * @param string  $refund_amount
+     * @param Request $request
      *
-     * @return bool
+     * @return bool|WP_Error
      */
     public static function validate_refund_amount( $refund_amount, $request ) {
         $refund_amount = Sanitizer::sanitize_refund_amount( $refund_amount );
@@ -65,9 +69,10 @@ class Validator {
 
         $order = wc_get_order( $request['order_id'] );
 
-        $max_allowed_refund = wc_format_decimal( $order->get_total() - $order->get_total_refunded(), wc_get_rounding_precision() );
+        $max_allowed_refund = wc_format_decimal( $order->get_total() - $order->get_total_refunded(), '' );
 
         if ( $refund_amount > $max_allowed_refund ) {
+            // translators: %f: maximum allowed refund amount
             return new WP_Error( 'dokan_pro_refund_error_refund_amount', sprintf( __( 'Maximum allowed amount is %f.', 'dokan' ), $max_allowed_refund ) );
         }
 
@@ -79,10 +84,10 @@ class Validator {
      *
      * @since 3.0.0
      *
-     * @param array                                           $item_qtys
-     * @param \WeDevs\DokanPro\Refund\Request\WP_REST_Request $request
+     * @param array   $item_qtys
+     * @param Request $request
      *
-     * @return bool
+     * @return bool|WP_Error
      */
     public static function validate_item_qtys( $item_qtys, $request ) {
         $item_qtys = Sanitizer::sanitize_item_qtys( $item_qtys );
@@ -96,19 +101,22 @@ class Validator {
 
         foreach ( $item_qtys as $item_id => $item_qty ) {
             if ( ! isset( $order_line_items[ $item_id ] ) ) {
+                // translators: %d: line item id
                 return new WP_Error( 'dokan_pro_refund_error_item_qtys', sprintf( __( 'Invalid line item id %d', 'dokan' ), $item_id ) );
             }
 
             $order_line_item = $order_line_items[ $item_id ];
 
             if ( ! $item_qty ) {
+                // translators: %s: line item name
                 return new WP_Error( 'dokan_pro_refund_error_item_qtys', sprintf( __( 'Invalid line item quantity for item %s', 'dokan' ), $order_line_item->get_name() ) );
             }
 
             $order_line_item_qty = $order_line_item->get_quantity();
 
             if ( $item_qty > $order_line_item_qty ) {
-                return new WP_Error( 'dokan_pro_refund_error_item_qtys', sprintf( __( 'Line item quantity must not exceed %d for item %s', 'dokan' ), $order_line_item_qty, $order_line_item->get_name() ) );
+                // translators: %d: line item quantity, %s: line item name
+                return new WP_Error( 'dokan_pro_refund_error_item_qtys', sprintf( __( 'Line item quantity must not exceed %1$d for item %2$s', 'dokan' ), $order_line_item_qty, $order_line_item->get_name() ) );
             }
         }
 
@@ -120,8 +128,8 @@ class Validator {
      *
      * @since 3.0.0
      *
-     * @param array                                           $item_totals
-     * @param \WeDevs\DokanPro\Refund\Request\WP_REST_Request $request
+     * @param array   $item_totals
+     * @param Request $request
      *
      * @return bool|WP_Error
      */
@@ -138,18 +146,20 @@ class Validator {
 
         foreach ( $item_totals as $item_id => $item_total ) {
             if ( ! isset( $order_line_items[ $item_id ] ) ) {
+                // translators: %d: line item id
                 return new WP_Error( 'dokan_pro_refund_error_item_totals', sprintf( __( 'Invalid line item id %d', 'dokan' ), $item_id ) );
             }
 
             $order_line_item       = $order_line_items[ $item_id ];
-            $order_line_item_total = wc_format_decimal( $order_line_item->get_total(), wc_get_rounding_precision() );
+            $order_line_item_total = wc_format_decimal( $order_line_item->get_total(), '' );
 
             if ( $order->get_total_refunded_for_item( $item_id ) ) {
                 $item_total = $item_total + $order->get_total_refunded_for_item( $item_id );
             }
 
             if ( $item_total > $order_line_item_total ) {
-                return new WP_Error( 'dokan_pro_refund_error_item_totals', sprintf( __( 'Line item total must not exceed %s for item %s', 'dokan' ), $order_line_item_total, $order_line_item->get_name() ) );
+                // translators: %s: line item name
+                return new WP_Error( 'dokan_pro_refund_error_item_totals', sprintf( __( 'Line item total must not exceed %1$s for item %2$s', 'dokan' ), $order_line_item_total, $order_line_item->get_name() ) );
             }
         }
 

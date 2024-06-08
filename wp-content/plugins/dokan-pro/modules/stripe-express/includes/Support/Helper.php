@@ -697,9 +697,16 @@ class Helper {
 
         $fee = $balance_transaction->fee;
         foreach ( $balance_transaction->fee_details as $fee_details ) {
+            if ( ! in_array( $fee_details->type, array( 'stripe_fee', 'tax' ), true ) ) {
+                continue;
+            }
+
             if ( $fee_details->type === 'stripe_fee' ) {
                 $fee = $fee_details->amount;
-                break;
+            }
+
+            if ( $fee_details->type === 'tax' ) {
+                $fee += $fee_details->amount;
             }
         }
 
@@ -714,6 +721,18 @@ class Helper {
         if ( 'net' === $type ) {
             return $balance_transaction->net;
         }
+
+        /**
+         * Filter the stripe express gateway balance fee
+         *
+         * @since 3.11.0
+         *
+         * @param int|float|string  $fee                    The gateway balance fee
+         * @param object            $balance_transaction    The balance transaction object
+         *
+         * @return int|float|string The formated gateway balance fee
+         */
+        $fee = apply_filters( 'dokan_stripe_express_format_gateway_balance_fee', $fee, $balance_transaction );
 
         if ( $balance_transaction->exchange_rate ) {
             $fee = number_format( $fee / $balance_transaction->exchange_rate, 2, '.', '' );
@@ -1060,7 +1079,7 @@ class Helper {
      *
      * @since 3.6.1
      *
-     * @param WP_User $user
+     * @param \WP_User $user
      *
      * @return string The locale/language set in the user profile or the site itself.
      */
@@ -1306,6 +1325,9 @@ class Helper {
      * @return string
      */
     public static function get_webhook_description() {
+        // Collect test mode endpoint if user on test mode.
+        $stripe_env = Settings::is_test_mode() ? '/test' : '';
+
         return wp_kses(
             sprintf(
                 /* translators: 1) opening strong tag, 2) non-breaking space, 3) webhook url, 4) non-breaking space, 5) closing strong tag, 6) opening anchor tag with stripe dashboard link, 7) closing anchor tag, 8) <br> tag, 9) <br> tag, 10) opening code tag, 11) webhook status, 12) closing code tag */
@@ -1317,8 +1339,8 @@ class Helper {
                 '&nbsp;',
                 Webhook::generate_url(),
                 '&nbsp;',
-                '</strong>',
-                '<a href="https://dashboard.stripe.com/account/webhooks" target="_blank">',
+                '</strong>' . '<span class="dokan-copy-to-clipboard" data-copy="' . Webhook::generate_url() . '"></span>',
+                "<a href='https://dashboard.stripe.com{$stripe_env}/webhooks' target='_blank'>",
                 '</a>',
                 '<br>',
                 '<br>',
@@ -1336,6 +1358,10 @@ class Helper {
                 ],
                 'br'     => [],
                 'code'   => [],
+                'span' => [
+                    'class' => true,
+                    'data-copy' => true,
+                ],
             ]
         );
     }
@@ -1348,11 +1374,14 @@ class Helper {
      * @return string
      */
     public static function get_api_keys_description() {
+        // Collect test mode endpoint if user on test mode.
+        $stripe_env = Settings::is_test_mode() ? '/test' : '';
+
         return wp_kses(
             sprintf(
                 // translators: 1) help documentation link, 2) opening anchor tag, 3) closing anchor tag, 4) line break tag, 5) opening <strong> and <span> tags combined, 6) closing </strong> and </span> tags combined
                 __( 'Your API credentials are a publishable key and a secret key, which authenticate API requests from your account. You can collect these credentials from a REST API app in the Developer Dashboard. Visit %1$sthis link%2$s for more information about getting your api details.%3$s%4$sNote: Even if you enable test mode, please provide your live API keys as well. For some extra configurations for payment methods like Apple Pay and payment request buttons, live API keys are required even in test mode.%5$s', 'dokan' ),
-                '<a href="https://dashboard.stripe.com/apikeys" target="_blank">',
+                "<a href='https://dashboard.stripe.com{$stripe_env}/apikeys' target='_blank'>",
                 '</a>',
                 '<br>',
                 '<span style="font-style: italic;">',

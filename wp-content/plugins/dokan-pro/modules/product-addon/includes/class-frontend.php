@@ -17,6 +17,7 @@ class Dokan_Product_Addon_Frontend {
         add_action( 'dokan_render_settings_content', [ $this, 'render_settings_content' ], 10 );
         add_action( 'pre_get_posts', [ $this, 'render_vendor_global_addons' ], 99 );
         add_action( 'template_redirect', [ $this, 'handle_addon_formdata' ], 10 );
+        add_action( 'wp_ajax_wc_pao_get_addon_options', [ $this, 'ajax_get_addon_options' ], 8 );
     }
 
     /**
@@ -293,5 +294,34 @@ class Dokan_Product_Addon_Frontend {
         update_post_meta( $edit_id, '_product_addons', $product_addons );
 
         return $edit_id;
+    }
+
+    /**
+     * Get add-on options ajax override.
+     *
+     * @since 3.9.4
+     */
+    public function ajax_get_addon_options() {
+        dokan_remove_hook_for_anonymous_class( 'wp_ajax_wc_pao_get_addon_options', 'WC_Product_Addons_Admin', 'ajax_get_addon_options', 10 );
+
+        check_ajax_referer( 'wc-pao-get-addon-options', 'security' );
+
+        global $product_addons, $post, $options;
+
+        $option = WC_Product_Addons_Admin::get_new_addon_option();
+        $loop   = '{loop}';
+
+        ob_start();
+        dokan_get_template_part( 'product-addon/html-addon-option', '', array(
+            'is_product_addon'    => true,
+            'option'           => $option,
+            'loop'             => $loop,
+            'addon'            => $product_addons
+        ) );
+        $html = ob_get_clean();
+
+        $html = str_replace( array( "\n", "\r" ), '', str_replace( "'", '"', $html ) );
+
+        wp_send_json( array( 'html' => $html ) );
     }
 }

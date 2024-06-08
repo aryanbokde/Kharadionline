@@ -3,6 +3,7 @@
 namespace WeDevs\DokanPro\Modules\Razorpay;
 
 use WC_Order;
+use WC_Product;
 use WP_Error;
 use WeDevs\DokanPro\Modules\Razorpay\PaymentMethods\Razorpay;
 
@@ -680,7 +681,7 @@ class Helper {
             $product = wc_get_product( $product );
         }
 
-        if ( ! $product instanceof \WC_Product ) {
+        if ( ! $product ) {
             return false;
         }
 

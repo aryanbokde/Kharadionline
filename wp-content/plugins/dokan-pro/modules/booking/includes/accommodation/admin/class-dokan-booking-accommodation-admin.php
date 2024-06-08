@@ -127,7 +127,7 @@ class Dokan_Booking_Accommodation_Admin {
 
         if ( ! isset( $_POST['_is_dokan_accommodation'] ) ) {
             $product->update_meta_data( '_dokan_is_accommodation_booking', 'no' );
-            $product->save_meta_data();
+            $product->save();
             return;
         }
 
@@ -150,6 +150,6 @@ class Dokan_Booking_Accommodation_Admin {
         $product->update_meta_data( '_dokan_is_accommodation_booking', $dokan_accommodation );
 
         // Save product meta
-        $product->save_meta_data();
+        $product->save();
     }
 }

@@ -75,8 +75,6 @@ class Dokan_Seller_Vacation_Ajax {
 
             update_user_meta( $vendor_id, 'dokan_profile_settings', $vendor_settings );
 
-            dokan_seller_vacation_update_product_status( array( $vendor ), false );
-
             wp_send_json_success( array(
                 'schedules'  => $schedules,
             ) );
@@ -122,8 +120,6 @@ class Dokan_Seller_Vacation_Ajax {
             $vendor_settings['seller_vacation_schedules'] = $schedules;
 
             update_user_meta( $vendor_id, 'dokan_profile_settings', $vendor_settings );
-
-            dokan_seller_vacation_update_product_status( array( $vendor ), false );
 
             wp_send_json_success( array(
                 'schedules'  => $schedules,

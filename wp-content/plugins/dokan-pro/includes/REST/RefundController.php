@@ -3,8 +3,11 @@
 namespace WeDevs\DokanPro\REST;
 
 use Exception;
+use WeDevs\DokanPro\Refund\ProcessAutomaticRefund;
 use WP_Error;
 use WP_REST_Controller;
+use WP_REST_Request;
+use WP_REST_Response;
 use WP_REST_Server;
 use WeDevs\DokanPro\Refund\Refund;
 use WeDevs\DokanPro\Refund\Sanitizer;
@@ -42,94 +45,106 @@ class RefundController extends WP_REST_Controller {
      * @return void
      */
     public function register_routes() {
-        register_rest_route( $this->namespace, '/' . $this->rest_base, [
-            [
-                'methods'             => WP_REST_Server::READABLE,
-                'callback'            => [ $this, 'get_items' ],
-                'permission_callback' => [ $this, 'get_items_permissions_check' ],
-                'args'                => array_merge( $this->get_collection_params(), [
-                    'status' => [
-                        'type'        => 'string',
-                        'description' => __( 'Refund status', 'dokan' ),
-                        'enum'        => ! empty( dokan_pro()->refund ) ? array_keys( dokan_pro()->refund->get_statuses() ) : [],
-                        'required'    => false,
-                    ],
-                    'search' => [
-                        'type'        => 'string',
-                        'description' => __( 'Search by order id OR shop name', 'dokan' ),
-                        'required'    => false,
-                    ],
-                    'orderby' => [
-                        'type'        => 'string',
-                        'description' => __( 'Order By', 'dokan' ),
-                        'required'    => false,
-                        'default'     => 'id',
-                    ],
-                    'order'   => [
-                        'type'        => 'string',
-                        'description' => __( 'Order', 'dokan' ),
-                        'required'    => false,
-                        'default'     => 'asc',
-                    ],
-                ] ),
-            ],
-        ] );
+        register_rest_route(
+            $this->namespace, '/' . $this->rest_base, [
+				[
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => [ $this, 'get_items' ],
+					'permission_callback' => [ $this, 'get_items_permissions_check' ],
+					'args'                => array_merge(
+                        $this->get_collection_params(), [
+							'status' => [
+								'type'        => 'string',
+								'description' => __( 'Refund status', 'dokan' ),
+								'enum'        => ! empty( dokan_pro()->refund ) ? array_keys( dokan_pro()->refund->get_statuses() ) : [],
+								'required'    => false,
+							],
+							'search' => [
+								'type'        => 'string',
+								'description' => __( 'Search by order id OR shop name', 'dokan' ),
+								'required'    => false,
+							],
+							'orderby' => [
+								'type'        => 'string',
+								'description' => __( 'Order By', 'dokan' ),
+								'required'    => false,
+								'default'     => 'id',
+							],
+							'order'   => [
+								'type'        => 'string',
+								'description' => __( 'Order', 'dokan' ),
+								'required'    => false,
+								'default'     => 'asc',
+							],
+                        ]
+                    ),
+				],
+			]
+        );
 
-        register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)/approve', [
-            'args' => [
-                'id' => [
-                    'description' => __( 'Unique identifier for the object.', 'dokan' ),
-                    'type'        => 'integer',
-                    'validate_callback' => [ Validator::class, 'validate_id' ],
+        register_rest_route(
+            $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)/approve', [
+                'args' => [
+                    'id' => [
+                        'description'       => __( 'Unique identifier for the object.', 'dokan' ),
+                        'type'              => 'integer',
+                        'validate_callback' => [ Validator::class, 'validate_id' ],
+                    ],
                 ],
-            ],
-            [
-                'methods'             => WP_REST_Server::EDITABLE,
-                'callback'            => [ $this, 'approve_item' ],
-                'permission_callback' => [ $this, 'update_item_permissions_check' ],
-            ],
-        ] );
+                [
+                    'methods'             => WP_REST_Server::EDITABLE,
+                    'callback'            => [ $this, 'approve_item' ],
+                    'permission_callback' => [ $this, 'update_item_permissions_check' ],
+                ],
+            ]
+        );
 
-        register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)/cancel', [
-            'args' => [
-                'id' => [
-                    'description'       => __( 'Unique identifier for the object.', 'dokan' ),
-                    'type'              => 'integer',
-                    'validate_callback' => [ Validator::class, 'validate_id' ],
-                ],
-            ],
-            [
-                'methods'             => WP_REST_Server::EDITABLE,
-                'callback'            => [ $this, 'cancel_item' ],
-                'permission_callback' => [ $this, 'update_item_permissions_check' ],
-            ],
-        ] );
+        register_rest_route(
+            $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)/cancel', [
+				'args' => [
+					'id' => [
+						'description'       => __( 'Unique identifier for the object.', 'dokan' ),
+						'type'              => 'integer',
+						'validate_callback' => [ Validator::class, 'validate_id' ],
+					],
+				],
+				[
+					'methods'             => WP_REST_Server::EDITABLE,
+					'callback'            => [ $this, 'cancel_item' ],
+					'permission_callback' => [ $this, 'update_item_permissions_check' ],
+				],
+			]
+        );
 
-        register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', [
-            'args' => [
-                'id' => [
-                    'description'       => __( 'Unique identifier for the object.', 'dokan' ),
-                    'type'              => 'integer',
-                    'validate_callback' => [ Validator::class, 'validate_id' ],
-                ],
-            ],
-            [
-                'methods'             => WP_REST_Server::DELETABLE,
-                'callback'            => [ $this, 'delete_item' ],
-                'permission_callback' => [ $this, 'delete_item_permissions_check' ],
-            ],
-        ] );
+        register_rest_route(
+            $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', [
+				'args' => [
+					'id' => [
+						'description'       => __( 'Unique identifier for the object.', 'dokan' ),
+						'type'              => 'integer',
+						'validate_callback' => [ Validator::class, 'validate_id' ],
+					],
+				],
+				[
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => [ $this, 'delete_item' ],
+					'permission_callback' => [ $this, 'delete_item_permissions_check' ],
+				],
+			]
+        );
 
         $batch_items_schema = $this->get_public_batch_schema();
-        register_rest_route( $this->namespace, '/' . $this->rest_base . '/batch', [
-            [
-                'methods'             => WP_REST_Server::EDITABLE,
-                'callback'            => [ $this, 'batch_items' ],
-                'permission_callback' => [ $this, 'batch_items_permissions_check' ],
-                'args'                => $batch_items_schema['properties'],
-            ],
-            'schema' => [ $this, 'get_public_batch_schema' ],
-        ] );
+        register_rest_route(
+            $this->namespace, '/' . $this->rest_base . '/batch', [
+				[
+					'methods'             => WP_REST_Server::EDITABLE,
+					'callback'            => [ $this, 'batch_items' ],
+					'permission_callback' => [ $this, 'batch_items_permissions_check' ],
+					'args'                => $batch_items_schema['properties'],
+				],
+				'schema' => [ $this, 'get_public_batch_schema' ],
+			]
+        );
     }
 
     /**
@@ -137,7 +152,7 @@ class RefundController extends WP_REST_Controller {
      *
      * @since 3.0.0
      *
-     * @param \WP_REST_Request $request
+     * @param WP_REST_Request $request
      *
      * @return bool
      */
@@ -150,7 +165,7 @@ class RefundController extends WP_REST_Controller {
      *
      * @since 3.0.0
      *
-     * @param \WP_REST_Request $request
+     * @param WP_REST_Request $request
      *
      * @return bool
      */
@@ -163,7 +178,7 @@ class RefundController extends WP_REST_Controller {
      *
      * @since 3.0.0
      *
-     * @param \WP_REST_Request $request
+     * @param WP_REST_Request $request
      *
      * @return bool
      */
@@ -176,7 +191,7 @@ class RefundController extends WP_REST_Controller {
      *
      * @since 3.0.0
      *
-     * @param \WP_REST_Request $request
+     * @param WP_REST_Request $request
      *
      * @return bool
      */
@@ -189,9 +204,9 @@ class RefundController extends WP_REST_Controller {
      *
      * @since 3.0.0
      *
-     * @param \WP_REST_Request $request
+     * @param WP_REST_Request $request
      *
-     * @return \WP_REST_Response|\WP_Error
+     * @return WP_REST_Response|WP_Error
      */
     public function get_items( $request ) {
         $args = [
@@ -223,7 +238,7 @@ class RefundController extends WP_REST_Controller {
             if ( empty( $seller_id ) ) {
                 return new WP_Error( 'dokan_rest_refund_error_user', __( 'No vendor found', 'dokan' ), [ 'status' => 404 ] );
             }
-        } else if ( isset( $request['seller_id'] ) ) {
+        } elseif ( isset( $request['seller_id'] ) ) {
             // Allow manager to filter request with user or vendor id
             $seller_id = $request['seller_id'];
         }
@@ -244,17 +259,14 @@ class RefundController extends WP_REST_Controller {
             $data[] = $this->prepare_response_for_collection( $item );
         }
 
-        $response            = rest_ensure_response( $data );
-        $refund_count        = dokan_get_refund_count( $seller_id );
-        $api_refund_disabled = 'on' !== dokan_get_option( 'automatic_process_api_refund', 'dokan_selling', 'off' );
+        $response     = rest_ensure_response( $data );
+        $refund_count = dokan_get_refund_count( $seller_id );
 
         $response->header( 'X-Status-Pending', $refund_count['pending'] );
         $response->header( 'X-Status-Completed', $refund_count['completed'] );
         $response->header( 'X-Status-Cancelled', $refund_count['cancelled'] );
-        $response->header( 'X-API-Refund-Disabled', $api_refund_disabled );
 
-        $response = $this->format_collection_response( $response, $request, $refunds->total );
-        return $response;
+        return $this->format_collection_response( $response, $request, $refunds->total );
     }
 
     /**
@@ -262,12 +274,15 @@ class RefundController extends WP_REST_Controller {
      *
      * @since 3.0.0
      *
-     * @param \WP_REST_Request $request
+     * @param WP_REST_Request $request
      *
-     * @return \WP_REST_Response|\WP_Error
+     * @return WP_REST_Response|WP_Error
      */
     public function approve_item( $request ) {
         try {
+            /**
+             * @var Refund $refund Refund object.
+             */
             $refund = dokan_pro()->refund->get( $request['id'] );
 
             if ( 'pending' !== $refund->get_status_name() ) {
@@ -275,6 +290,24 @@ class RefundController extends WP_REST_Controller {
                     'dokan_pro_rest_refund_error_approve',
                     __( 'The refund request does not have pending status', 'dokan' )
                 );
+            }
+
+            // API is sending string true or string false.
+            $via_api = '0';
+            if (
+                isset( $request['api'] )
+                && 'true' === $request['api']
+                && ProcessAutomaticRefund::instance()->is_auto_refundable_gateway( $refund )
+            ) {
+                $via_api = '1';
+            }
+
+            if ( $refund->get_method() !== $via_api ) {
+                $refund->set_method( $via_api );
+                $saved = $refund->save();
+                if ( is_wp_error( $saved ) ) {
+                    return $saved;
+                }
             }
 
             $refund->approve();
@@ -292,9 +325,9 @@ class RefundController extends WP_REST_Controller {
      *
      * @since 3.0.0
      *
-     * @param \WP_REST_Request $request
+     * @param WP_REST_Request $request
      *
-     * @return \WP_REST_Response|\WP_Error
+     * @return WP_REST_Response|WP_Error
      */
     public function cancel_item( $request ) {
         try {
@@ -322,9 +355,9 @@ class RefundController extends WP_REST_Controller {
      *
      * @since 3.0.0
      *
-     * @param \WP_REST_Request $request
+     * @param WP_REST_Request $request
      *
-     * @return \WP_REST_Response|\WP_Error
+     * @return WP_REST_Response|WP_Error
      */
     public function delete_item( $request ) {
         try {
@@ -339,7 +372,6 @@ class RefundController extends WP_REST_Controller {
             $response = $this->prepare_item_for_response( $refund, $request );
 
             return rest_ensure_response( $response );
-
         } catch ( Exception $e ) {
             return $this->send_response_error( $e );
         }
@@ -365,7 +397,7 @@ class RefundController extends WP_REST_Controller {
      *
      * @since 2.8.0
      *
-     * @return WP_Error|\WP_HTTP_Response|\WP_REST_Response
+     * @return WP_Error|WP_REST_Response
      */
     public function batch_items( $request ) {
         $success = [];
@@ -383,7 +415,24 @@ class RefundController extends WP_REST_Controller {
                     if ( ! $validate_request ) {
                         $failed['completed'][] = $id;
                     } else {
-                        $refund = $refund->approve();
+                        // API is sending string true or string false.
+                        $via_api = '0';
+                        if (
+                            isset( $request['api'] )
+                            && 'true' === $request['api']
+                            && ProcessAutomaticRefund::instance()->is_auto_refundable_gateway( $refund )
+                        ) {
+                            $via_api = '1';
+                        }
+
+                        if ( $refund->get_method() !== $via_api ) {
+                            $refund->set_method( $via_api );
+                            $refund = $refund->save();
+                        }
+
+                        if ( ! is_wp_error( $refund ) ) {
+							$refund = $refund->approve();
+                        }
 
                         if ( is_wp_error( $refund ) ) {
                             $failed['completed'][] = $id;
@@ -443,10 +492,12 @@ class RefundController extends WP_REST_Controller {
             }
         }
 
-        return rest_ensure_response( [
-            'success' => $success,
-            'failed'  => $failed,
-        ] );
+        return rest_ensure_response(
+            [
+				'success' => $success,
+				'failed'  => $failed,
+			]
+        );
     }
 
     /**
@@ -464,36 +515,36 @@ class RefundController extends WP_REST_Controller {
             'title'      => 'Refund',
             'type'       => 'object',
             'properties' => [
-                'id' => [
+                'id'          => [
                     'description' => __( 'Unique identifier for the object.', 'dokan' ),
                     'type'        => 'integer',
                     'context'     => [ 'view' ],
                     'readonly'    => true,
                 ],
-                'order_id' => [
+                'order_id'    => [
                     'description' => __( 'Order ID', 'dokan' ),
                     'type'        => 'integer',
                     'context'     => [ 'view', 'edit' ],
                     'default'     => $refund->get_order_id(),
                 ],
-                'seller_id' => [
+                'seller_id'   => [
                     'description' => __( 'Vendor ID', 'dokan' ),
                     'type'        => 'integer',
                     'context'     => [ 'view' ],
                 ],
-                'amount' => [
+                'amount'      => [
                     'description' => __( 'The amount requested for refund. Should always be numeric', 'dokan' ),
                     'type'        => 'string',
                     'context'     => [ 'view', 'edit' ],
                     'default'     => $refund->get_refund_amount(),
                 ],
-                'reason' => [
+                'reason'      => [
                     'description' => __( 'Refund Reason', 'dokan' ),
                     'type'        => 'string',
                     'context'     => [ 'view', 'edit' ],
                     'default'     => $refund->get_refund_reason(),
                 ],
-                'item_qty' => [
+                'item_qty'    => [
                     'description' => __( 'Item Quantity', 'dokan' ),
                     'type'        => 'string',
                     'context'     => [ 'view', 'edit' ],
@@ -505,30 +556,30 @@ class RefundController extends WP_REST_Controller {
                     'context'     => [ 'view', 'edit' ],
                     'default'     => $refund->get_item_totals(),
                 ],
-                'tax_total' => [
+                'tax_total'   => [
                     'description' => __( 'Tax Total', 'dokan' ),
                     'type'        => 'string',
                     'context'     => [ 'view', 'edit' ],
                     'default'     => $refund->get_item_tax_totals(),
                 ],
-                'restock' => [
+                'restock'     => [
                     'description' => __( 'Restock Items', 'dokan' ),
                     'type'        => 'string',
                     'context'     => [ 'view', 'edit' ],
                     'default'     => $refund->get_restock_items(),
                 ],
-                'date' => [
+                'date'        => [
                     'description' => __( 'The date the Refund request has beed created in the site\'s timezone.', 'dokan' ),
                     'type'        => 'date-time',
                     'context'     => [ 'view' ],
                 ],
-                'status' => [
+                'status'      => [
                     'description' => __( 'Refund status', 'dokan' ),
                     'type'        => 'string',
                     'enum'        => ! empty( dokan_pro()->refund ) ? array_keys( dokan_pro()->refund->get_statuses() ) : [],
                     'context'     => [ 'view', 'edit' ],
                 ],
-                'method' => [
+                'method'      => [
                     'description' => __( 'Refund Method', 'dokan' ),
                     'type'        => 'string',
                     'context'     => [ 'view', 'edit' ],
@@ -552,7 +603,7 @@ class RefundController extends WP_REST_Controller {
             'title'      => 'batch',
             'type'       => 'object',
             'properties' => [
-                'completed'  => [
+                'completed' => [
                     'required'    => false,
                     'description' => __( 'List of refund IDs to be completed', 'dokan-lite' ),
                     'type'        => 'array',
@@ -584,9 +635,9 @@ class RefundController extends WP_REST_Controller {
      * @since 3.0.0
      *
      * @param \WeDevs\DokanPro\Refund\Refund $refund
-     * @param \WP_REST_Request               $request
+     * @param WP_REST_Request               $request
      *
-     * @return \WP_REST_Response
+     * @return WP_REST_Response
      */
     public function prepare_item_for_response( $refund, $request ) {
         $vendor = dokan()->vendor->get( $refund->get_seller_id() );
@@ -605,6 +656,7 @@ class RefundController extends WP_REST_Controller {
             'status'        => $refund->get_status_name(),
             'method'        => get_post_meta( $refund->get_order_id(), '_payment_method_title', true ),
             'type'          => $refund->get_method(),
+            'api'           => ProcessAutomaticRefund::instance()->is_auto_refundable_gateway( $refund ),
         ];
 
         $response = rest_ensure_response( $data );
@@ -618,11 +670,11 @@ class RefundController extends WP_REST_Controller {
      *
      * @since 3.0.0
      *
-     * @param \WP_REST_Response $response
-     * @param \WP_REST_Request  $request
+     * @param WP_REST_Response $response
+     * @param WP_REST_Request  $request
      * @param int               $total_items
      *
-     * @return \WP_REST_Response
+     * @return WP_REST_Response
      */
     public function format_collection_response( $response, $request, $total_items ) {
         if ( $total_items === 0 ) {
@@ -652,7 +704,6 @@ class RefundController extends WP_REST_Controller {
         }
 
         if ( $max_pages > $page ) {
-
             $next_page = $page + 1;
             $next_link = add_query_arg( 'page', $next_page, $base );
             $response->link_header( 'next', $next_link );
@@ -666,14 +717,14 @@ class RefundController extends WP_REST_Controller {
      *
      * @since 3.0.0
      *
-     * @param \WeDevs\DokanPro\Refund\Refund         $object  Object data.
-     * @param \WP_REST_Request                       $request Request object.
+     * @param \WeDevs\DokanPro\Refund\Refund $object  Object data.
+     * @param WP_REST_Request               $request Request object.
      *
      * @return array Links for the given post.
      */
     protected function prepare_links( $refund, $request ) {
         $links = [
-            'self' => [
+            'self'       => [
                 'href' => rest_url( sprintf( '/%s/%s/%d', $this->namespace, $this->rest_base, $refund->get_id() ) ),
             ],
             'collection' => [

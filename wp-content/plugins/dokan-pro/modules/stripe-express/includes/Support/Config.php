@@ -100,7 +100,7 @@ class Config {
      *
      * @var string
      */
-    private $app_url = 'https://wedevs.com/dokan/modules/stripe-express/';
+    private $app_url = 'https://dokan.co/wordpress/modules/stripe-express/';
 
     /**
      * The reference to Singleton instance of this class

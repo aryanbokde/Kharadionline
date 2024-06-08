@@ -74,7 +74,7 @@ class Store {
                     ],
                     [
                         'text' => __( 'Get Help', 'dokan' ),
-                        'url'  => 'https://wedevs.com/docs/dokan/modules/dokan-live-chat/',
+                        'url'  => 'https://dokan.co/docs/wordpress/modules/dokan-live-chat/',
                         'icon' => '',
                     ],
                 ],

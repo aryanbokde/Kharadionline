@@ -69,6 +69,7 @@ class QuoteRuleController extends DokanRESTController {
                     'methods'             => WP_REST_Server::EDITABLE,
                     'callback'            => [ $this, 'update_quote_rule' ],
                     'permission_callback' => [ $this, 'get_quote_rule_permissions_check' ],
+                    'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
                 ],
 
                 [
@@ -380,45 +381,88 @@ class QuoteRuleController extends DokanRESTController {
                     'readonly'    => true,
                 ],
                 'rule_name'            => [
-                    'description' => __( 'Name of the rule', 'dokan' ),
-                    'type'        => 'string',
-                    'context'     => [ 'view', 'edit' ],
-                    'required'    => true,
-                    'arg_options' => [
-                        'sanitize_callback' => 'sanitize_text_field',
-                    ],
+                    'description'       => __( 'Name of the rule', 'dokan' ),
+                    'type'              => 'string',
+                    'context'           => [ 'view', 'edit' ],
+                    'required'          => true,
+                    'sanitize_callback' => 'sanitize_text_field',
                 ],
-                'hide_price'           => [
-                    'description' => __( 'If you wish to hide price.', 'dokan' ),
-                    'type'        => 'integer',
-                    'context'     => [ 'view', 'edit' ],
+                'selected_user_role' => [
+                    'type'              => 'array',
+                    'description'       => __( 'Rule apply for users.', 'dokan' ),
+                    'required'          => true,
+                    'context'           => [ 'edit' ],
+                    'sanitize_callback' => 'wc_clean',
+                    'minItems'          => 1,
+                    'items'             => array(
+                        'type' => 'string',
+                    ),
+                ],
+                'category_ids' => [
+                    'description'       => __( 'Product categories', 'dokan' ),
+                    'type'              => 'array',
+                    'required'          => false,
+                    'context'           => [ 'edit' ],
+                    'sanitize_callback' => 'wc_clean',
+                    'items'             => array(
+                        'type' => 'integer',
+                    ),
+                ],
+                'product_ids' => [
+                    'type'              => 'array',
+                    'description'       => __( 'Product ids', 'dokan' ),
+                    'required'          => false,
+                    'context'           => [ 'edit' ],
+                    'sanitize_callback' => 'wc_clean',
+                    'items'             => array(
+                        'type' => 'integer',
+                    ),
+                ],
+                'rule_priority' => [
+                    'type'        => 'number',
+                    'description' => __( 'Rule priority', 'dokan' ),
+                    'required'    => false,
+                    'context'           => [ 'view', 'edit' ],
+                ],
+                'hide_price' => [
+                    'type'        => 'boolean',
+                    'description' => __( 'Hide price', 'dokan' ),
+                    'required'    => true,
+                    'context'           => [ 'view', 'edit' ],
+                ],
+                'hide_price_text' => [
+                    'type'              => 'string',
+                    'description'       => __( 'Hide price text', 'dokan' ),
+                    'required'          => true,
+                    'context'           => [ 'edit' ],
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+                'hide_cart_button' => [
+                    'type'              => 'string',
+                    'description'       => __( 'Hide cart button', 'dokan' ),
+                    'required'          => true,
+                    'context'           => [ 'edit' ],
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+                'button_text' => [
+                    'type'              => 'string',
+                    'description'       => __( 'Button text', 'dokan' ),
+                    'required'          => true,
+                    'context'           => [ 'view', 'edit' ],
+                    'sanitize_callback' => 'sanitize_text_field',
                 ],
                 'apply_on_all_product' => [
-                    'description' => __( 'If you wish to apply rule for all product.', 'dokan' ),
-                    'type'        => 'integer',
-                    'context'     => [ 'view', 'edit' ],
-                ],
-                'button_text'          => [
-                    'description' => __( 'Button text.', 'dokan' ),
-                    'type'        => 'string',
-                    'context'     => [ 'view', 'edit' ],
+                    'type'        => 'boolean',
+                    'description' => __( 'Apply on all product', 'dokan' ),
                     'required'    => true,
-                    'arg_options' => [
-                        'sanitize_callback' => 'sanitize_text_field',
-                    ],
-                ],
-                'rule_priority'        => [
-                    'description' => __( 'Rule priority.', 'dokan' ),
-                    'type'        => 'integer',
                     'context'     => [ 'view', 'edit' ],
                 ],
-                'status'               => [
+                'status' => [
                     'description' => __( 'Status of the rule.', 'dokan' ),
                     'type'        => 'string',
                     'context'     => [ 'view', 'edit' ],
-                    'arg_options' => [
-                        'sanitize_callback' => 'sanitize_textarea_field',
-                    ],
+                    'required'    => false,
+                    'sanitize_callback' => 'sanitize_text_field',
                 ],
                 'created_at'           => [
                     'description' => __( "The date the object was published, in the site's timezone.", 'dokan' ),
@@ -467,15 +511,17 @@ class QuoteRuleController extends DokanRESTController {
      * @return \WP_Error
      */
     public function update_quote_rule( $request ) {
-        if ( empty( trim( $request['id'] ) ) ) {
-            return new WP_Error( 'no_id', __( 'No rule id found', 'dokan' ), [ 'status' => 404 ] );
-        }
-
         if ( isset( $request['rule_name'] ) && empty( trim( $request['rule_name'] ) ) ) {
             return new WP_Error( 'no_title', __( 'Rule name is required', 'dokan' ), [ 'status' => 404 ] );
         }
 
-        $rule_id                        = trim( $request['id'] );
+        $rule_id   = ! empty( trim( $request['id'] ) ) ? trim( $request['id'] ) : '';
+        $rule_data = (array) $this->get_quote_rule_object_by_id( $rule_id );
+
+        if ( empty( $rule_id ) || ! is_array( $rule_data ) || empty( $rule_data ) ) {
+            return new WP_Error( 'no_id', __( 'No rule id found', 'dokan' ), [ 'status' => 404 ] );
+        }
+
         $params                         = $request->get_params();
         $params['apply_on_all_product'] = ( 'true' === $params['apply_on_all_product'] || '1' === $params['apply_on_all_product'] ) ? 1 : 0;
         $params['hide_price']           = (int) $params['hide_price'];
@@ -493,7 +539,7 @@ class QuoteRuleController extends DokanRESTController {
             return new WP_Error( 'select-no-user-role', __( 'You must select at least one role.', 'dokan' ), [ 'status' => 400 ] );
         }
 
-        $request_quote = Helper::update_quote_rule( $rule_id, $params );
+        $request_quote = Helper::update_quote_rule( $rule_id, array_merge( $rule_data, $params ) );
 
         if ( is_wp_error( $request_quote ) ) {
             return new WP_Error( $request_quote->get_error_code(), $request_quote->get_error_message(), [ 'status' => 404 ] );

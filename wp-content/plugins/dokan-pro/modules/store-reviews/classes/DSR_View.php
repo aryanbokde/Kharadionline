@@ -10,10 +10,6 @@ use WeDevs\Dokan\Cache;
 class DSR_View {
 
     public function __construct() {
-        add_action( 'dokan_review_tab_before_comments', array( $this, 'add_or_edit_review' ) );
-        add_action( 'dokan_after_load_script', array( $this, 'include_scripts' ) );
-        add_action( 'dokan_enqueue_scripts', array( $this, 'include_scripts' ) );
-
         add_action( 'wp_ajax_dokan_store_rating_ajax_handler', array( $this, 'ajax_handler' ) );
         add_action( 'wp_ajax_nopriv_dokan_store_rating_ajax_handler', array( $this, 'ajax_handler' ) );
         add_action( 'dokan_after_store_lists_filter_category', array( $this, 'after_store_lists_filter_category' ), 15 );
@@ -91,56 +87,11 @@ class DSR_View {
     }
 
     /**
-     * Render Single Review Section
-     *
-     * @since 1.0
-     *
-     * @return string
-     */
-    function add_or_edit_review() {
-
-        $seller_id = get_userdata( get_query_var( 'author' ) )->ID;
-
-        //check if valid customer to proceed
-        if ( ! $this->check_if_valid_customer( $seller_id, get_current_user_id() ) ) {
-            return;
-        }
-        //show add review or edit review
-
-        $args = array(
-            'post_type'   => 'dokan_store_reviews',
-            'meta_key'    => 'store_id',
-            'meta_value'  => $seller_id,
-            'author'      => get_current_user_id(),
-            'post_status' => 'publish'
-        );
-
-        $query = new WP_Query( $args );
-
-        ob_start();
-
-        if ( $query->posts ) {
-        ?>
-            <h3><?php _e( 'Your Review', 'dokan' ) ?></h3>
-            <ol class="commentlist" id="dokan-store-review-single">
-                <?php echo $this->render_review_list( $query->posts, __( 'No Reviews found', 'dokan' ) );?>
-            </ol>
-        <?php
-
-        } else {
-            $this->render_add_review_button( $seller_id );
-        }
-
-        ob_get_flush();
-        wp_reset_postdata();
-    }
-
-    /**
      * Render add button for review
      *
      * @since 1.0
      *
-     * @param type $seller_id
+     * @param int $seller_id
      *
      * @return string
      */
@@ -159,14 +110,15 @@ class DSR_View {
      *
      * @since 1.0
      *
-     * @param type $seller_id
+     * @param int $seller_id
+     * @param int $post_id
      *
      * @return string
      */
     function render_edit_review_button( $seller_id, $post_id ) {
         ?>
         <div class="dokan-review-wrapper" style="margin-bottom: 25px;">
-            <button class='dokan-btn dokan-btn-sm dokan-btn-theme edit-review-btn' data-post_id='<?php echo $post_id ?>' data-store_id ='<?php echo $seller_id ?>' ><?php _e(' Edit', 'dokan' ) ?></button>
+            <button class='dokan-btn dokan-btn-sm dokan-btn-theme edit-review-btn' data-post_id='<?php echo esc_attr( $post_id ); ?>' data-store_id ='<?php echo esc_attr( $seller_id ); ?>' ><?php _e(' Edit', 'dokan' ) ?></button>
         </div>
         <div class="dokan-clearfix"></div>
 
@@ -174,26 +126,11 @@ class DSR_View {
     }
 
     /**
-     * Enqueue JS scripts
-     *
-     * @since 1.0
-     *
-     * @return void
-     */
-    function include_scripts() {
-
-        if ( dokan_is_store_page() ) {
-            wp_enqueue_style( 'dokan-magnific-popup' );
-            wp_enqueue_script( 'dokan-magnific-popup' );
-        }
-    }
-
-    /**
      * Submit or Edit new review
      *
      * @since 1.0
      *
-     * @return JSON Success | Error
+     * @return void Success | Error
      */
     function submit_review() {
 
@@ -202,7 +139,7 @@ class DSR_View {
         if ( !wp_verify_nonce( $postdata['dokan-seller-rating-form-nonce'], 'dokan-seller-rating-form-action' ) ) {
             wp_send_json( array(
                 'success' => false,
-                'msg'     => __( 'Sorry, something went wrong!.', 'dokan' ),
+                'msg'     => __( 'Nonce verification failed, please refresh current page and try again!.', 'dokan' ),
             ) );
         }
 
@@ -210,7 +147,9 @@ class DSR_View {
         if ( !$this->check_if_valid_customer( $postdata['store_id'], get_current_user_id() ) ) {
             wp_send_json( array(
                 'success' => false,
-                'msg'     => __( 'Sorry, something went wrong!.', 'dokan' ),
+                'msg'     => is_user_logged_in()
+                    ?  __( 'Sorry, You must be logged in to leave a review!', 'dokan' )
+                    : __( 'Sorry, You need to be a verified owner to leave a review.' ),
             ) );
         }
 
@@ -259,13 +198,35 @@ class DSR_View {
 
             wp_send_json( array(
                 'success' => true,
-                'msg'     => __( 'Thanks for your review', 'dokan' ),
+                'msg'     => __( 'Thank you for your review.', 'dokan' ),
             ) );
         } else {
             wp_send_json( array(
                 'success' => false,
-                'msg'     => __( 'Sorry, something went wrong!.', 'dokan' ),
+                'msg'     => __( 'Sorry, something went wrong!', 'dokan' ),
             ) );
+        }
+    }
+
+    public function print_store_reviews( $posts, $msg ) {
+        // Print current user review or print add review button
+        list( $current_user_review, $seller_id ) = $this->get_current_user_review();
+        if ( count( $current_user_review ) ) {
+            ?>
+            <ol class="commentlist" id="dokan-store-review-single">
+                <?php echo $this->get_review_list( $current_user_review );?>
+            </ol>
+            <?php
+        } elseif( $seller_id != dokan_get_current_user_id() && $this->check_if_valid_customer( $seller_id, get_current_user_id() ) ) {
+            $this->render_add_review_button( $seller_id );
+        }
+
+        // Print all reviews.
+        echo $this->get_review_list( $posts );
+
+        // Print no review found message.
+        if ( ! count( $current_user_review) && ! count( $posts ) ){
+            echo '<span colspan="5">' . $msg . '</span>';
         }
     }
 
@@ -278,12 +239,9 @@ class DSR_View {
      *
      * @return String List of reviews
      */
-    function render_review_list( $posts, $msg ) {
+    public function get_review_list( $posts ) {
+        ob_start();
 
-        if ( count( $posts ) == 0 ) {
-            echo '<span colspan="5">' . __( $msg, 'dokan' ) . '</span>';
-            return;
-        }
         foreach ( $posts as $review ) {
             $review_timestamp  = dokan_current_datetime()->setTimezone( new DateTimeZone( 'UTC' ) )->modify( $review->post_date_gmt )->getTimestamp();
             $review_date       = dokan_format_datetime( $review_timestamp );
@@ -330,6 +288,43 @@ class DSR_View {
                     </li>
             <?php
         }
+
+        return ob_get_clean();
+    }
+
+    /**
+     * Render Single Review Section
+     *
+     * @since 1.0
+     *
+     * @return array
+     */
+    function get_current_user_review() {
+        $user_data = get_userdata( get_query_var( 'author' ) );
+        if ( false === $user_data ) {
+            return [ [], 0 ];
+        }
+
+        $seller_id       = $user_data->ID;
+        $current_user_id = get_current_user_id();
+
+        //check if valid customer to proceed
+        if ( ! $this->check_if_valid_customer( $seller_id, $current_user_id ) ) {
+            return [ [], $seller_id ];
+        }
+
+        //get review given by current user for this store
+        $args = array(
+            'post_type'   => 'dokan_store_reviews',
+            'meta_key'    => 'store_id',
+            'meta_value'  => $seller_id,
+            'author'      => $current_user_id,
+            'post_status' => 'publish'
+        );
+
+        $query = new WP_Query( $args );
+
+        return [  $query->posts, $seller_id ];
     }
 
     /**
@@ -341,11 +336,11 @@ class DSR_View {
      *
      * @param int $customer_id
      *
-     * @return boolean
+     * @return bool
      */
     function check_if_valid_customer( $seller_id, $customer_id ) {
 
-        if ( !is_user_logged_in() ) {
+        if ( ! is_user_logged_in() ) {
             return false;
         }
 
@@ -353,24 +348,17 @@ class DSR_View {
             return true;
         }
 
-        $args = array(
-            'post_type'           => 'shop_order',
-            'meta_key'            => '_customer_user',
-            'meta_value'          => $customer_id,
-            'post_status'         => 'wc-completed',
-            'meta_query'          => array(
-                'key'   => '_dokan_vendor_id',
-                'value' => $seller_id
-            )
+        $order = dokan()->order->all(
+            [
+                'customer_id' => $customer_id,
+                'seller_id'   => $seller_id,
+                'status'      => 'wc-completed',
+                'limit'       => 1,
+                'return'      => 'ids',
+            ]
         );
 
-        $query = new WP_Query( $args );
-
-        if( $query->posts ) {
-            return true;
-        }
-
-        return false;
+        return ! empty( $order );
     }
 
     /**

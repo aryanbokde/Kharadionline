@@ -64,8 +64,19 @@ class Module {
      * @return void
      */
     public function activate() {
-        $role = get_role( 'seller' );
-        $role->add_cap( 'dokan_view_inbox_menu', true );
+        global $wp_roles;
+
+        if ( ! class_exists( 'WP_Roles' ) ) {
+            return;
+        }
+
+        if ( ! isset( $wp_roles ) ) {
+            // @codingStandardsIgnoreLine
+            $wp_roles = new \WP_Roles();
+        }
+
+        $wp_roles->add_cap( 'seller', 'dokan_view_inbox_menu' );
+        $wp_roles->add_cap( 'administrator', 'dokan_view_inbox_menu' );
 
         // fix rewrite rules
         $this->flush_rewrite_rules();
@@ -98,6 +109,8 @@ class Module {
      */
     public function deactivate() {
         $role = get_role( 'seller' );
+        $role->remove_cap( 'dokan_view_inbox_menu' );
+        $role = get_role( 'administrator' );
         $role->remove_cap( 'dokan_view_inbox_menu' );
     }
 }

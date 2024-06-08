@@ -22,12 +22,14 @@ class OrderMeta {
      *
      * @param WC_Order $order
      *
-     * @return void
+     * @return WC_Order
      */
     public static function save( WC_Order $order ) {
         if ( is_callable( [ $order, 'save' ] ) ) {
             $order->save();
         }
+
+		return $order;
     }
 
     /**
@@ -196,6 +198,9 @@ class OrderMeta {
             return;
         }
 
+	    $order->update_meta_data( $intent_key, $payment_intent_id );
+		$order->save();
+
         $order->add_order_note(
             sprintf(
                 /* translators: $1%s payment intent ID */
@@ -203,8 +208,6 @@ class OrderMeta {
                 Helper::get_gateway_title(), $payment_intent_id
             )
         );
-
-        $order->update_meta_data( $intent_key, $payment_intent_id );
     }
 
     /**
@@ -616,7 +619,7 @@ class OrderMeta {
      * @return void
      */
     public static function update_stripe_fee( WC_Order $order, $amount = 0.0 ) {
-        $order->update_meta_data( self::stripe_fee_key(), $amount );
+        $order->add_meta_data( self::stripe_fee_key(), $amount, true );
     }
 
     /**
@@ -1172,7 +1175,7 @@ class OrderMeta {
      * @return void
      */
     public static function update_dokan_gateway_fee( WC_Order $order, $fee ) {
-        $order->update_meta_data( 'dokan_gateway_fee', $fee );
+        $order->add_meta_data( 'dokan_gateway_fee', $fee, true );
     }
 
     /**

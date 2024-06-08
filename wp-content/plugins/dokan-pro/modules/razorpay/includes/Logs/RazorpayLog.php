@@ -33,7 +33,13 @@ class RazorpayLog {
         if ( isset( $error_data['dokan_razorpay_id'] ) ) {
             switch ( $context ) {
                 case 'post':
-                    update_post_meta( $id, "_dokan_razorpay_{$meta_key}_debug_id", $error_data['dokan_razorpay_id'] );
+                    $order = wc_get_order( $id );
+                    if ( $order  ) {
+                        $order->update_meta_data( "_dokan_razorpay_{$meta_key}_debug_id", $error_data['dokan_razorpay_id'] );
+                        $order->save();
+                    } else {
+                        update_post_meta( $id, "_dokan_razorpay_{$meta_key}_debug_id", $error_data['dokan_razorpay_id'] );
+                    }
                     break;
 
                 case 'user':

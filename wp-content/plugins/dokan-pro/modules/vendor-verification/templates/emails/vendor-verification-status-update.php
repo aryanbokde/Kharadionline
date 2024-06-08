@@ -14,8 +14,8 @@ do_action( 'woocommerce_email_header', $email_heading, $email );
 ?>
     <p>
         <?php
-        // translators: 1: Store Name.
         echo sprintf(
+            // translators: 1: Store Name.
             __( 'Hello %s,', 'dokan' ),
             wp_strip_all_tags( $store_name )
         );
@@ -24,9 +24,9 @@ do_action( 'woocommerce_email_header', $email_heading, $email );
 
     <p>
         <?php
-        // translators: 1: Document Type, 2: Verification Status.
         echo sprintf(
-            __( 'Your %s verification request has been %s by the admin.', 'dokan' ),
+            // translators: 1: Document Type, 2: Verification Status.
+            __( 'Your %1$s verification request has been %2$s by the admin.', 'dokan' ),
             wp_strip_all_tags( $document_type ),
             wp_strip_all_tags( $verification_status )
         );
@@ -35,8 +35,8 @@ do_action( 'woocommerce_email_header', $email_heading, $email );
 
     <p>
         <?php
-        // translators: 1: Home URL.
         echo sprintf(
+            // translators: 1: Home URL.
             __( 'You can check out it by going <a href="%s">here</a>.', 'dokan' ),
             esc_url( $home_url )
         );
@@ -44,7 +44,7 @@ do_action( 'woocommerce_email_header', $email_heading, $email );
     </p>
 
     <p>
-        <?php _e( 'From: Admin', 'dokan' );?>
+        <?php esc_attr_e( 'From: Admin', 'dokan' ); ?>
     </p>
 
     <p>

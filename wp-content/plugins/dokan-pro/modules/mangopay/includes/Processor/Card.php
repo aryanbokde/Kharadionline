@@ -146,7 +146,7 @@ class Card extends Processor {
      *
      * @since 3.5.0
      *
-     * @param object $order
+     * @param \WC_Order $order
      * @param array $payment_data
      *
      * @return void

@@ -3,6 +3,7 @@
 namespace WeDevs\DokanPro\Modules\SPMV\Search;
 
 use stdClass;
+use WeDevs\Dokan\Traits\Singleton;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
@@ -17,6 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Dashboard {
 
+    use Singleton;
+
     /**
      * Constructor.
      *
@@ -24,7 +27,7 @@ class Dashboard {
      *
      * @return void
      */
-    public function __construct() {
+    private function __construct() {
         if ( ! $this->is_spmv_enabled() ) {
             add_action( 'wp', [ $this, 'redirect_to_dashboard' ] );
             return;
@@ -60,34 +63,9 @@ class Dashboard {
         $paged             = ( isset( $_GET['pagenum'] ) ) ? absint( wp_unslash( $_GET['pagenum'] ) ) : 1; // phpcs:ignore.
         $search_word       = ( isset( $_GET['search'] ) ) ? sanitize_text_field( wp_unslash( $_GET['search'] ) ) : ''; // phpcs:ignore.
         $products_per_page = apply_filters( 'loop_shop_per_page', wc_get_default_products_per_row() * wc_get_default_product_rows_per_page() );
-        $search_args       = [
-            'meta_key'   => '_price', //phpcs:ignore.
-            'status'     => 'publish',
-            's'          => $search_word,
-            'limit'      => $products_per_page,
-            'page'       => $paged,
-            'paginate'   => true,
-            'return'     => 'all',
-            'visibility' => 'visible',
-            'orderby'    => $ordering['orderby'],
-            'order'      => $ordering['order'],
-        ];
-
-        if ( ! empty( $this->get_product_type_for_search() ) && 'all' !== $this->get_product_type_for_search() ) {
-            $search_args['type'] = $this->get_product_type_for_search();
-        } else {
-            $search_args['type'] = array_diff(
-                array_keys( wc_get_product_types() ),
-                [
-                    'auction',
-                    'booking',
-                    'grouped',
-                ]
-            );
-        }
 
         $this->remove_auction_query_restrictions();
-        $search_results = $this->dokan_spmv_get_products( $paged, $search_word, '',  $products_per_page, $this->get_product_type_for_search()  );
+        $search_results = $this->dokan_spmv_get_products( $paged, $search_word, $products_per_page, $this->get_product_type_for_search()  );
         $this->reset_auction_query_restrictions();
 
         wc_set_loop_prop( 'current_page', $paged );
@@ -303,7 +281,7 @@ class Dashboard {
             return 'booking';
         }
 
-        if ( $this->is_auction_enabled() && isset( $wp->query_vars['new-auction-product'] ) ) {
+        if ( $this->is_auction_enabled() && ( isset( $wp->query_vars['new-auction-product'] ) || isset( $wp->query_vars['auction'] ) ) ) {
             return 'auction';
         }
 
@@ -399,33 +377,36 @@ class Dashboard {
      *
      * @param integer $paged
      * @param string  $search_word
-     * @param string  $ordering
      * @param integer $products_per_page
-     * @param string  $product_type
+     * @param string  $product_type_for_search
      *
      * @return array|stdClass
      */
-    public static function dokan_spmv_get_products( int $paged = 1, string $search_word = '', string $ordering = '', int $products_per_page = 10, string $product_type = 'all' ) {
-        $ordering          = WC()->query->get_catalog_ordering_args( $ordering );
+    public static function dokan_spmv_get_products( int $paged = 1, string $search_word = '', int $products_per_page = 10, string $product_type_for_search = 'all' ) {
+        $ordering          = WC()->query->get_catalog_ordering_args();
         $search_args       = [
-            'meta_key' => '_price', //phpcs:ignore.
-            'status'   => 'publish',
-            's'        => $search_word,
-            'limit'    => $products_per_page,
-            'page'     => $paged,
-            'paginate' => true,
-            'orderby'  => $ordering['orderby'],
-            'order'    => $ordering['order'],
+            'meta_key'   => '_price', //phpcs:ignore.
+            'status'     => 'publish',
+            's'          => $search_word,
+            'limit'      => $products_per_page,
+            'page'       => $paged,
+            'paginate'   => true,
+            'return'     => 'all',
+            'visibility' => 'visible',
+            'orderby'    => $ordering['orderby'],
+            'order'      => $ordering['order'],
         ];
 
-        if ( ! empty( $product_type ) && 'all' !== $product_type ) {
-            $search_args['type'] = self::get_product_type_for_search( $product_type );
+        if ( ! empty( $product_type_for_search ) && 'all' !== $product_type_for_search ) {
+            $obj = self::instance();
+            $search_args['type'] = $obj->get_product_type_for_search( $product_type_for_search );
         } else {
             $search_args['type'] = array_diff(
                 array_keys( wc_get_product_types() ),
                 [
                     'auction',
                     'booking',
+                    'grouped',
                 ]
             );
         }
